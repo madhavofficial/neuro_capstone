@@ -233,3 +233,12 @@ if __name__ == "__main__":
         with open(out_path, "w") as f:
             json.dump(results, f, indent=4)
         print(f"\n✅ Physics Analysis saved to: {out_path}")
+"""
+	•	Hydrophobicity (ΔH): Indicates how much stickier the mutated residue becomes, affecting aggregation risk.
+	•	SASA (Local Exposure): Shows whether the mutated residue is buried or exposed, determining if its effects interact with solvent.
+	•	Global SASA: Reflects overall protein surface openness, useful for comparing whole-protein packing.
+	•	Net Charge (ΔQ): Reveals loss or gain of electrostatic repulsion, affecting solubility and stability.
+	•	Residue Volume (ΔVol): Detects steric clashes by measuring if the new residue is too large for its local pocket.
+	•	Beta-Sheet Propensity (Δβ): Shows increased tendency to form amyloid fibrils through β-sheet formation.
+	•	pLDDT / Confiden    ce: Identifies disorder or structural uncertainty at the mutation site, key for misfolding susceptibility.
+"""

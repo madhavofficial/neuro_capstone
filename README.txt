@@ -20,7 +20,7 @@ physical simulation.
 2. INSTALL DEPENDENCIES:
    Run the following command to install required libraries:
    
-   pip install requests argparse
+   pip install requests numpy biopython
 
    (Note: 'pysam' is NO LONGER REQUIRED. The pipeline now uses the 
    MyVariant.info REST API for maximum cross-platform compatibility.)
@@ -39,6 +39,33 @@ physical simulation.
 🧪 HOW TO RUN: TEST CASES
 =============================================================================
 Run these commands in your terminal to validate the pipeline.
+
+=============================================================================
+✅ ONE-COMMAND PIPELINE (NEW)
+=============================================================================
+Instead of running structure, context, and analysis separately, you can run:
+
+   python pipeline.py SNCA --variant A53T --analysis-out-dir data/analysis
+
+This runs (in order):
+   1) fetch_structure.get_structure (downloads or generates the PDB)
+   2) fetch_context.fetch_all_context (writes data/context/*_context.json)
+   3) analyze_structure.calculate_physics_metrics (writes physics JSON)
+
+Batch mode (one target per line):
+
+   # targets.txt
+   SNCA A53T
+   TTR V50M
+   TTR T139M
+
+Run:
+   python pipeline.py --batch targets.txt --analysis-out-dir data/analysis
+
+Optional flags:
+   --no-structure   Skip structure step
+   --no-context     Skip context step
+   --no-analysis    Skip physics analysis step
 
 -----------------------------------------------------------------------------
 TEST CASE 1: THE "BASELINE" (Parkinson's Disease)

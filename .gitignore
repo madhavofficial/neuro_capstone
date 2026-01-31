@@ -1,3 +1,30 @@
-# Data directories
-data/context/
-data/structure/
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- OS ---
+.DS_Store
+
+# --- Project outputs ---
+# Keep the folders, ignore generated artifacts.
+data/context/*.json
+data/analysis/*.json
+data/structure/*.pdb
+
+# If you later add placeholder files to keep empty dirs, allow them:
+!data/context/.gitkeep
+!data/analysis/.gitkeep
+!data/structure/.gitkeep
+    
