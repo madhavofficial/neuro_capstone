@@ -73,6 +73,7 @@ def run_pipeline(
     *,
     uniprot_id: Optional[str] = None,
     manual_sequence: Optional[str] = None,
+    chain_id: Optional[str] = None,
     run_structure: bool = True,
     run_context: bool = True,
     run_analysis: bool = True,
@@ -94,7 +95,8 @@ def run_pipeline(
             gene,
             uniprot_id_arg=uniprot_id,
             manual_sequence=manual_sequence,
-            variant_tag=variant,
+            # Mutation is handled virtually during analysis; keep structure WT/canonical.
+            variant_tag=None,
         )
         if not pdb_path:
             raise RuntimeError(f"Structure step failed for {gene}{' ' + variant if variant else ''}")
@@ -114,7 +116,7 @@ def run_pipeline(
 
         from analyze_structure import calculate_physics_metrics
 
-        physics_data = calculate_physics_metrics(pdb_path, variant)
+        physics_data = calculate_physics_metrics(pdb_path, variant, chain_id=chain_id)
         if not physics_data:
             raise RuntimeError(f"Analysis step failed for {gene} {variant}")
 
@@ -139,7 +141,20 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
 
     # Pass-through options to fetch_structure
     parser.add_argument("--id", dest="uniprot_id", help="Optional UniProt ID", default=None)
-    parser.add_argument("--seq", dest="manual_sequence", help="Manual sequence override (requires --variant)", default=None)
+    parser.add_argument(
+        "--seq",
+        dest="manual_sequence",
+        help="Manual WT/canonical sequence override for structure folding (used if AlphaFold is unavailable)",
+        default=None,
+    )
+
+    # Analysis options
+    parser.add_argument(
+        "--chain",
+        dest="chain_id",
+        help="Chain ID to analyze (passed to analyze_structure; default: first chain)",
+        default=None,
+    )
 
     # Pipeline controls
     parser.add_argument("--no-structure", action="store_true", help="Skip structure step")
@@ -153,9 +168,7 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
 
     args = parser.parse_args(list(argv) if argv is not None else None)
 
-    if args.manual_sequence and not args.variant:
-        print("❌ CRITICAL ERROR: You provided --seq but no --variant.")
-        return 2
+    # --seq is allowed without --variant (WT folding override).
 
     try:
         targets = load_targets(args.batch, args.gene, args.variant)
@@ -174,6 +187,7 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
                 target.variant,
                 uniprot_id=args.uniprot_id,
                 manual_sequence=args.manual_sequence,
+                chain_id=args.chain_id,
                 run_structure=not args.no_structure,
                 run_context=not args.no_context,
                 run_analysis=not args.no_analysis,

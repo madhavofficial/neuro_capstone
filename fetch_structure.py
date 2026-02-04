@@ -218,7 +218,7 @@ def get_structure(gene_symbol, uniprot_id_arg=None, manual_sequence=None, varian
     # PATH C: FALLBACK (ESMFold)
     # ------------------------------------------
     print(f"   ⚠️  Falling back to ESMFold Generation...")
-    wt_seq = get_uniprot_sequence(uniprot_id)
+    wt_seq = manual_sequence or get_uniprot_sequence(uniprot_id)
     return generate_esmfold_structure(wt_seq, gene_symbol) if wt_seq else None
 
 if __name__ == "__main__":
