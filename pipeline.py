@@ -89,7 +89,16 @@ def run_pipeline(
     physics_json_path: Optional[str] = None
 
     if run_structure:
-        from fetch_structure import get_structure
+        try:
+            from fetch_structure import get_structure
+        except ModuleNotFoundError as e:
+            raise RuntimeError(
+                "Structure step import failed. This usually means you're running the pipeline with a Python "
+                "interpreter that doesn't have the project dependencies installed. "
+                "If you have a venv, try: `source .venv/bin/activate` then rerun with `python pipeline.py ...` "
+                "(or run `./.venv/bin/python pipeline.py ...`). "
+                f"Original error: {e}"
+            )
 
         pdb_path = get_structure(
             gene,
@@ -102,7 +111,16 @@ def run_pipeline(
             raise RuntimeError(f"Structure step failed for {gene}{' ' + variant if variant else ''}")
 
     if run_context:
-        from fetch_context import fetch_all_context
+        try:
+            from fetch_context import fetch_all_context
+        except ModuleNotFoundError as e:
+            raise RuntimeError(
+                "Context step import failed. This usually means you're running the pipeline with a Python "
+                "interpreter that doesn't have the project dependencies installed. "
+                "If you have a venv, try: `source .venv/bin/activate` then rerun with `python pipeline.py ...` "
+                "(or run `./.venv/bin/python pipeline.py ...`). "
+                f"Original error: {e}"
+            )
 
         context_data = fetch_all_context(gene, variant)
         if context_data is None:
@@ -114,7 +132,15 @@ def run_pipeline(
         if not pdb_path:
             raise RuntimeError("No PDB available for analysis step")
 
-        from analyze_structure import calculate_physics_metrics
+        try:
+            from analyze_structure import calculate_physics_metrics
+        except ModuleNotFoundError as e:
+            raise RuntimeError(
+                "Analysis step import failed. If the error mentions `Bio`/Biopython, you're likely not using the venv. "
+                "Try: `source .venv/bin/activate` then rerun with `python pipeline.py ...` "
+                "(or run `./.venv/bin/python pipeline.py ...`). "
+                f"Original error: {e}"
+            )
 
         physics_data = calculate_physics_metrics(pdb_path, variant, chain_id=chain_id)
         if not physics_data:

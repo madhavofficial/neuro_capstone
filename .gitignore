@@ -14,14 +14,32 @@ ENV/
 .mypy_cache/
 .ruff_cache/
 
+# Jupyter
+.ipynb_checkpoints/
+
+# Coverage
+.coverage
+htmlcov/
+coverage.xml
+
+# Editor/IDE
+.vscode/
+.idea/
+
 # --- OS ---
 .DS_Store
+
+# Local env files
+.env
+.env.*
 
 # --- Project outputs ---
 # Keep the folders, ignore generated artifacts.
 data/context/*.json
 data/analysis/*.json
 data/structure/*.pdb
+data/structure/*.cif
+data/structure/*.mmcif
 
 # If you later add placeholder files to keep empty dirs, allow them:
 !data/context/.gitkeep

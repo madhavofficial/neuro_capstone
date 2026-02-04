@@ -11,6 +11,79 @@ import warnings
 # Suppress Biopython warnings
 warnings.filterwarnings('ignore')
 
+
+def _as_float_or_none(x):
+    try:
+        if x is None:
+            return None
+        return float(x)
+    except Exception:
+        return None
+
+
+def _format_cell(val, *, digits: int = 2) -> str:
+    if val is None:
+        return "N/A"
+    if isinstance(val, (int, np.integer)):
+        return str(int(val))
+    if isinstance(val, (float, np.floating)):
+        return f"{float(val):.{digits}f}"
+    return str(val)
+
+
+def _format_delta(val, *, digits: int = 2) -> str:
+    if val is None:
+        return "N/A"
+    try:
+        f = float(val)
+        sign = "+" if f > 0 else ""
+        return f"{sign}{f:.{digits}f}"
+    except Exception:
+        return str(val)
+
+
+def _print_comparison_table(comparison_view: dict, *, title: str | None = None):
+    if title:
+        print(title)
+
+    rows = []
+    for key, triple in comparison_view.items():
+        if not isinstance(triple, dict) or not {"wt", "mut", "delta"}.issubset(triple.keys()):
+            continue
+        rows.append(
+            (
+                key,
+                _format_cell(triple.get("wt")),
+                _format_cell(triple.get("mut")),
+                _format_delta(triple.get("delta")),
+            )
+        )
+
+    if not rows:
+        return
+
+    headers = ("Property", "WT", "MUT", "Δ")
+    col1 = max(len(headers[0]), max(len(r[0]) for r in rows))
+    col2 = max(len(headers[1]), max(len(r[1]) for r in rows))
+    col3 = max(len(headers[2]), max(len(r[2]) for r in rows))
+    col4 = max(len(headers[3]), max(len(r[3]) for r in rows))
+
+    def line(ch: str = "-"):
+        return f"{ch * (col1 + col2 + col3 + col4 + 9)}"
+
+    print(line("="))
+
+
+def _default_physics_json_path(pdb_path: str, variant_code: str, out_dir: str = "data/analysis") -> str:
+    base_name = os.path.basename(pdb_path).replace(".pdb", "")
+    os.makedirs(out_dir, exist_ok=True)
+    return os.path.join(out_dir, f"{base_name}_{variant_code}_physics.json")
+    print(f"{headers[0]:<{col1}} | {headers[1]:>{col2}} | {headers[2]:>{col3}} | {headers[3]:>{col4}}")
+    print(line("-"))
+    for prop, wt, mut, delta in rows:
+        print(f"{prop:<{col1}} | {wt:>{col2}} | {mut:>{col3}} | {delta:>{col4}}")
+    print(line("="))
+
 # ==========================================
 # 🧪 BIOPHYSICAL LOOKUP TABLES (THE CONSTANTS)
 # ==========================================
@@ -323,9 +396,10 @@ def get_interactions(structure, model_id, chain_id, res_id, wt_resname, mut_resn
 # ==========================================
 # 🧠 MAIN ANALYSIS LOGIC (Features 1-10)
 # ==========================================
-def analyze_protein(pdb_path, variant_code, *, chain_id: str | None = None):
+def analyze_protein(pdb_path, variant_code, *, chain_id: str | None = None, verbose: bool = True):
     chain_label = chain_id if chain_id is not None else "<first>"
-    print(f"--- 🧬 ANALYZING {variant_code} (chain {chain_label}) ---")
+    if verbose:
+        print(f"--- 🧬 ANALYZING {variant_code} (chain {chain_label}) ---")
     
     # A. Parse Variant
     try:
@@ -373,19 +447,39 @@ def analyze_protein(pdb_path, variant_code, *, chain_id: str | None = None):
         strain_warning = "Proline Helix Breaker"
 
     # E. Compile Final JSON
+    wt_volume = _as_float_or_none(VOLUME.get(wt_3, 0))
+    mut_volume = _as_float_or_none(VOLUME.get(mut_3, 0))
+    wt_hydro = _as_float_or_none(HYDROPHOBICITY.get(wt_3, 0))
+    mut_hydro = _as_float_or_none(HYDROPHOBICITY.get(mut_3, 0))
+    wt_charge = _as_float_or_none(CHARGE.get(wt_3, 0))
+    mut_charge = _as_float_or_none(CHARGE.get(mut_3, 0))
+
+    comparison_view = {
+        "residue": {"wt": wt_3, "mut": mut_3, "delta": None},
+        "volume": {"wt": wt_volume, "mut": mut_volume, "delta": round(float(d_vol), 2)},
+        "hydrophobicity": {"wt": wt_hydro, "mut": mut_hydro, "delta": round(float(d_hydro), 2)},
+        "charge": {"wt": wt_charge, "mut": mut_charge, "delta": float(d_charge)},
+        # Structural context is only available for WT in virtual-swap mode.
+        "sasa": {"wt": round(float(sasa), 2), "mut": None, "delta": None},
+        "plddt_confidence": {"wt": round(float(plddt), 2), "mut": None, "delta": None},
+        "secondary_structure": {"wt": sec_struct, "mut": None, "delta": None},
+        "exposure": {"wt": "Buried" if sasa < 15 else "Exposed", "mut": None, "delta": None},
+    }
+
     result = {
         "variant": variant_code,
+        "comparison_view": comparison_view,
         "wild_type": {
             "residue": wt_3,
-            "volume": VOLUME.get(wt_3, 0),
-            "hydrophobicity": HYDROPHOBICITY.get(wt_3, 0),
-            "charge": CHARGE.get(wt_3, 0)
+            "volume": wt_volume,
+            "hydrophobicity": wt_hydro,
+            "charge": wt_charge,
         },
         "mutant_properties": {
             "residue": mut_3,
-            "volume": VOLUME.get(mut_3, 0),
-            "hydrophobicity": HYDROPHOBICITY.get(mut_3, 0),
-            "charge": CHARGE.get(mut_3, 0)
+            "volume": mut_volume,
+            "hydrophobicity": mut_hydro,
+            "charge": mut_charge,
         },
         "deltas": {
             "delta_volume": round(d_vol, 2),
@@ -430,22 +524,58 @@ def analyze_variant_pair(wt_pdb_path: str, mut_pdb_path: str, variant_code: str,
         "secondary_structure_changed": bool(mut_metrics["secondary_structure"] != wt_metrics["secondary_structure"]),
     }
 
+    wt_volume = _as_float_or_none(VOLUME.get(wt_3, 0))
+    mut_volume = _as_float_or_none(VOLUME.get(mut_3, 0))
+    wt_hydro = _as_float_or_none(HYDROPHOBICITY.get(wt_3, 0))
+    mut_hydro = _as_float_or_none(HYDROPHOBICITY.get(mut_3, 0))
+    wt_charge = _as_float_or_none(CHARGE.get(wt_3, 0))
+    mut_charge = _as_float_or_none(CHARGE.get(mut_3, 0))
+
+    comparison_view = {
+        "residue": {"wt": wt_3, "mut": mut_3, "delta": None},
+        "volume": {"wt": wt_volume, "mut": mut_volume, "delta": round(float(d_vol), 2)},
+        "hydrophobicity": {"wt": wt_hydro, "mut": mut_hydro, "delta": round(float(d_hydro), 2)},
+        "charge": {"wt": wt_charge, "mut": mut_charge, "delta": float(d_charge)},
+        "sasa": {"wt": wt_metrics["sasa"], "mut": mut_metrics["sasa"], "delta": observed_deltas["delta_sasa"]},
+        "plddt_confidence": {
+            "wt": wt_metrics["plddt_confidence"],
+            "mut": mut_metrics["plddt_confidence"],
+            "delta": observed_deltas["delta_plddt_confidence"],
+        },
+        "neighbor_residue_count_5A": {
+            "wt": wt_metrics["neighbor_residue_count_5A"],
+            "mut": mut_metrics["neighbor_residue_count_5A"],
+            "delta": observed_deltas["delta_neighbor_residue_count_5A"],
+        },
+        "secondary_structure": {
+            "wt": wt_metrics["secondary_structure"],
+            "mut": mut_metrics["secondary_structure"],
+            "delta": "CHANGED" if observed_deltas["secondary_structure_changed"] else "Same",
+        },
+        "exposure": {
+            "wt": wt_metrics["exposure"],
+            "mut": mut_metrics["exposure"],
+            "delta": None,
+        },
+    }
+
     return {
         "variant": variant_code,
         "position": resseq,
+        "comparison_view": comparison_view,
         "wild_type": {
             "residue": wt_3,
-            "volume": VOLUME.get(wt_3, 0),
-            "hydrophobicity": HYDROPHOBICITY.get(wt_3, 0),
-            "charge": CHARGE.get(wt_3, 0),
+            "volume": wt_volume,
+            "hydrophobicity": wt_hydro,
+            "charge": wt_charge,
             "pdb": wt_pdb_path,
             "site_metrics": wt_metrics,
         },
         "mutant": {
             "residue": mut_3,
-            "volume": VOLUME.get(mut_3, 0),
-            "hydrophobicity": HYDROPHOBICITY.get(mut_3, 0),
-            "charge": CHARGE.get(mut_3, 0),
+            "volume": mut_volume,
+            "hydrophobicity": mut_hydro,
+            "charge": mut_charge,
             "pdb": mut_pdb_path,
             "site_metrics": mut_metrics,
         },
@@ -464,7 +594,8 @@ def calculate_physics_metrics(pdb_path: str, variant_code: str, *, chain_id: str
 
     Returns a JSON-serializable dict for a single PDB (no WT-vs-MUT deltas unless you use analyze_variant_pair).
     """
-    return analyze_protein(pdb_path, variant_code, chain_id=chain_id)
+    # Keep pipeline output clean; CLI printing happens in __main__.
+    return analyze_protein(pdb_path, variant_code, chain_id=chain_id, verbose=False)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze intrinsic residue deltas and (optionally) WT-vs-MUT structural deltas.")
@@ -475,7 +606,13 @@ if __name__ == "__main__":
     parser.add_argument("--chain-wt", help="WT chain ID (compare mode)", default=None)
     parser.add_argument("--chain-mut", help="Mutant chain ID (compare mode)", default=None)
     parser.add_argument("--chain", help="Chain ID (single-structure mode; default: first chain)", default=None)
+    parser.add_argument(
+        "--analysis-out-dir",
+        help="Directory to save JSON output (default: data/analysis)",
+        default="data/analysis",
+    )
     parser.add_argument("--out", help="Output JSON path (default: <variant>_analysis.json)", default=None)
+    parser.add_argument("--no-table", action="store_true", help="Do not print side-by-side comparison table")
     args = parser.parse_args()
 
     if args.wt_pdb or args.mut_pdb:
@@ -483,13 +620,23 @@ if __name__ == "__main__":
             print("❌ Compare mode requires --wt-pdb, --mut-pdb, and <variant>.")
             sys.exit(2)
         data = analyze_variant_pair(args.wt_pdb, args.mut_pdb, args.variant, chain_wt=args.chain_wt, chain_mut=args.chain_mut)
-        out_file = args.out or f"{args.variant}_compare.json"
+        if args.out:
+            out_file = args.out
+        else:
+            base_name = os.path.basename(args.wt_pdb).replace(".pdb", "")
+            os.makedirs(args.analysis_out_dir, exist_ok=True)
+            out_file = os.path.join(args.analysis_out_dir, f"{base_name}_{args.variant}_compare.json")
     else:
         if not args.pdb or not args.variant:
             print("❌ Single-structure mode requires <pdb> <variant>.")
             sys.exit(2)
-        data = analyze_protein(args.pdb, args.variant, chain_id=args.chain)
-        out_file = args.out or f"{args.variant}_analysis.json"
+        data = analyze_protein(args.pdb, args.variant, chain_id=args.chain, verbose=True)
+        out_file = args.out or _default_physics_json_path(args.pdb, args.variant, out_dir=args.analysis_out_dir)
+
+    if data and (not args.no_table):
+        cv = data.get("comparison_view")
+        if isinstance(cv, dict):
+            _print_comparison_table(cv, title="\nComparison View (WT vs MUT vs Δ)")
 
     with open(out_file, "w") as f:
         json.dump(data, f, indent=4)

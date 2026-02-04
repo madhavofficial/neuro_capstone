@@ -17,6 +17,8 @@ ENSEMBL_URL = "https://rest.ensembl.org/phenotype/gene/human/"
 OT_GRAPHQL_URL = "https://api.platform.opentargets.org/api/v4/graphql"
 UNIPROT_URL = "https://rest.uniprot.org/uniprotkb/search"
 VEP_URL = "https://rest.ensembl.org/vep/human/hgvs/"
+ENSEMBL_XREF_SYMBOL_URL = "https://rest.ensembl.org/xrefs/symbol/homo_sapiens/"
+ENSEMBL_LOOKUP_ID_URL = "https://rest.ensembl.org/lookup/id/"
 
 # The Target: Remote AlphaMissense File (Hg38)
 HEADERS = {
@@ -64,35 +66,204 @@ def get_protein_metadata(query):
 # ==========================================
 # 2️⃣ SNIPER LAYER: AlphaMissense (API Sniper)
 # ==========================================
-def get_genomic_coordinates(gene, old_aa, pos, new_aa):
+def _get_uniprot_signal_peptide_length(uniprot_id: str) -> int | None:
+    """Best-effort: fetch signal peptide length from UniProt features.
+
+    Returns length (end position) if available, else None.
     """
-    Helper: Converts 'TTR V50M' -> 'chr18:31592974'
+    if not uniprot_id:
+        return None
+    url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.json"
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=10)
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        feats = data.get("features")
+        if not isinstance(feats, list):
+            return None
+        for feat in feats:
+            if not isinstance(feat, dict):
+                continue
+            # Typical type strings: "Signal peptide" / "SIGNAL"
+            ftype = str(feat.get("type", "")).lower()
+            if "signal" not in ftype:
+                continue
+            loc = feat.get("location")
+            if not isinstance(loc, dict):
+                continue
+            end = loc.get("end")
+            if isinstance(end, dict) and "value" in end:
+                return int(end["value"])
+        return None
+    except Exception:
+        return None
+
+
+def _uniprot_starts_with_m(uniprot_id: str) -> bool | None:
+    """Best-effort check for N-terminal methionine in UniProt sequence."""
+    if not uniprot_id:
+        return None
+    url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.json"
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=10)
+        if resp.status_code != 200:
+            return None
+        data = resp.json()
+        seq = data.get("sequence", {}).get("value")
+        if isinstance(seq, str) and seq:
+            return seq[0] == "M"
+        return None
+    except Exception:
+        return None
+
+
+def _get_ensembl_protein_id_from_symbol(gene_symbol: str) -> str | None:
+    """Resolve ENSP (Ensembl protein) ID for a gene symbol using Ensembl lookup.
+
+    Returns the canonical transcript's protein translation ID when available.
+    """
+    if not gene_symbol:
+        return None
+    try:
+        xref_url = f"{ENSEMBL_XREF_SYMBOL_URL}{gene_symbol}"
+        resp = requests.get(xref_url, headers=HEADERS, timeout=10)
+        if resp.status_code != 200:
+            return None
+        xrefs = resp.json()
+        ensg = None
+        if isinstance(xrefs, list):
+            for item in xrefs:
+                if isinstance(item, dict) and str(item.get("id", "")).startswith("ENSG"):
+                    ensg = item["id"]
+                    break
+        if not ensg:
+            return None
+
+        lookup_url = f"{ENSEMBL_LOOKUP_ID_URL}{ensg}"
+        resp = requests.get(lookup_url, params={"expand": 1}, headers=HEADERS, timeout=10)
+        if resp.status_code != 200:
+            return None
+        gene_obj = resp.json()
+        transcripts = gene_obj.get("Transcript")
+        if not isinstance(transcripts, list):
+            return None
+
+        canonical = None
+        for tr in transcripts:
+            if isinstance(tr, dict) and tr.get("is_canonical") == 1:
+                canonical = tr
+                break
+        if canonical is None and transcripts:
+            canonical = transcripts[0] if isinstance(transcripts[0], dict) else None
+
+        if not canonical:
+            return None
+        translation = canonical.get("Translation")
+        if isinstance(translation, dict) and translation.get("id"):
+            return str(translation["id"])
+        return None
+    except Exception:
+        return None
+
+
+def _query_vep_hgvs(hgvs: str):
+    url = f"{VEP_URL}{hgvs}"
+    resp = requests.get(url, headers=HEADERS, timeout=10)
+    if resp.status_code != 200:
+        return None
+    data = resp.json()
+    if not data:
+        return None
+    return data[0]
+
+def get_genomic_coordinates(gene, old_aa, pos, new_aa, *, uniprot_id: str | None = None):
+    """
+    Helper: Converts a protein-level mutation into hg38 genomic coordinates.
+
+    Returns a dict with at least: {chrom, pos}. When Ensembl VEP provides alleles,
+    also includes {ref, alt} for more precise downstream queries.
     """
     print(f"   🗺️  [Mapping] Converting {gene} {old_aa}{pos}{new_aa} to Genome Coordinates...")
     
-    # Format: TTR:p.Val50Met
-    hgvs = f"{gene}:p.{AA_MAP.get(old_aa, '')}{pos}{AA_MAP.get(new_aa, '')}"
-    url = f"{VEP_URL}{hgvs}"
-    
+    aa_old = AA_MAP.get(old_aa, "")
+    aa_new = AA_MAP.get(new_aa, "")
+    if not aa_old or not aa_new:
+        return None
+
+    # Some proteins (secreted/mature peptides) are commonly reported using mature-protein
+    # numbering (i.e. after the signal peptide). If VEP fails at the reported position,
+    # try adding the UniProt signal peptide length as an offset.
+    signal_len = _get_uniprot_signal_peptide_length(uniprot_id) if uniprot_id else None
+    starts_with_m = _uniprot_starts_with_m(uniprot_id) if uniprot_id else None
+    if signal_len:
+        print(f"      ℹ️  Detected UniProt signal peptide length: {signal_len}. Will try position offsets.")
+    if starts_with_m:
+        print("      ℹ️  UniProt sequence starts with 'M'. Will also try +1 position (initiator Met cleavage numbering).")
+
+    ensp = _get_ensembl_protein_id_from_symbol(gene)
+
+    # Try multiple identifiers because Ensembl VEP HGVS resolver is picky.
+    identifiers: list[str] = [gene]
+    if ensp:
+        identifiers.append(ensp)
+    if uniprot_id:
+        identifiers.append(uniprot_id)
+
+    positions: list[int] = [int(pos)]
+    if starts_with_m and (int(pos) + 1) not in positions:
+        positions.append(int(pos) + 1)
+    if signal_len:
+        cand = int(pos) + int(signal_len)
+        if cand not in positions:
+            positions.append(cand)
+        if starts_with_m:
+            cand2 = int(pos) + int(signal_len) + 1
+            if cand2 not in positions:
+                positions.append(cand2)
+
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=10)
-        if resp.status_code != 200: return None
-        
-        data = resp.json()
-        if not data: return None
-        
-        res = data[0]
-        chrom = res['seq_region_name'] # Ensembl returns '18'
-        start = res['start']
-        
-        print(f"      📍 Mapped to: chr{chrom}:{start}")
-        return chrom, int(start)
+        res = None
+        for ident in identifiers:
+            for try_pos in positions:
+                hgvs = f"{ident}:p.{aa_old}{try_pos}{aa_new}"
+                out = _query_vep_hgvs(hgvs)
+                if out:
+                    if try_pos != int(pos):
+                        print(f"      ✅ Resolved using offset position: {pos} -> {try_pos} via {ident}")
+                    res = out
+                    break
+            if res:
+                break
+        if not res:
+            return None
+
+        chrom = res.get('seq_region_name')  # Ensembl returns e.g. '18'
+        start = res.get('start')
+        allele_string = res.get('allele_string')  # often like 'G/A'
+
+        if chrom is None or start is None:
+            return None
+
+        mapping = {"chrom": str(chrom), "pos": int(start)}
+        if isinstance(allele_string, str) and "/" in allele_string:
+            ref, alt = allele_string.split("/", 1)
+            if ref and alt and len(ref) == 1 and len(alt) == 1:
+                mapping["ref"] = ref
+                mapping["alt"] = alt
+
+        if "ref" in mapping and "alt" in mapping:
+            print(f"      📍 Mapped to: chr{mapping['chrom']}:{mapping['pos']} {mapping['ref']}>{mapping['alt']}")
+        else:
+            print(f"      📍 Mapped to: chr{mapping['chrom']}:{mapping['pos']}")
+
+        return mapping
         
     except Exception as e:
         print(f"      ⚠️ Mapping Error: {e}")
         return None
 
-def get_alphamissense_sniper(gene, variant_code):
+def get_alphamissense_sniper(gene, variant_code, *, uniprot_id: str | None = None):
     """
     THE API SNIPER (MyVariant.info) - ROBUST VERSION
     Handles hg38 and nested list responses from the API.
@@ -105,30 +276,40 @@ def get_alphamissense_sniper(gene, variant_code):
     old_aa, pos, new_aa = match.groups()
 
     # 2. Get Coordinates (hg38)
-    coords = get_genomic_coordinates(gene, old_aa, pos, new_aa)
-    if not coords:
-        print("      ⚠️ Could not resolve genomic coordinates. Skipping Sniper.")
+    mapping = get_genomic_coordinates(gene, old_aa, pos, new_aa, uniprot_id=uniprot_id)
+    if not mapping:
+        print("      ⚠️ Could not resolve genomic coordinates. Skipping Sniper. (This can happen when variants are reported using mature-protein numbering.)")
         return None
-    
-    chrom, loc = coords
+
+    chrom, loc = mapping["chrom"], mapping["pos"]
 
     print(f"   🎯 [Sniper] Querying MyVariant Cloud at chr{chrom}:{loc} (hg38)...")
     
     # 3. Query MyVariant
     url = "https://myvariant.info/v1/query"
-    params = {
-        "q": f"chr{chrom}:{loc}",
-        "fields": "alphamissense,dbnsfp.alphamissense",
-        "assembly": "hg38",
-        "size": 1
-    }
+
+    # MyVariant indexing can vary; try HGVS g. and plain coordinate queries.
+    queries: list[str] = []
+    if mapping.get("ref") and mapping.get("alt"):
+        queries.append(f"chr{chrom}:g.{loc}{mapping['ref']}>{mapping['alt']}")
+    queries.append(f"chr{chrom}:{loc}")
     
     try:
-        resp = requests.get(url, params=params, headers=HEADERS, timeout=10)
-        data = resp.json()
-        
-        if "hits" in data and len(data["hits"]) > 0:
-            hit = data["hits"][0]
+        hit = None
+        for q in queries:
+            params = {
+                "q": q,
+                "fields": "alphamissense,dbnsfp.alphamissense",
+                "assembly": "hg38",
+                "size": 1,
+            }
+            resp = requests.get(url, params=params, headers=HEADERS, timeout=10)
+            data = resp.json()
+            if "hits" in data and len(data["hits"]) > 0:
+                hit = data["hits"][0]
+                break
+
+        if hit:
             
             # 4. Extract Data Block
             am_data = None
@@ -158,13 +339,108 @@ def get_alphamissense_sniper(gene, variant_code):
             else:
                 print("      ℹ️  Variant found, but AlphaMissense score not in DB.")
         else:
-            print("      ❌ No variant record found (Double-check coordinate mapping).")
+            print("      ❌ No variant record found (Double-check coordinate mapping / MyVariant coverage).")
 
     except Exception as e:
         print(f"      ❌ Sniper Error: {e}")
         return None
         
     return None
+
+
+def get_clinvar_myvariant(gene: str, variant_code: str, *, uniprot_id: str | None = None):
+    """Fetch ClinVar annotations for a protein variant via Ensembl VEP -> MyVariant.
+
+    Returns a small normalized dict (or None if unavailable).
+    """
+    if not variant_code:
+        return None
+
+    match = re.match(r"([A-Z])(\d+)([A-Z])", variant_code.upper())
+    if not match:
+        return None
+    old_aa, pos, new_aa = match.groups()
+
+    mapping = get_genomic_coordinates(gene, old_aa, pos, new_aa, uniprot_id=uniprot_id)
+    if not mapping:
+        return None
+
+    chrom, loc = mapping["chrom"], mapping["pos"]
+    queries: list[str] = []
+    if mapping.get("ref") and mapping.get("alt"):
+        queries.append(f"chr{chrom}:g.{loc}{mapping['ref']}>{mapping['alt']}")
+    queries.append(f"chr{chrom}:{loc}")
+
+    print(f"   🧬 [ClinVar] Querying MyVariant (hg38)...")
+
+    url = "https://myvariant.info/v1/query"
+    try:
+        hit = None
+        for q in queries:
+            params = {
+                "q": q,
+                "fields": "clinvar,dbnsfp.clinvar",
+                "assembly": "hg38",
+                "size": 1,
+            }
+            resp = requests.get(url, params=params, headers=HEADERS, timeout=10)
+            data = resp.json()
+            if "hits" in data and data["hits"]:
+                hit = data["hits"][0]
+                break
+
+        if not hit:
+            print("      ℹ️  No ClinVar record found.")
+            return None
+        clinvar = hit.get("clinvar")
+        if not clinvar and "dbnsfp" in hit:
+            clinvar = hit["dbnsfp"].get("clinvar")
+        if not clinvar:
+            print("      ℹ️  Variant found, but ClinVar data not present.")
+            return None
+
+        # Normalize common fields while keeping raw for debugging.
+        rcv = clinvar.get("rcv") if isinstance(clinvar, dict) else None
+        if isinstance(rcv, list) and rcv:
+            rcv0 = rcv[0]
+        elif isinstance(rcv, dict):
+            rcv0 = rcv
+        else:
+            rcv0 = None
+
+        sig = None
+        conditions: list[str] = []
+        accession = None
+        review_status = None
+
+        if isinstance(rcv0, dict):
+            accession = rcv0.get("accession")
+            sig = rcv0.get("clinical_significance")
+            if isinstance(sig, dict):
+                review_status = sig.get("review_status")
+                sig = sig.get("description")
+            conditions_raw = rcv0.get("conditions")
+            if isinstance(conditions_raw, dict) and "name" in conditions_raw:
+                conditions.append(str(conditions_raw["name"]))
+            elif isinstance(conditions_raw, list):
+                for item in conditions_raw:
+                    if isinstance(item, dict) and item.get("name"):
+                        conditions.append(str(item["name"]))
+
+        normalized = {
+            "accession": accession,
+            "clinical_significance": sig,
+            "review_status": review_status,
+            "conditions": conditions[:10],
+            "mapping": mapping,
+            "raw": clinvar,
+        }
+        if sig:
+            print(f"      ✅ ClinVar: {sig}{' (' + accession + ')' if accession else ''}")
+        return normalized
+    except Exception as e:
+        print(f"      ❌ ClinVar query error: {e}")
+        return None
 # ==========================================
 # 3️⃣ RECALL LAYER: Ensembl
 # ==========================================
@@ -251,10 +527,14 @@ def fetch_all_context(protein_name, variant_input=None):
     uid, seq, gene = get_protein_metadata(protein_name)
     if not uid: return None
 
-    # 2. The Sniper (AlphaMissense Raw Check)
+    # 2. Variant-layer (AlphaMissense + ClinVar via MyVariant)
     am_data = None
+    clinvar_data = None
     if variant_input:
-        am_data = get_alphamissense_sniper(gene, variant_input)
+        # Note: these functions do their own VEP mapping; kept separate for simplicity.
+        # If you want to avoid repeated mapping logs entirely, we can refactor to compute mapping once.
+        am_data = get_alphamissense_sniper(gene, variant_input, uniprot_id=uid)
+        clinvar_data = get_clinvar_myvariant(gene, variant_input, uniprot_id=uid)
         
         # 🚦 FILTER LOGIC
         if am_data and am_data['score'] < 0.2:
@@ -273,6 +553,7 @@ def fetch_all_context(protein_name, variant_input=None):
         "uniprot_id": uid,
         "variant": variant_input,
         "alphamissense_sniper": am_data, # <--- Specific field for Sniper results
+        "clinvar": clinvar_data,
         "medical_context": {
             "recall_layer_ensembl": recall_data,
             "precision_layer_opentargets": precision_data
