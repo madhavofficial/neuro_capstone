@@ -151,22 +151,39 @@ def one_to_three(one_letter):
 
 
 def parse_variant_code(variant_code: str) -> tuple[str, int, str, str, str]:
-    """Parses e.g. 'A53T' -> (wt_1, pos, mut_1, wt_3, mut_3)."""
+    """Parses 'A53T' or 'Ala53Thr' -> (wt_1, pos, mut_1, wt_3, mut_3)."""
     import re
+    
+    # Try 1-letter format first: A53T
+    match_1 = re.match(r"^([A-Z])(\d+)([A-Z])$", variant_code.upper())
+    if match_1:
+        wt_1, pos_str, mut_1 = match_1.groups()
+        pos = int(pos_str)
+        wt_3 = one_to_three(wt_1)
+        mut_3 = one_to_three(mut_1)
+        if not wt_3 or not mut_3:
+            raise ValueError(f"Invalid amino acid code in variant '{variant_code}'.")
+        return wt_1, pos, mut_1, wt_3, mut_3
 
-    match = re.match(r"([A-Z])(\d+)([A-Z])", variant_code.upper())
-    if not match:
-        raise ValueError("Invalid variant format. Use format like 'A53T'.")
+    # Try 3-letter format: Ala53Thr
+    match_3 = re.match(r"^([A-Z][a-z]{2})(\d+)([A-Z][a-z]{2})$", variant_code)
+    if match_3:
+        wt_3_raw, pos_str, mut_3_raw = match_3.groups()
+        wt_3 = wt_3_raw.upper()
+        mut_3 = mut_3_raw.upper()
+        pos = int(pos_str)
+        
+        # Reverse lookup 3->1
+        map_3_to_1 = {v: k for k, v in AA_MAP_1_TO_3.items()}
+        wt_1 = map_3_to_1.get(wt_3)
+        mut_1 = map_3_to_1.get(mut_3)
+        
+        if not wt_1 or not mut_1:
+             raise ValueError(f"Invalid amino acid code in variant '{variant_code}'.")
+             
+        return wt_1, pos, mut_1, wt_3, mut_3
 
-    wt_1, pos_str, mut_1 = match.groups()
-    pos = int(pos_str)
-
-    wt_3 = one_to_three(wt_1)
-    mut_3 = one_to_three(mut_1)
-    if not wt_3 or not mut_3:
-        raise ValueError(f"Invalid amino acid code in variant '{variant_code}'.")
-
-    return wt_1, pos, mut_1, wt_3, mut_3
+    raise ValueError("Invalid variant format. Use format like 'A53T' or 'Ala53Thr'.")
 
 
 def load_structure(pdb_path: str):
@@ -311,8 +328,9 @@ def get_interactions(structure, model_id, chain_id, res_id, wt_resname, mut_resn
     ns = NeighborSearch(atoms)
 
     # Broad neighbor search (sidechains can extend beyond CA distance).
+    # UPDATED: Increased radius to 12.0Å to capture long side-chain interactions (e.g., Arg/Lys tips).
     center_atom = target_res["CA"] if "CA" in target_res else list(target_res)[-1]
-    neighbor_residues = ns.search(center_atom.get_coord(), 6.0, level="R")
+    neighbor_residues = ns.search(center_atom.get_coord(), 12.0, level="R")
 
     # 7) Salt bridges: charged atom distance < 4.0Å
     positive = {"ARG", "LYS", "HIS"}
@@ -641,3 +659,48 @@ if __name__ == "__main__":
     with open(out_file, "w") as f:
         json.dump(data, f, indent=4)
     print(f"✅ Analysis saved to {out_file}")
+"""
+================================================================================
+Feature Summary: Contribution to Neurodegenerative Disease Risk
+================================================================================
+
+1.  delta_volume (Volume Change):
+    *   What it is: Did the amino acid get bigger or smaller?
+    *   Risk: If a small piece inside the protein is replaced by a big one, it pushes other parts apart ("steric clash"). This can make the protein unfold and clump together (aggregate).
+
+2.  delta_hydrophobicity (Hydrophobicity Change):
+    *   What it is: Did the part become more oil-like (repels water) or water-like?
+    *   Risk: If a water-loving part becomes oil-like, it might stick to other proteins to 'hide' from water. This is a primary driver of sticky clumps (amyloid plaques) in Alzheimer's and Parkinson's.
+
+3.  delta_charge (Charge Change):
+    *   What it is: Did we lose a + or - charge?
+    *   Risk: Charges act like magnets holding the protein shape together or guiding interactions with DNA/other proteins. Losing them breaks these connections.
+
+4.  exposure (Buried vs. Exposed):
+    *   What it is: Is this spot deep inside the protein core or on the surface?
+    *   Risk: Mutations deep inside ("Buried") are usually much more dangerous because they disrupt the protein's foundation, leading to total collapse.
+
+5.  secondary_structure (Alpha Helix / Beta Sheet):
+    *   What it is: Is this part of a corkscrew (helix) or a flat sheet?
+    *   Risk: Neurodegenerative proteins (like Tau or Alpha-synuclein) rely on these shapes. Breaking them destabilizes the protein.
+
+6.  pLDDT (Confidence):
+    *   What it is: How sure is AI (AlphaFold) about this shape?
+    *   Risk: If this score is low (< 70), the protein is naturally floppy/disordered here. Mutations in floppy regions behave differently than in rigid ones.
+
+7.  salt_bridges_lost:
+    *   What it is: Did we break a strong "+ to -" magnetic bond?
+    *   Risk: Salt bridges are the "super glue" of protein structure. Losing one significantly weakens stability.
+
+8.  disulfides_lost:
+    *   What it is: Did we break a covalent chemical cross-link?
+    *   Risk: This is like cutting a support cable on a bridge. It usually causes immediate structural failure.
+
+9.  h_bonds_lost_est:
+    *   What it is: Estimate of broken weak magnetic bonds.
+    *   Risk: While weak individually, losing many of these makes the protein "looser" and prone to misfolding.
+
+10. backbone_strain (Gly/Pro warnings):
+    *   What it is: Did we insert a rigid piece into a flexible turn, or a "helix breaker" into a spiral?
+    *   Risk: "Glycine Flexibility Lost" means the chain can't turn where it needs to. "Proline Helix Breaker" snaps Alpha Helices. Both force the protein into the wrong shape.
+"""

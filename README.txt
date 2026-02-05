@@ -47,6 +47,41 @@ Instead of running structure, context, and analysis separately, you can run:
 
    python pipeline.py SNCA --variant A53T --analysis-out-dir data/analysis
 
+PIPELINE INPUT METHODS (WHAT USERS CAN PROVIDE)
+
+1) Single target (most common)
+   - Input a gene symbol as the first positional argument, plus an optional variant.
+   Examples:
+     python pipeline.py SNCA --variant A53T
+     python pipeline.py MAPT --variant P301L
+
+2) Batch file (many targets)
+   - Provide a file via --batch with one target per line.
+   - Each line can be whitespace-separated or comma-separated:
+      GENE VARIANT
+      GENE,VARIANT
+      GENE            (variant optional; analysis will be skipped/blocked without it)
+
+3) Variant formats supported
+   - 1-letter amino acid code: A53T
+   - 3-letter amino acid code: Ala53Thr
+   Notes:
+   - Context + physics support both formats.
+   - Some external databases are strict about reference numbering; a commonly used
+    clinical label may differ from RefSeq numbering (e.g., “A4V” vs “Ala5Val”).
+
+4) Optional overrides / controls
+   - --id <UniProtAccession>
+      Use a specific UniProt ID instead of resolving from the gene symbol.
+   - --seq <AASEQUENCE>
+      Provide a canonical sequence override for structure folding (used if AlphaFold is unavailable).
+   - --chain <ChainID>
+      Analyze a specific chain (default: first chain in the PDB).
+   - --analysis-out-dir <folder>
+      Where physics JSON is written (default: data/analysis).
+   - --no-structure / --no-context / --no-analysis
+      Skip any stage (useful for debugging or re-running only one step).
+
 This runs (in order):
    1) fetch_structure.get_structure (downloads or generates the PDB)
    2) fetch_context.fetch_all_context (writes data/context/*_context.json)
@@ -61,6 +96,13 @@ Batch mode (one target per line):
 
 Run:
    python pipeline.py --batch targets.txt --analysis-out-dir data/analysis
+
+You can also run context-only or analysis-only:
+   # context only
+   python pipeline.py SNCA --variant A53T --no-structure --no-analysis
+
+   # analysis only (requires a PDB already downloaded)
+   python pipeline.py SNCA --variant A53T --no-structure --no-context
 
 Optional flags:
    --no-structure   Skip structure step

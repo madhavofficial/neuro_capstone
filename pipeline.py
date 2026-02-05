@@ -188,8 +188,8 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
     parser.add_argument("--no-analysis", action="store_true", help="Skip analysis step")
     parser.add_argument(
         "--analysis-out-dir",
-        help="Where to save physics JSON output (default: alongside PDB). Recommended: data/analysis",
-        default=None,
+        help="Where to save physics JSON output (default: data/analysis)",
+        default="data/analysis",
     )
 
     args = parser.parse_args(list(argv) if argv is not None else None)
@@ -208,6 +208,10 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         label = f"{target.gene}{' ' + target.variant if target.variant else ''}".strip()
         print(f"\n==============================\n🚀 PIPELINE TARGET: {label}\n==============================")
         try:
+            effective_run_analysis = (not args.no_analysis) and bool(target.variant)
+            if (not args.no_analysis) and (not target.variant):
+                print("ℹ️  No variant provided for this target; skipping physics analysis.")
+
             pdb_path, _context, physics_json_path = run_pipeline(
                 target.gene,
                 target.variant,
@@ -216,7 +220,7 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
                 chain_id=args.chain_id,
                 run_structure=not args.no_structure,
                 run_context=not args.no_context,
-                run_analysis=not args.no_analysis,
+                run_analysis=effective_run_analysis,
                 analysis_out_dir=args.analysis_out_dir,
             )
 
