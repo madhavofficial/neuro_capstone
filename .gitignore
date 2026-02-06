@@ -1,48 +1,59 @@
-# --- Python ---
+# Python
 __pycache__/
 *.py[cod]
-*.pyo
+*$py.class
+*.so
 .Python
+*.egg-info/
+dist/
+build/
+*.egg
 
-# Virtual environments
+# Virtual Environment
 .venv/
 venv/
 ENV/
+env/
 
-# Tooling caches
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
+# Data files (PDB structures, JSON outputs)
+data/structure/*.pdb
+data/structures/*.pdb
+data/analysis/*.json
+data/context/*.json
 
-# Jupyter
+# Keep directory structure but ignore contents
+!data/structure/.gitkeep
+!data/structures/.gitkeep
+!data/analysis/.gitkeep
+!data/context/.gitkeep
+
+# Jupyter Notebook
 .ipynb_checkpoints/
+*.ipynb
 
-# Coverage
-.coverage
-htmlcov/
-coverage.xml
-
-# Editor/IDE
+# IDEs
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# --- OS ---
+# OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
 
-# Local env files
-.env
-.env.*
+# Logs
+*.log
 
-# --- Project outputs ---
-# Keep the folders, ignore generated artifacts.
-data/context/*.json
-data/analysis/*.json
-data/structure/*.pdb
-data/structure/*.cif
-data/structure/*.mmcif
+# Test outputs
+test_*.txt
+temp_*.txt
 
-# If you later add placeholder files to keep empty dirs, allow them:
-!data/context/.gitkeep
-!data/analysis/.gitkeep
-!data/structure/.gitkeep
-    
+# Batch target files
+neuro_targets.txt
+data/neuro_targets.txt
+

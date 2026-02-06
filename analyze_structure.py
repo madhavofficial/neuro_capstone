@@ -72,17 +72,17 @@ def _print_comparison_table(comparison_view: dict, *, title: str | None = None):
         return f"{ch * (col1 + col2 + col3 + col4 + 9)}"
 
     print(line("="))
+    print(f"{headers[0]:<{col1}} | {headers[1]:>{col2}} | {headers[2]:>{col3}} | {headers[3]:>{col4}}")
+    print(line("-"))
+    for prop, wt, mut, delta in rows:
+        print(f"{prop:<{col1}} | {wt:>{col2}} | {mut:>{col3}} | {delta:>{col4}}")
+    print(line("="))
 
 
 def _default_physics_json_path(pdb_path: str, variant_code: str, out_dir: str = "data/analysis") -> str:
     base_name = os.path.basename(pdb_path).replace(".pdb", "")
     os.makedirs(out_dir, exist_ok=True)
     return os.path.join(out_dir, f"{base_name}_{variant_code}_physics.json")
-    print(f"{headers[0]:<{col1}} | {headers[1]:>{col2}} | {headers[2]:>{col3}} | {headers[3]:>{col4}}")
-    print(line("-"))
-    for prop, wt, mut, delta in rows:
-        print(f"{prop:<{col1}} | {wt:>{col2}} | {mut:>{col3}} | {delta:>{col4}}")
-    print(line("="))
 
 # ==========================================
 # 🧪 BIOPHYSICAL LOOKUP TABLES (THE CONSTANTS)
@@ -127,7 +127,10 @@ HYDROPHOBICITY = {
     'ILE': 4.5, 'VAL': 4.2, 'LEU': 3.8, 'PHE': 2.8, 'CYS': 2.5,
     'MET': 1.9, 'ALA': 1.8, 'GLY': -0.4, 'THR': -0.7, 'SER': -0.8,
     'TRP': -0.9, 'TYR': -1.3, 'PRO': -1.6, 'HIS': -3.2, 'GLU': -3.5,
-    'GLN': -3.5, 'ASP': -3.5, 'ASN': -3.5, 'LYS': -3.9, 'ARG': -4.5
+    'GLN': -3.5, 'ASP': -3.5, 'ASN': -3.5, 'LYS': -3.9, 'ARG': -4.5,
+    # Alternate protonation/bonding states (same as parent residue)
+    'HSD': -3.2, 'HSE': -3.2, 'HIP': -3.2,  # histidine variants
+    'CYX': 2.5, 'CYM': 2.5,  # cysteine variants
 }
 
 # 2. Charge (pH 7.4)
@@ -135,7 +138,12 @@ CHARGE = {
     'ARG': 1, 'LYS': 1, 'HIS': 0.1, 
     'ASP': -1, 'GLU': -1,
     'ALA': 0, 'VAL': 0, 'LEU': 0, 'ILE': 0, 'MET': 0, 'PHE': 0, 'TRP': 0, 
-    'PRO': 0, 'GLY': 0, 'SER': 0, 'THR': 0, 'CYS': 0, 'TYR': 0, 'ASN': 0, 'GLN': 0
+    'PRO': 0, 'GLY': 0, 'SER': 0, 'THR': 0, 'CYS': 0, 'TYR': 0, 'ASN': 0, 'GLN': 0,
+    # Alternate protonation/bonding states
+    'HSD': 0, 'HSE': 0,  # neutral histidine (δ or ε protonated)
+    'HIP': 1,  # doubly protonated histidine (positively charged)
+    'CYX': 0,  # cysteine in disulfide bond (neutral)
+    'CYM': -1,  # deprotonated cysteine (negatively charged thiolate)
 }
 
 # 3. Van der Waals Volume
@@ -143,11 +151,40 @@ VOLUME = {
     'GLY': 60.1, 'ALA': 88.6, 'SER': 89.0, 'CYS': 108.5, 'PRO': 112.7,
     'ASP': 111.1, 'THR': 116.1, 'ASN': 114.1, 'VAL': 140.0, 'GLU': 138.4,
     'GLN': 143.8, 'HIS': 153.2, 'MET': 162.9, 'ILE': 166.7, 'LEU': 166.7,
-    'LYS': 168.6, 'ARG': 173.4, 'PHE': 189.9, 'TYR': 193.6, 'TRP': 227.8
+    'LYS': 168.6, 'ARG': 173.4, 'PHE': 189.9, 'TYR': 193.6, 'TRP': 227.8,
+    # Alternate protonation/bonding states (same volume as parent residue)
+    'HSD': 153.2, 'HSE': 153.2, 'HIP': 153.2,  # histidine variants
+    'CYX': 108.5, 'CYM': 108.5,  # cysteine variants
 }
 
 def one_to_three(one_letter):
     return AA_MAP_1_TO_3.get(one_letter.upper())
+
+
+def normalize_resname(name: str) -> str:
+    """Normalize PDB residue names to standard 3-letter codes or recognized variants.
+    
+    Handles:
+    - Case normalization (uppercase)
+    - Selenomethionine (MSE -> MET)
+    - Ambiguous residues (ASX -> ASP, GLX -> GLU)
+    - Preserves alternate protonation states (HSD, HSE, HIP, CYX, CYM)
+    """
+    name = name.upper().strip()
+    
+    # Preserve recognized alternate states
+    if name in ("HSD", "HSE", "HIP", "CYX", "CYM"):
+        return name
+    
+    # Map non-standard to standard
+    if name == "MSE":  # Selenomethionine
+        return "MET"
+    if name == "ASX":  # Ambiguous Asp/Asn
+        return "ASP"
+    if name == "GLX":  # Ambiguous Glu/Gln
+        return "GLU"
+    
+    return name
 
 
 def parse_variant_code(variant_code: str) -> tuple[str, int, str, str, str]:
@@ -231,6 +268,112 @@ def _iter_polar_atoms(residue):
             yield atom
 
 
+def _check_hbond_geometry(donor_atom, acceptor_atom, donor_heavy_atom) -> bool:
+    """Check if D-H...A geometry is compatible with H-bonding (angle > 120°).
+    
+    Since PDB files often lack explicit hydrogens, we approximate:
+    - Use donor heavy atom (N or O) as proxy for hydrogen direction
+    - Check D...A distance < 3.5 Å (already done by caller)
+    - Check D-heavy...A angle > 90° (relaxed from ideal 120° due to H approximation)
+    
+    Returns True if geometry permits H-bond.
+    """
+    try:
+        # Vector from donor heavy atom to acceptor
+        vec_donor_to_acceptor = acceptor_atom.get_coord() - donor_heavy_atom.get_coord()
+        vec_donor_to_polar = donor_atom.get_coord() - donor_heavy_atom.get_coord()
+        
+        # Angle between D-heavy → D-polar and D-heavy → acceptor
+        # If angle > 90°, geometry is reasonable for H-bond
+        dot_product = np.dot(vec_donor_to_acceptor, vec_donor_to_polar)
+        norm_product = np.linalg.norm(vec_donor_to_acceptor) * np.linalg.norm(vec_donor_to_polar)
+        
+        if norm_product < 1e-6:
+            return False
+        
+        cos_angle = dot_product / norm_product
+        angle_deg = np.degrees(np.arccos(np.clip(cos_angle, -1.0, 1.0)))
+        
+        # Relaxed criterion: angle > 90° (in practice, H would extend further)
+        return angle_deg > 90.0
+    except Exception:
+        # If geometry check fails, conservatively assume H-bond possible
+        return True
+
+
+def _get_hbond_donors_acceptors(residue):
+    """Extract H-bond donor and acceptor atoms from a residue.
+    
+    Returns: (donors, acceptors) where each is list of (atom, heavy_atom_reference)
+    - donors: N-H groups (use N as heavy atom ref), O-H groups (use O)
+    - acceptors: C=O groups (carbonyl O), O- groups (Asp/Glu), N (His)
+    """
+    donors = []
+    acceptors = []
+    resname = normalize_resname(residue.get_resname())
+    
+    # Backbone always has N-H donor and C=O acceptor
+    if "N" in residue:
+        donors.append((residue["N"], residue["CA"] if "CA" in residue else residue["N"]))
+    if "O" in residue:
+        acceptors.append((residue["O"], residue["C"] if "C" in residue else residue["O"]))
+    
+    # Side-chain donors/acceptors by residue type
+    if resname in {"SER", "THR", "TYR"}:  # Hydroxyl groups (O-H donors and acceptors)
+        if "OG" in residue:  # Ser
+            donors.append((residue["OG"], residue["CB"] if "CB" in residue else residue["OG"]))
+            acceptors.append((residue["OG"], residue["CB"] if "CB" in residue else residue["OG"]))
+        if "OG1" in residue:  # Thr
+            donors.append((residue["OG1"], residue["CB"] if "CB" in residue else residue["OG1"]))
+            acceptors.append((residue["OG1"], residue["CB"] if "CB" in residue else residue["OG1"]))
+        if "OH" in residue:  # Tyr
+            donors.append((residue["OH"], residue["CZ"] if "CZ" in residue else residue["OH"]))
+            acceptors.append((residue["OH"], residue["CZ"] if "CZ" in residue else residue["OH"]))
+    
+    if resname in {"ASN", "GLN"}:  # Amide groups (N-H donors, C=O acceptors)
+        if resname == "ASN":
+            if "OD1" in residue:
+                acceptors.append((residue["OD1"], residue["CG"] if "CG" in residue else residue["OD1"]))
+            if "ND2" in residue:
+                donors.append((residue["ND2"], residue["CG"] if "CG" in residue else residue["ND2"]))
+        elif resname == "GLN":
+            if "OE1" in residue:
+                acceptors.append((residue["OE1"], residue["CD"] if "CD" in residue else residue["OE1"]))
+            if "NE2" in residue:
+                donors.append((residue["NE2"], residue["CD"] if "CD" in residue else residue["NE2"]))
+    
+    if resname in {"ASP", "GLU"}:  # Carboxylate groups (O acceptors)
+        if resname == "ASP":
+            for atom_name in ["OD1", "OD2"]:
+                if atom_name in residue:
+                    acceptors.append((residue[atom_name], residue["CG"] if "CG" in residue else residue[atom_name]))
+        elif resname == "GLU":
+            for atom_name in ["OE1", "OE2"]:
+                if atom_name in residue:
+                    acceptors.append((residue[atom_name], residue["CD"] if "CD" in residue else residue[atom_name]))
+    
+    if resname in {"HIS", "HSD", "HSE", "HIP"}:  # Imidazole (N donors and acceptors)
+        if "ND1" in residue:
+            donors.append((residue["ND1"], residue["CG"] if "CG" in residue else residue["ND1"]))
+            acceptors.append((residue["ND1"], residue["CG"] if "CG" in residue else residue["ND1"]))
+        if "NE2" in residue:
+            donors.append((residue["NE2"], residue["CD2"] if "CD2" in residue else residue["NE2"]))
+            acceptors.append((residue["NE2"], residue["CD2"] if "CD2" in residue else residue["NE2"]))
+    
+    if resname in {"LYS", "ARG"}:  # Charged amines (N-H donors)
+        if resname == "LYS" and "NZ" in residue:
+            donors.append((residue["NZ"], residue["CE"] if "CE" in residue else residue["NZ"]))
+        elif resname == "ARG":
+            for atom_name in ["NE", "NH1", "NH2"]:
+                if atom_name in residue:
+                    donors.append((residue[atom_name], residue["CZ"] if "CZ" in residue else residue[atom_name]))
+    
+    if resname == "TRP" and "NE1" in residue:  # Indole N-H donor
+        donors.append((residue["NE1"], residue["CD1"] if "CD1" in residue else residue["NE1"]))
+    
+    return donors, acceptors
+
+
 def safe_secondary_structure(model, pdb_path: str, chain_id: str, residue) -> str:
     """Returns DSSP secondary structure label if mkdssp/dssp is installed."""
     sec_struct = "Unknown"
@@ -282,12 +425,20 @@ def compute_site_metrics(structure, pdb_path: str, *, model_id: int = 0, chain_i
     neighbors = ns.search(center.get_coord(), 5.0, level="R")
     neighbor_count = len([r for r in neighbors if r is not residue])
 
+    # Refined SASA exposure categories (literature-based thresholds)
+    if sasa < 10:
+        exposure = "Buried"  # Core residues, minimal solvent contact
+    elif sasa < 40:
+        exposure = "Partially Exposed"  # Surface-proximal, some solvent
+    else:
+        exposure = "Exposed"  # Fully solvent-accessible
+    
     return {
         "chain": chain_id_resolved,
         "resseq": resseq,
-        "resname": residue.get_resname(),
+        "resname": normalize_resname(residue.get_resname()),
         "sasa": round(float(sasa), 2),
-        "exposure": "Buried" if sasa < 15 else "Exposed",
+        "exposure": exposure,
         "plddt_confidence": round(plddt, 2),
         "secondary_structure": sec_struct,
         "neighbor_residue_count_5A": int(neighbor_count),
@@ -320,8 +471,11 @@ def get_interactions(structure, model_id, chain_id, res_id, wt_resname, mut_resn
 
     interactions = {
         "salt_bridges_lost": [],
+        "salt_bridges_gained": [],
         "disulfides_lost": [],
+        "disulfides_gained": [],
         "h_bonds_lost_est": 0,
+        "h_bonds_gained_est": 0,
     }
 
     atoms = Bio.PDB.Selection.unfold_entities(model, "A")
@@ -333,14 +487,16 @@ def get_interactions(structure, model_id, chain_id, res_id, wt_resname, mut_resn
     neighbor_residues = ns.search(center_atom.get_coord(), 12.0, level="R")
 
     # 7) Salt bridges: charged atom distance < 4.0Å
-    positive = {"ARG", "LYS", "HIS"}
+    positive = {"ARG", "LYS", "HIS", "HSD", "HSE", "HIP"}  # Include histidine variants
     negative = {"ASP", "GLU"}
+    
+    # LOSS: WT has charge, forms bridge, MUT loses it
     if wt_resname in positive or wt_resname in negative:
         my_atoms = CHARGED_ATOMS.get(wt_resname, [])
         for neighbor in neighbor_residues:
             if neighbor is target_res:
                 continue
-            neighbor_name = neighbor.get_resname()
+            neighbor_name = normalize_resname(neighbor.get_resname())
             if neighbor_name not in (positive | negative):
                 continue
 
@@ -362,20 +518,71 @@ def get_interactions(structure, model_id, chain_id, res_id, wt_resname, mut_resn
             )
             if mut_is_neutral or mut_flips:
                 interactions["salt_bridges_lost"].append(f"{neighbor_name}{neighbor.id[1]}")
+    
+    # GAIN: WT neutral/opposite, MUT gains compatible charge
+    if mut_resname in positive or mut_resname in negative:
+        wt_is_neutral = wt_resname not in (positive | negative)
+        wt_is_same_sign = (wt_resname in positive and mut_resname in positive) or (
+            wt_resname in negative and mut_resname in negative
+        )
+        
+        if wt_is_neutral or wt_is_same_sign:
+            # MUT could form new bridges with oppositely charged neighbors
+            for neighbor in neighbor_residues:
+                if neighbor is target_res:
+                    continue
+                neighbor_name = normalize_resname(neighbor.get_resname())
+                if neighbor_name not in (positive | negative):
+                    continue
+                
+                # Check if MUT and neighbor have opposite charges
+                mut_creates_bridge = (mut_resname in positive and neighbor_name in negative) or (
+                    mut_resname in negative and neighbor_name in positive
+                )
+                if not mut_creates_bridge:
+                    continue
+                
+                # Assume mutation preserves backbone geometry - use existing CA distance as proxy
+                # If neighbor is within salt bridge range of WT CA, MUT could form bridge
+                neighbor_atoms = CHARGED_ATOMS.get(neighbor_name, [])
+                if neighbor_atoms and "CA" in target_res:
+                    ca_dist = target_res["CA"] - neighbor["CA"] if "CA" in neighbor else float("inf")
+                    # Conservative estimate: only flag if CAs are close enough for sidechain contact
+                    if ca_dist < 8.0:  # Arg/Lys sidechains can extend ~6-7Å from CA
+                        interactions["salt_bridges_gained"].append(f"{neighbor_name}{neighbor.id[1]}")
 
     # 8) Disulfides: SG-SG < 2.5Å
-    if wt_resname == "CYS" and mut_resname != "CYS" and "SG" in target_res:
+    cys_variants = {"CYS", "CYX"}  # Include disulfide-bonded cysteine
+    
+    # LOSS: WT is Cys with existing disulfide, MUT is not Cys
+    if wt_resname in cys_variants and mut_resname not in cys_variants and "SG" in target_res:
         candidate_residues = ns.search(target_res["SG"].get_coord(), 3.5, level="R")
         for neighbor in candidate_residues:
             if neighbor is target_res:
                 continue
-            if neighbor.get_resname() != "CYS" or "SG" not in neighbor:
+            neighbor_name = normalize_resname(neighbor.get_resname())
+            if neighbor_name not in cys_variants or "SG" not in neighbor:
                 continue
             dist = target_res["SG"] - neighbor["SG"]
             if dist < 2.5:
-                interactions["disulfides_lost"].append(f"{neighbor.get_resname()}{neighbor.id[1]}")
+                interactions["disulfides_lost"].append(f"{neighbor_name}{neighbor.id[1]}")
+    
+    # GAIN: WT is not Cys, MUT is Cys near another free Cys
+    if mut_resname in cys_variants and wt_resname not in cys_variants and "CA" in target_res:
+        # Check for nearby cysteines that could form new disulfide with mutant
+        candidate_residues = ns.search(target_res["CA"].get_coord(), 8.0, level="R")
+        for neighbor in candidate_residues:
+            if neighbor is target_res:
+                continue
+            neighbor_name = normalize_resname(neighbor.get_resname())
+            if neighbor_name not in cys_variants or "SG" not in neighbor:
+                continue
+            # Conservative estimate: CA-CA distance as proxy for potential SG-SG bond
+            ca_dist = target_res["CA"] - neighbor["CA"] if "CA" in neighbor else float("inf")
+            if ca_dist < 6.0:  # SG is ~2-3Å from CA, so 6Å CA-CA allows ~2.5Å SG-SG
+                interactions["disulfides_gained"].append(f"{neighbor_name}{neighbor.id[1]}")
 
-    # 9) H-bond loss proxy: count neighbors with any polar atom contact < 3.5Å
+    # 9) H-bond loss/gain with geometry validation (distance + angle)
     polar_residues = {
         "SER",
         "THR",
@@ -389,25 +596,68 @@ def get_interactions(structure, model_id, chain_id, res_id, wt_resname, mut_resn
         "ASP",
         "GLU",
     }
+    
+    # LOSS: WT is polar, MUT is not
     if wt_resname in polar_residues and mut_resname not in polar_residues:
         h_loss_count = 0
-        target_polar_atoms = list(_iter_polar_atoms(target_res))
-        if target_polar_atoms:
+        wt_donors, wt_acceptors = _get_hbond_donors_acceptors(target_res)
+        
+        for neighbor in neighbor_residues:
+            if neighbor is target_res:
+                continue
+            neighbor_donors, neighbor_acceptors = _get_hbond_donors_acceptors(neighbor)
+            
+            # Check WT as donor to neighbor as acceptor
+            for wt_donor, wt_heavy in wt_donors:
+                for neighbor_acceptor, neighbor_heavy in neighbor_acceptors:
+                    dist = wt_donor - neighbor_acceptor
+                    if dist < 3.5 and _check_hbond_geometry(wt_donor, neighbor_acceptor, wt_heavy):
+                        h_loss_count += 1
+                        break
+            
+            # Check WT as acceptor to neighbor as donor
+            for wt_acceptor, wt_heavy in wt_acceptors:
+                for neighbor_donor, neighbor_heavy in neighbor_donors:
+                    dist = neighbor_donor - wt_acceptor
+                    if dist < 3.5 and _check_hbond_geometry(neighbor_donor, wt_acceptor, neighbor_heavy):
+                        h_loss_count += 1
+                        break
+        
+        interactions["h_bonds_lost_est"] = h_loss_count
+    
+    # GAIN: WT is not polar, MUT is polar (approximate based on backbone + sidechain reach)
+    if mut_resname in polar_residues and wt_resname not in polar_residues:
+        h_gain_count = 0
+        # Estimate MUT H-bond potential: backbone stays, sidechain extends ~4-6Å from CA
+        if "CA" in target_res:
+            # Get MUT's expected donor/acceptor capacity (we know the residue type)
+            # Use a dummy residue to get D/A profile
+            mut_has_donors = mut_resname in {"SER", "THR", "TYR", "ASN", "GLN", "HIS", "TRP", "LYS", "ARG"}
+            mut_has_acceptors = mut_resname in {"SER", "THR", "TYR", "ASN", "GLN", "ASP", "GLU", "HIS"}
+            
             for neighbor in neighbor_residues:
                 if neighbor is target_res:
                     continue
-                neighbor_polar_atoms = list(_iter_polar_atoms(neighbor))
-                if not neighbor_polar_atoms:
-                    continue
-                min_dist = float("inf")
-                for atom_1 in target_polar_atoms:
-                    for atom_2 in neighbor_polar_atoms:
-                        d = atom_1 - atom_2
-                        if d < min_dist:
-                            min_dist = d
-                if min_dist < 3.5:
-                    h_loss_count += 1
-        interactions["h_bonds_lost_est"] = h_loss_count
+                neighbor_donors, neighbor_acceptors = _get_hbond_donors_acceptors(neighbor)
+                
+                # Check if MUT could donate to neighbor acceptors
+                if mut_has_donors:
+                    for neighbor_acceptor, _ in neighbor_acceptors:
+                        ca_dist = target_res["CA"] - neighbor_acceptor
+                        # Sidechain can extend ~6Å, so if acceptor within 7Å of CA, H-bond possible
+                        if ca_dist < 7.0:
+                            h_gain_count += 1
+                            break
+                
+                # Check if MUT could accept from neighbor donors
+                if mut_has_acceptors:
+                    for neighbor_donor, _ in neighbor_donors:
+                        ca_dist = target_res["CA"] - neighbor_donor
+                        if ca_dist < 7.0:
+                            h_gain_count += 1
+                            break
+        
+        interactions["h_bonds_gained_est"] = h_gain_count
 
     return interactions
 
@@ -422,6 +672,8 @@ def analyze_protein(pdb_path, variant_code, *, chain_id: str | None = None, verb
     # A. Parse Variant
     try:
         _wt_1, res_id, _mut_1, wt_3, mut_3 = parse_variant_code(variant_code)
+        wt_3 = normalize_resname(wt_3)
+        mut_3 = normalize_resname(mut_3)
     except ValueError as e:
         print(f"❌ {e}")
         return None
@@ -472,6 +724,14 @@ def analyze_protein(pdb_path, variant_code, *, chain_id: str | None = None, verb
     wt_charge = _as_float_or_none(CHARGE.get(wt_3, 0))
     mut_charge = _as_float_or_none(CHARGE.get(mut_3, 0))
 
+    # Refined exposure classification
+    if sasa < 10:
+        exposure = "Buried"
+    elif sasa < 40:
+        exposure = "Partially Exposed"
+    else:
+        exposure = "Exposed"
+    
     comparison_view = {
         "residue": {"wt": wt_3, "mut": mut_3, "delta": None},
         "volume": {"wt": wt_volume, "mut": mut_volume, "delta": round(float(d_vol), 2)},
@@ -481,7 +741,7 @@ def analyze_protein(pdb_path, variant_code, *, chain_id: str | None = None, verb
         "sasa": {"wt": round(float(sasa), 2), "mut": None, "delta": None},
         "plddt_confidence": {"wt": round(float(plddt), 2), "mut": None, "delta": None},
         "secondary_structure": {"wt": sec_struct, "mut": None, "delta": None},
-        "exposure": {"wt": "Buried" if sasa < 15 else "Exposed", "mut": None, "delta": None},
+        "exposure": {"wt": exposure, "mut": None, "delta": None},
     }
 
     result = {
@@ -506,14 +766,17 @@ def analyze_protein(pdb_path, variant_code, *, chain_id: str | None = None, verb
         },
         "structural_context_wt": {
             "sasa": round(sasa, 2),
-            "exposure": "Buried" if sasa < 15 else "Exposed",
+            "exposure": exposure,
             "secondary_structure": sec_struct,
             "plddt_confidence": round(plddt, 2)
         },
         "stability_audit": {
             "salt_bridges_lost": interaction_data['salt_bridges_lost'],
+            "salt_bridges_gained": interaction_data['salt_bridges_gained'],
             "disulfides_lost": interaction_data['disulfides_lost'],
+            "disulfides_gained": interaction_data['disulfides_gained'],
             "h_bonds_lost_est": interaction_data['h_bonds_lost_est'],
+            "h_bonds_gained_est": interaction_data['h_bonds_gained_est'],
             "backbone_strain": strain_warning
         }
     }
@@ -659,48 +922,75 @@ if __name__ == "__main__":
     with open(out_file, "w") as f:
         json.dump(data, f, indent=4)
     print(f"✅ Analysis saved to {out_file}")
+
+
+# ==========================================
+# 📝 10 BIOPHYSICAL FEATURES & NEURODEGENERATION RISK
+# ==========================================
 """
-================================================================================
-Feature Summary: Contribution to Neurodegenerative Disease Risk
-================================================================================
+HOW EACH FEATURE CONTRIBUTES TO NEURODEGENERATIVE DISEASE RISK:
 
-1.  delta_volume (Volume Change):
-    *   What it is: Did the amino acid get bigger or smaller?
-    *   Risk: If a small piece inside the protein is replaced by a big one, it pushes other parts apart ("steric clash"). This can make the protein unfold and clump together (aggregate).
+1. VOLUME CHANGE (Δ Volume)
+   - What it measures: How much bigger or smaller the mutant amino acid is compared to wild-type
+   - Disease risk: Large changes can cause protein misfolding. Example: A small-to-large mutation 
+     creates steric clashes that destabilize the protein, leading to aggregation (a hallmark of 
+     Alzheimer's, Parkinson's, ALS)
 
-2.  delta_hydrophobicity (Hydrophobicity Change):
-    *   What it is: Did the part become more oil-like (repels water) or water-like?
-    *   Risk: If a water-loving part becomes oil-like, it might stick to other proteins to 'hide' from water. This is a primary driver of sticky clumps (amyloid plaques) in Alzheimer's and Parkinson's.
+2. HYDROPHOBICITY CHANGE (Δ Hydrophobicity)
+   - What it measures: Whether the mutation makes the site more water-loving or water-hating
+   - Disease risk: Exposing hydrophobic residues to water (or burying hydrophilic ones) causes 
+     misfolding. Misfolded proteins stick together forming toxic aggregates (amyloid plaques, 
+     Lewy bodies, TDP-43 inclusions)
 
-3.  delta_charge (Charge Change):
-    *   What it is: Did we lose a + or - charge?
-    *   Risk: Charges act like magnets holding the protein shape together or guiding interactions with DNA/other proteins. Losing them breaks these connections.
+3. CHARGE CHANGE (Δ Charge)
+   - What it measures: Gain or loss of positive/negative charge
+   - Disease risk: Losing a charge can break critical salt bridges that hold the protein together. 
+     Gaining the wrong charge can cause electrostatic repulsion, leading to unfolding and aggregation
 
-4.  exposure (Buried vs. Exposed):
-    *   What it is: Is this spot deep inside the protein core or on the surface?
-    *   Risk: Mutations deep inside ("Buried") are usually much more dangerous because they disrupt the protein's foundation, leading to total collapse.
+4. SASA (Solvent Accessible Surface Area)
+   - What it measures: Whether the mutation site is buried inside the protein or exposed on the surface
+   - Disease risk: Buried sites are more sensitive to mutations because any change disrupts the tightly 
+     packed core. Core destabilization → misfolding → aggregation. Surface mutations are usually 
+     better tolerated unless they affect binding sites
 
-5.  secondary_structure (Alpha Helix / Beta Sheet):
-    *   What it is: Is this part of a corkscrew (helix) or a flat sheet?
-    *   Risk: Neurodegenerative proteins (like Tau or Alpha-synuclein) rely on these shapes. Breaking them destabilizes the protein.
+5. SECONDARY STRUCTURE
+   - What it measures: Whether the site is in an alpha helix, beta sheet, or loop
+   - Disease risk: Mutations in structured regions (helices/sheets) are more likely to disrupt folding. 
+     Beta-sheet mutations are especially dangerous because they can promote conversion to amyloid 
+     (the fibrillar form seen in plaques)
 
-6.  pLDDT (Confidence):
-    *   What it is: How sure is AI (AlphaFold) about this shape?
-    *   Risk: If this score is low (< 70), the protein is naturally floppy/disordered here. Mutations in floppy regions behave differently than in rigid ones.
+6. pLDDT (AlphaFold Confidence)
+   - What it measures: How confident AlphaFold is about the local structure (high = rigid, low = flexible)
+   - Disease risk: Low-confidence regions are intrinsically disordered. Mutations here can shift the 
+     protein toward aggregation-prone conformations. Many neurodegenerative proteins (alpha-synuclein, 
+     tau) have disordered regions that are mutation hotspots
 
-7.  salt_bridges_lost:
-    *   What it is: Did we break a strong "+ to -" magnetic bond?
-    *   Risk: Salt bridges are the "super glue" of protein structure. Losing one significantly weakens stability.
+7. SALT BRIDGES LOST
+   - What it measures: How many ionic bonds (positive-negative pairs) are broken by the mutation
+   - Disease risk: Salt bridges are critical for protein stability. Losing them causes unfolding, 
+     which exposes sticky hydrophobic patches that drive aggregation
 
-8.  disulfides_lost:
-    *   What it is: Did we break a covalent chemical cross-link?
-    *   Risk: This is like cutting a support cable on a bridge. It usually causes immediate structural failure.
+8. DISULFIDE BONDS LOST
+   - What it measures: Whether a cysteine-cysteine bridge (S-S bond) is broken
+   - Disease risk: Disulfide bonds act as molecular staples. Breaking them destabilizes the structure, 
+     making the protein prone to aggregation. SOD1 (ALS) has critical disulfides
 
-9.  h_bonds_lost_est:
-    *   What it is: Estimate of broken weak magnetic bonds.
-    *   Risk: While weak individually, losing many of these makes the protein "looser" and prone to misfolding.
+9. HYDROGEN BONDS LOST (Estimate)
+   - What it measures: How many polar contacts are lost if a polar residue becomes non-polar
+   - Disease risk: Hydrogen bonds fine-tune protein structure. Losing multiple H-bonds weakens the 
+     protein scaffold, increasing misfolding risk. This is cumulative damage
 
-10. backbone_strain (Gly/Pro warnings):
-    *   What it is: Did we insert a rigid piece into a flexible turn, or a "helix breaker" into a spiral?
-    *   Risk: "Glycine Flexibility Lost" means the chain can't turn where it needs to. "Proline Helix Breaker" snaps Alpha Helices. Both force the protein into the wrong shape.
+10. BACKBONE STRAIN
+    - What it measures: Whether the mutation creates geometric stress (Glycine flexibility loss, 
+      Proline helix-breaking)
+    - Disease risk: Backbone strain forces the protein into unnatural conformations. These stressed 
+      states are thermodynamically unstable and more likely to misfold or trigger quality control 
+      pathways (ER stress, proteasome overload) that eventually kill neurons
+
+KEY INSIGHT:
+Neurodegenerative diseases share a common mechanism: protein aggregation. A single mutation rarely 
+causes disease through one feature alone. Instead, mutations accumulate risk across multiple features 
+(e.g., losing salt bridges + exposing hydrophobic core + high aggregation propensity). This pipeline 
+quantifies that cumulative burden.
+
 """
