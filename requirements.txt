@@ -1,0 +1,17 @@
+# Recommended Python version: 3.13 (tested on 3.13.7)
+# Python 3.11+ is required at minimum; 
+#
+# Windows note (DSSP):
+#   Bio.PDB.DSSP requires the DSSP binary, which is not available via pip on Windows.
+#   Install it manually:
+#     1. Download the Windows build from https://swift.cmbi.umcn.nl/gv/dssp/
+#     2. Place dssp.exe somewhere on your PATH (e.g. C:\Windows\System32\)
+#   Alternatively, use WSL2 and run: sudo apt install dssp
+#   Conda (recommended for Windows): conda install -c conda-forge dssp
+#     This is the easiest Windows-native option — no manual binary needed.
+#   On macOS/Linux: brew install dssp  OR  sudo apt install dssp
+
+biopython==1.86
+numpy==2.4.1
+requests==2.32.5
+urllib3==2.6.3

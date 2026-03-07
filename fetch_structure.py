@@ -12,7 +12,6 @@ if not os.path.exists(STRUCTURE_DIR):
     os.makedirs(STRUCTURE_DIR)
 
 # URLs
-ESMFOLD_API_URL = "https://api.esmatlas.com/foldSequence/v1/pdb/"
 UNIPROT_SEARCH_URL = "https://rest.uniprot.org/uniprotkb/search"
 ALPHAFOLD_API_URL = "https://alphafold.ebi.ac.uk/api/prediction/{}"
 
@@ -94,36 +93,6 @@ def get_alphafold_url_via_api(uniprot_id):
     
     return None
 
-def generate_esmfold_structure(sequence, filename_label):
-    """
-    Generates structure via Meta ESMFold API.
-    """
-    # Clean input
-    clean_seq = "".join(sequence.split()).replace("*", "").upper()
-    print(f"   ⚠️  Generating structure for {filename_label} via ESMFold...")
-    print(f"   🧪 Sending {len(clean_seq)} residues...")
-    
-    save_path = os.path.join(STRUCTURE_DIR, f"{filename_label}.pdb")
-    
-    try:
-        # Disable SSL warnings for cleaner output
-        import urllib3
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-        
-        response = requests.post(ESMFOLD_API_URL, data=clean_seq, verify=False) 
-        
-        if response.status_code == 200 and not response.text.startswith("Error"):
-            with open(save_path, "wb") as f:
-                f.write(response.content)
-            print(f"   ✅ Success! Generated PDB saved to: {save_path}")
-            return save_path
-        else:
-            print(f"   ❌ ESMFold Error: {response.text}")
-            return None
-    except Exception as e:
-        print(f"   ❌ ESMFold Connection Failed: {e}")
-        return None
-
 def apply_mutation(wild_type_seq, mutation_code):
     """
     Parses 'A53T', checks validity against WT, and applies it.
@@ -181,7 +150,8 @@ def get_structure(gene_symbol, uniprot_id_arg=None, manual_sequence=None, varian
                 target_seq = apply_mutation(wt_seq, variant_tag)
         
         if target_seq:
-            return generate_esmfold_structure(target_seq, label)
+            print("   ❌ Variant structure generation is not supported (ESMFold removed). Use a pre-folded PDB.")
+            return None
         else:
             print("   ❌ Failed to prepare variant sequence.")
             return None
@@ -212,14 +182,9 @@ def get_structure(gene_symbol, uniprot_id_arg=None, manual_sequence=None, varian
         except Exception as e:
             print(f"      ❌ Download Error: {e}")
     else:
-        print(f"   ⚠️  No AlphaFold model found in API.")
+        print(f"   ⚠️  No AlphaFold model found in API. No fallback available.")
 
-    # ------------------------------------------
-    # PATH C: FALLBACK (ESMFold)
-    # ------------------------------------------
-    print(f"   ⚠️  Falling back to ESMFold Generation...")
-    wt_seq = manual_sequence or get_uniprot_sequence(uniprot_id)
-    return generate_esmfold_structure(wt_seq, gene_symbol) if wt_seq else None
+    return None
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
