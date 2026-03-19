@@ -46,6 +46,9 @@ Thumbs.db
 # Logs
 *.log
 
+# Local environment secrets
+.env
+
 # Test outputs
 test_*.txt
 temp_*.txt
