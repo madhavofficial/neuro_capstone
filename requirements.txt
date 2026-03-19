@@ -11,6 +11,7 @@
 #     This is the easiest Windows-native option — no manual binary needed.
 #   On macOS/Linux: brew install dssp  OR  sudo apt install dssp
 
+beautifulsoup4==4.12.3
 biopython==1.86
 numpy==2.4.1
 requests==2.32.5
