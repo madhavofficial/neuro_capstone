@@ -27,9 +27,6 @@ data/context/*.json
 !data/analysis/.gitkeep
 !data/context/.gitkeep
 
-# Jupyter Notebook
-.ipynb_checkpoints/
-*.ipynb
 
 # IDEs
 .vscode/
