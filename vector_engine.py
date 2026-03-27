@@ -8,8 +8,33 @@ from sentence_transformers import SentenceTransformer, CrossEncoder
 MODEL_NAME = "pritamdeka/S-PubMedBert-MS-MARCO"
 RERANK_MODEL = "cross-encoder/ms-marco-TinyBERT-L-2-v2"
 
-lit_files = [f for f in os.listdir("data/literature") if f.endswith(".json")]
-DATA_PATH = os.path.join("data/literature", lit_files[0])
+
+def _resolve_literature_path():
+    literature_dir = "data/literature"
+    if not os.path.isdir(literature_dir):
+        raise FileNotFoundError(f"Literature directory not found: {literature_dir}")
+
+    chunked_files = sorted(
+        f for f in os.listdir(literature_dir)
+        if f.endswith("_chunked_corpus.json")
+    )
+    if chunked_files:
+        return os.path.join(literature_dir, chunked_files[0])
+
+    json_files = sorted(
+        f for f in os.listdir(literature_dir)
+        if f.endswith(".json")
+    )
+    if not json_files:
+        raise FileNotFoundError(f"No literature JSON files found in {literature_dir}")
+
+    raise FileNotFoundError(
+        "Only raw literature corpus JSON files were found. "
+        "Run the literature chunking stage to generate '*_chunked_corpus.json'."
+    )
+
+
+DATA_PATH = _resolve_literature_path()
 
 EMBEDDINGS_PATH = "data/faiss/embeddings.npy"
 INDEX_PATH = "data/faiss/faiss_index.bin"
@@ -127,7 +152,6 @@ def setup_pipeline():
     save_embeddings(embeddings, corpus)
 
     build_faiss_index(embeddings)
-
 
 
 
