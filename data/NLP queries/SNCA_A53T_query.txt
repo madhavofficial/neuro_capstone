@@ -1,0 +1,1 @@
+Steric clash and volume increase (ΔV=27.5) at position 53 (ALA→THR), disrupting the hydrophobic core (Δhydrophobicity=-2.5, Exposed residue). Associated with: Parkinson Disease, Dominant, Lewy body dementia.

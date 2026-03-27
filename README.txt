@@ -17,9 +17,18 @@ physical simulation.
    - Python 3.8 or higher
    - Internet connection (for API access to EBI, UniProt, OpenTargets)
 
-2. INSTALL DEPENDENCIES:
+2. CREATE AND ACTIVATE VIRTUAL ENVIRONMENT:
+   # Windows (PowerShell)
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+
+   # Linux / macOS / Git Bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+
+3. INSTALL DEPENDENCIES:
    Run the following command to install required libraries:
-   
+
    pip install requests numpy biopython
 
    (Note: 'pysam' is NO LONGER REQUIRED. The pipeline now uses the 

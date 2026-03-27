@@ -95,7 +95,8 @@ def run_pipeline(
             raise RuntimeError(
                 "Structure step import failed. This usually means you're running the pipeline with a Python "
                 "interpreter that doesn't have the project dependencies installed. "
-                "If you have a venv, try: `source .venv/bin/activate` then rerun with `python pipeline.py ...` "
+                "If you have a venv, try: `source .venv/bin/activate` (Linux/macOS) "
+                "or `.\\.venv\\Scripts\\Activate.ps1` (Windows PowerShell) then rerun with `python pipeline.py ...` "
                 "(or run `./.venv/bin/python pipeline.py ...`). "
                 f"Original error: {e}"
             )
@@ -117,7 +118,8 @@ def run_pipeline(
             raise RuntimeError(
                 "Context step import failed. This usually means you're running the pipeline with a Python "
                 "interpreter that doesn't have the project dependencies installed. "
-                "If you have a venv, try: `source .venv/bin/activate` then rerun with `python pipeline.py ...` "
+                "If you have a venv, try: `source .venv/bin/activate` (Linux/macOS) "
+                "or `.\\.venv\\Scripts\\Activate.ps1` (Windows PowerShell) then rerun with `python pipeline.py ...` "
                 "(or run `./.venv/bin/python pipeline.py ...`). "
                 f"Original error: {e}"
             )
@@ -137,7 +139,8 @@ def run_pipeline(
         except ModuleNotFoundError as e:
             raise RuntimeError(
                 "Analysis step import failed. If the error mentions `Bio`/Biopython, you're likely not using the venv. "
-                "Try: `source .venv/bin/activate` then rerun with `python pipeline.py ...` "
+                "Try: `source .venv/bin/activate` (Linux/macOS) "
+                "or `.\\.venv\\Scripts\\Activate.ps1` (Windows PowerShell) then rerun with `python pipeline.py ...` "
                 "(or run `./.venv/bin/python pipeline.py ...`). "
                 f"Original error: {e}"
             )
@@ -228,6 +231,19 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
                 print(f"✅ Structure: {pdb_path}")
             if physics_json_path:
                 print(f"✅ Physics JSON: {physics_json_path}")
+
+            # Automatically invoke NLP query generation if both gene and variant are present
+            if target.gene and target.variant:
+                import subprocess
+                nlp_args = [sys.executable, os.path.join(os.path.dirname(__file__), "nlp_formation.py"), target.gene, target.variant, "--data-dir", "data"]
+                try:
+                    print(f"📝 Generating NLP query for {target.gene} {target.variant}...")
+                    result = subprocess.run(nlp_args, capture_output=True, text=True)
+                    print(result.stdout)
+                    if result.returncode != 0:
+                        print(f"⚠️  NLP query generation failed: {result.stderr}")
+                except Exception as e:
+                    print(f"⚠️  Failed to run NLP query generation: {e}")
         except Exception as e:
             failures.append(f"{label}: {e}")
             print(f"❌ Pipeline failed for {label}: {e}")
