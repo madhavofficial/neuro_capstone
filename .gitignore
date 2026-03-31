@@ -21,6 +21,7 @@ data/structures/*.pdb
 data/analysis/*.json
 data/context/*.json
 data/literature/*.json
+data/NLP queries/*.txt
 
 # Keep directory structure but ignore contents
 !data/structure/.gitkeep
@@ -28,6 +29,7 @@ data/literature/*.json
 !data/analysis/.gitkeep
 !data/context/.gitkeep
 !data/literature/.gitkeep
+!data/NLP queries/.gitkeep
 
 
 # IDEs

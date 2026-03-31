@@ -77,8 +77,8 @@ def _require_literature_runtime() -> None:
     except ModuleNotFoundError as e:
         raise RuntimeError(
             "Literature stage dependencies are missing. "
-            "Install them in your venv with: "
-            "`./.venv/bin/pip install requests beautifulsoup4 transformers` "
+            "Please ensure they are in your requirements.txt and installed: "
+            "`requests`, `beautifulsoup4`, `transformers` "
             f"(original error: {e})"
         )
 
@@ -95,7 +95,7 @@ def _clean_literature_text(text: str | None) -> str:
 
 
 def _literature_query(gene: str, variant: str) -> str:
-    return f'("{gene}" AND "{variant}") AND (mutation OR pathogenic OR aggregation OR misfolding OR "protein stability")'
+    return f'("{gene}" AND "{variant}") AND (pathogenic OR aggregation OR misfolding)'
 
 
 def fetch_literature_json(gene: str, variant: str, *, literature_dir: str = "data/literature", max_papers: int = 100) -> str:
@@ -131,6 +131,9 @@ def fetch_literature_json(gene: str, variant: str, *, literature_dir: str = "dat
                 if attempt == 2:
                     raise
                 time.sleep(2 ** attempt)
+
+        if not isinstance(data, dict):
+            break
 
         results = (data or {}).get("resultList", {}).get("result", [])
         if not results:
@@ -217,6 +220,8 @@ def _chunk_by_words(text: str, chunk_size: int = 400, overlap: int = 80) -> list
     return chunks
 
 
+_TOKENIZER_CACHE = None
+
 def process_literature_json(gene: str, variant: str, *, literature_dir: str = "data/literature") -> str:
     from transformers import AutoTokenizer
 
@@ -230,9 +235,12 @@ def process_literature_json(gene: str, variant: str, *, literature_dir: str = "d
     with open(input_path, "r", encoding="utf-8") as f:
         papers = json.load(f)
 
+    global _TOKENIZER_CACHE
     tokenizer = None
     try:
-        tokenizer = AutoTokenizer.from_pretrained("pritamdeka/S-PubMedBert-MS-MARCO", use_fast=True)
+        if _TOKENIZER_CACHE is None:
+            _TOKENIZER_CACHE = AutoTokenizer.from_pretrained("pritamdeka/S-PubMedBert-MS-MARCO", use_fast=True)
+        tokenizer = _TOKENIZER_CACHE
         if not tokenizer.is_fast:
             tokenizer = None
     except Exception:
