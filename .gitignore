@@ -15,22 +15,22 @@ venv/
 ENV/
 env/
 
-# Data files (PDB structures, JSON outputs)
-data/structure/*.pdb
-data/structures/*.pdb
-data/analysis/*.json
-data/context/*.json
-data/literature/*.json
-data/NLP queries/*.txt
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
 
-# Keep directory structure but ignore contents
-!data/structure/.gitkeep
-!data/structures/.gitkeep
-!data/analysis/.gitkeep
-!data/context/.gitkeep
-!data/literature/.gitkeep
-!data/NLP queries/.gitkeep
+# Data and Artifacts
+# We ignore the entire data directory but keep the structure
+data/*
+!data/**/.gitkeep
 
+# Specifically ignore large/binary data that might be outside white-listing
+*.bin
+*.npy
+*.pdb
+
+# Local environment secrets
+.env
 
 # IDEs
 .vscode/
@@ -47,17 +47,12 @@ data/NLP queries/*.txt
 .Trashes
 Thumbs.db
 
+# Scratch and Temporary files
+Untitled*
+scratch/
+temp/
+tmp/
+
 # Logs
 *.log
-
-# Local environment secrets
-.env
-
-# Test outputs
-test_*.txt
-temp_*.txt
-
-# Batch target files
-neuro_targets.txt
-data/neuro_targets.txt
 

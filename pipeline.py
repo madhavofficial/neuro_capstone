@@ -470,16 +470,30 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
 
             # Automatically invoke NLP query generation if both gene and variant are present
             if target.gene and target.variant:
-                import subprocess
-                nlp_args = [sys.executable, os.path.join(os.path.dirname(__file__), "nlp_formation.py"), target.gene, target.variant, "--data-dir", "data"]
                 try:
+                    from nlp_formation import run_nlp_formation
                     print(f"📝 Generating NLP query for {target.gene} {target.variant}...")
-                    result = subprocess.run(nlp_args, capture_output=True, text=True)
-                    print(result.stdout)
-                    if result.returncode != 0:
-                        print(f"⚠️  NLP query generation failed: {result.stderr}")
+                    nlp_query = run_nlp_formation(target.gene, target.variant, data_dir="data")
+                    print(f"✅ NLP Query Generated: {nlp_query[:100]}...")
+
+                    try:
+                        from orchestration import phase_3_vector_engine, phase_4_assemble_payload
+                        
+                        print(f"\n🔎 Orchestrating vector retrieval and assembling payload...")
+                        ranked_results = phase_3_vector_engine(target.gene, target.variant, nlp_query)
+                        
+                        output_payload_path = f"data/{target.gene}_{target.variant}_payload.json"
+                        payload = phase_4_assemble_payload(
+                            query=nlp_query,
+                            ranked_results=ranked_results,
+                            output_path=output_payload_path
+                        )
+                        print(f"✅ Final payload successfully saved to {output_payload_path}")
+                    except Exception as e:
+                        print(f"⚠️  Orchestrator failed to retrieve and assemble evidence: {e}")
+
                 except Exception as e:
-                    print(f"⚠️  Failed to run NLP query generation: {e}")
+                    print(f"⚠️  Failed to generate NLP query: {e}")
         except Exception as e:
             failures.append(f"{label}: {e}")
             print(f"❌ Pipeline failed for {label}: {e}")

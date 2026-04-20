@@ -3,6 +3,14 @@ import json
 import os
 import argparse
 import re
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Force UTF-8 encoding for stdout
 if sys.stdout.encoding is None or sys.stdout.encoding.lower() != 'utf-8':
@@ -11,9 +19,16 @@ if sys.stdout.encoding is None or sys.stdout.encoding.lower() != 'utf-8':
     except Exception:
         pass
 
+class NLPFormationError(Exception):
+    """Custom exception for NLP query formation failures."""
+    pass
+
 def load_json(path):
-    with open(path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        raise NLPFormationError(f"Failed to load JSON from {path}: {e}")
 
 def extract_signals(physics):
     """
@@ -26,6 +41,7 @@ def extract_signals(physics):
         wt, pos, mut = m.groups()
     else:
         # Fallback if unparseable
+        logger.warning(f"Could not parse variant string: {variant}. Using placeholders.")
         wt, pos, mut = "?", variant[3:] if len(variant) > 3 else "?", "?"
     
     comp_view = physics.get("comparison_view", {})
@@ -33,33 +49,30 @@ def extract_signals(physics):
     mut_residue = comp_view.get("residue", {}).get("mut", mut)
     
     deltas = physics.get("deltas", {})
-    delta_vol = deltas.get("delta_volume", 0.0)
-    delta_hydro = deltas.get("delta_hydrophobicity", 0.0)
-    delta_charge = deltas.get("delta_charge", 0.0)
     
-    # Cast "Unknown" / "?" to 0.0 safely
-    try: delta_vol = float(delta_vol)
-    except: delta_vol = 0.0
-    try: delta_hydro = float(delta_hydro)
-    except: delta_hydro = 0.0
-    try: delta_charge = float(delta_charge)
-    except: delta_charge = 0.0
+    def _safe_float(val, default=0.0):
+        if val is None:
+            return default
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            return default
 
+    delta_vol = _safe_float(deltas.get("delta_volume"))
+    delta_hydro = _safe_float(deltas.get("delta_hydrophobicity"))
+    delta_charge = _safe_float(deltas.get("delta_charge"))
+    
     wt_context = physics.get("structural_context_wt", {})
     exposure = wt_context.get("exposure", "Unknown")
-    sasa = wt_context.get("sasa", 0.0)
-    try: sasa = float(sasa)
-    except: sasa = 0.0
+    sasa = _safe_float(wt_context.get("sasa"))
     
     sec_struct = wt_context.get("secondary_structure", "Unknown")
-    plddt = wt_context.get("plddt_confidence", 100.0)
-    try: plddt = float(plddt)
-    except: plddt = 100.0
+    plddt = _safe_float(wt_context.get("plddt_confidence"), 100.0)
     
     stability_audit = physics.get("stability_audit", {})
     h_bonds_lost = stability_audit.get("h_bonds_lost_est", 0)
-
-
+    if not isinstance(h_bonds_lost, (int, float)):
+        h_bonds_lost = 0
 
     return {
         "variant": variant,
@@ -73,8 +86,7 @@ def extract_signals(physics):
         "sasa": sasa,
         "sec_struct": sec_struct,
         "plddt": plddt,
-        "h_bonds_lost": int(h_bonds_lost) if isinstance(h_bonds_lost, (int, float)) else 0,
-
+        "h_bonds_lost": int(h_bonds_lost),
     }
 
 def interpret_and_prioritize(signals):
@@ -185,14 +197,47 @@ def construct_query(signals, mechanisms):
     elif disorder:
         query_parts.append("These predicted molecular consequences are linked to intrinsically disordered regions modifying functional dynamics.")
 
-
-
     return " ".join(query_parts)
 
 def create_nlp_query(physics):
+    """Entry point for dictionary-based physics input."""
     signals = extract_signals(physics)
     mechanisms = interpret_and_prioritize(signals)
     return construct_query(signals, mechanisms)
+
+def create_nlp_query_from_file(physics_path):
+    """Loads physics JSON and generates query."""
+    if not os.path.exists(physics_path):
+        raise NLPFormationError(f"Missing physics file: {physics_path}")
+    physics = load_json(physics_path)
+    return create_nlp_query(physics)
+
+def run_nlp_formation(gene, variant, data_dir="data"):
+    """
+    Exportable function to generate NLP query for a specific gene/variant.
+    
+    Args:
+        gene: Gene symbol
+        variant: Variant code
+        data_dir: Base directory for data
+        
+    Returns:
+        The generated NLP query string
+    """
+    base = f"{gene}_{variant}"
+    physics_path = os.path.join(data_dir, "analysis", f"{base}_physics.json")
+    output_dir = os.path.join(data_dir, "NLP queries")
+    output_path = os.path.join(output_dir, f"{base}_query.txt")
+
+    logger.info(f"Generating NLP query for {gene} {variant}...")
+    query = create_nlp_query_from_file(physics_path)
+    
+    os.makedirs(output_dir, exist_ok=True)
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(query)
+    
+    logger.info(f"NLP query saved to {output_path}")
+    return query
 
 def main():
     parser = argparse.ArgumentParser(description="Generate NLP query via semantic translation of Physics/Context signals.")
@@ -201,24 +246,14 @@ def main():
     parser.add_argument("--data-dir", default="data", help="Base data directory")
     args = parser.parse_args()
 
-    base = f"{args.gene}_{args.variant}"
-    physics_path = os.path.join(args.data_dir, "analysis", f"{base}_physics.json")
-    output_dir = os.path.join(args.data_dir, "NLP queries")
-    output_path = os.path.join(output_dir, f"{base}_query.txt")
-
-    if not os.path.exists(physics_path):
-        raise FileNotFoundError(f"Missing physics file: {physics_path}")
-
-    physics = load_json(physics_path)
-    
-    query = create_nlp_query(physics)
-    
-    os.makedirs(output_dir, exist_ok=True)
-    with open(output_path, 'w', encoding='utf-8') as f:
-        f.write(query)
-        
-    print(f"NLP query saved to {output_path}\n\n{query}")
+    try:
+        query = run_nlp_formation(args.gene, args.variant, args.data_dir)
+        print(f"\n{query}")
+        return 0
+    except Exception as e:
+        logger.error(f"NLP Formation failed: {e}")
+        return 1
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
 

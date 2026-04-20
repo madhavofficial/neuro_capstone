@@ -138,7 +138,7 @@ def phase_3_vector_engine(gene: str, variant: str, query: str) -> List[Dict[str,
         # Retrieve evidence
         log_msg = "   - Retrieving evidence with bi-encoder + cross-encoder reranking..."
         logger.info(log_msg)
-        ranked_results = vector_engine.retrieve_evidence(query)
+        ranked_results = vector_engine.retrieve_evidence(gene, variant, query)
         
         logger.info(f"✅ Phase 3 complete: Retrieved {len(ranked_results)} ranked results")
         
@@ -161,7 +161,8 @@ def phase_3_vector_engine(gene: str, variant: str, query: str) -> List[Dict[str,
 def phase_4_assemble_payload(
     query: str,
     ranked_results: List[Dict[str, Any]],
-    confidence_threshold: float = 0.7
+    confidence_threshold: float = 0.7,
+    output_path: str = "data/context_payload.json"
 ) -> Dict[str, Any]:
     """
     Execute assemble_payload module.
@@ -191,7 +192,7 @@ def phase_4_assemble_payload(
         payload = assemble_payload.run(
             query=query,
             ranked_results=ranked_results,
-            output_path="data/context_payload.json"
+            output_path=output_path
         )
         
         logger.info(f"✅ Phase 4 complete:")
