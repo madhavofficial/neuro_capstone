@@ -147,11 +147,12 @@ def interpret_and_prioritize(signals):
     dH = signals["delta_hydro"]
     if exposure == "Buried" and dH < -1.0:
         mechanisms.append((11, f"potential disruption of the hydrophobic core (Δhydrophobicity={dH:+.1f})"))
-    elif exposure == "Exposed" and dH > 1.0:
+    elif exposure == "Exposed" and dH > 3.0:   # raised from 1.0 → matches severity gate
         sasa_note = " highly solvent-accessible" if sasa > 50 else ""
         mechanisms.append((9, f"aberrant surface hydrophobicity on a{sasa_note} region, potentially increasing aggregation propensity"))
     elif exposure == "Exposed" and dH < -1.0:
         mechanisms.append((6, f"introduction of a polar/hydrophilic residue (Δhydrophobicity={dH:+.1f}) potentially altering surface interactions"))
+
 
     # --- 3. pLDDT (AlphaFold Disorder Guidelines) & Secondary Structure ---
     plddt = signals["plddt"]
@@ -184,6 +185,11 @@ def _build_mechanistic_keywords(signals):
     """
     Maps raw delta values to biological keyword phrases for RAG compatibility.
     Returns a list of (keyword, category) tuples.
+
+    Thresholds are intentionally conservative and aligned with the severity
+    gates in assemble_payload.evaluate_physics_severity so that a benign
+    conservative substitution (e.g. M129V) produces an empty list rather
+    than spurious pathogenic vocabulary.
     """
     keywords = []
     dV = signals["delta_vol"]
@@ -192,44 +198,63 @@ def _build_mechanistic_keywords(signals):
     exposure = signals["exposure"]
     sec_struct = signals["sec_struct"]
     plddt = signals["plddt"]
+    is_buried = (exposure == "Buried") or (signals.get("sasa", 100) < 15.0)
 
-    # --- Volume → steric / pocket keywords ---
-    if dV > 20:
-        keywords.append(("steric hindrance", "volume"))
-        keywords.append(("pocket expansion", "volume"))
-    elif dV > 10:
-        keywords.append(("steric crowding", "volume"))
-    elif dV < -20:
-        keywords.append(("cavity formation", "volume"))
-        keywords.append(("protein destabilization", "volume"))
+    # --- Volume: context-aware thresholds ---
+    # Buried: >30 Å3 expansion OR <-30 Å3 cavity → structurally significant
+    # Exposed: >60 Å3 expansion OR <-40 Å3 cavity → significant surface distortion
+    if is_buried:
+        if dV > 30:
+            keywords.append(("steric hindrance", "volume"))
+            keywords.append(("pocket expansion", "volume"))
+        elif dV > 10:
+            keywords.append(("steric crowding", "volume"))
+        elif dV < -30:
+            keywords.append(("cavity formation", "volume"))
+            keywords.append(("protein destabilization", "volume"))
+    else:  # exposed
+        if dV > 60:
+            keywords.append(("steric hindrance", "volume"))
+            keywords.append(("pocket expansion", "volume"))
+        elif dV > 25:
+            keywords.append(("surface structural alteration", "volume"))
+        elif dV < -40:   # raised from -20: conservative substitutions like M129V (dV=-22.9) stay silent
+            keywords.append(("cavity formation", "volume"))
+            keywords.append(("protein destabilization", "volume"))
 
-    # --- Hydrophobicity → polarity / aggregation keywords ---
-    if dH < -1.5:
+    # --- Hydrophobicity ---
+    # Thresholds aligned with assemble_payload.SEVERE_DELTA_HYDRO_* constants:
+    #   surface gain threshold: >3.0  (not >1.0 — avoids flagging M129V at +2.3)
+    #   buried loss threshold:  <-2.5
+    if is_buried and dH < -2.5:
         keywords.append(("polar shift", "hydrophobicity"))
         keywords.append(("hydrophilic substitution", "hydrophobicity"))
-    elif dH < -0.5:
-        keywords.append(("reduced hydrophobicity", "hydrophobicity"))
-    if exposure == "Exposed" and dH > 1.0:
+    elif not is_buried and dH < -1.5:
+        keywords.append(("reduced surface hydrophobicity", "hydrophobicity"))
+    if not is_buried and dH > 3.0:   # raised from 1.0 → matches severity gate
         keywords.append(("aberrant surface hydrophobicity", "hydrophobicity"))
         keywords.append(("aggregation propensity", "hydrophobicity"))
         keywords.append(("amyloid formation", "hydrophobicity"))
 
     # --- Charge ---
-    if dC != 0 and exposure != "Buried":
+    if dC != 0 and not is_buried:
         keywords.append(("electrostatic perturbation", "charge"))
-    elif dC != 0:
+    elif dC != 0 and is_buried:
         keywords.append(("buried charge disruption", "charge"))
         keywords.append(("protein unfolding", "charge"))
 
     # --- Secondary structure context ---
-    sec_lower = sec_struct.lower()
-    if "alpha" in sec_lower or "helix" in sec_lower:
-        keywords.append(("alpha-helix disruption", "structure"))
-        keywords.append(("helical stability", "structure"))
-    elif "beta" in sec_lower or "sheet" in sec_lower:
-        keywords.append(("beta-sheet remodelling", "structure"))
-    elif "loop" in sec_lower:
-        keywords.append(("loop flexibility", "structure"))
+    # Only appended when at least one delta keyword fired, so structure context
+    # doesn't appear alone for a completely benign substitution.
+    if keywords:
+        sec_lower = sec_struct.lower()
+        if "alpha" in sec_lower or "helix" in sec_lower:
+            keywords.append(("alpha-helix disruption", "structure"))
+            keywords.append(("helical stability", "structure"))
+        elif "beta" in sec_lower or "sheet" in sec_lower:
+            keywords.append(("beta-sheet remodelling", "structure"))
+        elif "loop" in sec_lower:
+            keywords.append(("loop flexibility", "structure"))
 
     # --- pLDDT disorder ---
     if plddt < 50:
@@ -238,7 +263,7 @@ def _build_mechanistic_keywords(signals):
     elif plddt < 70:
         keywords.append(("structurally dynamic region", "disorder"))
 
-    # Also fold in any qualitative tags from orchestration
+    # Qualitative tags injected by orchestration
     for tag in signals.get("mechanism_tags", []):
         keywords.append((tag, "qualitative"))
 
@@ -311,18 +336,43 @@ def construct_query(signals, mechanisms):
         struct_ctx = f"occurring in a {sec_struct} region"
 
     # ── Part 4: Disease/Pathway RAG Expansion ─────────────────────────────────
+    # Only fire expansion keywords when a delta keyword actually crossed a
+    # severity threshold.  Track which categories fired rather than doing a
+    # string-match on the assembled keyword list (which caused M129V to
+    # inherit "amyloid formation" vocabulary via the keyword text itself).
+    kw_categories = {cat for _, cat in bio_keywords}
     mech_text = " ".join(kw_phrases).lower() + " " + " ".join(mechanisms).lower()
     expansion_kws = []
-    if any(t in mech_text for t in ["aggregation", "hydrophobic", "amyloid", "fibrillation"]):
-        expansion_kws.extend(["misfolding", "amyloidogenesis", "fibrillation", "Parkinson's disease"])
-    if any(t in mech_text for t in ["steric", "cavity", "pocket", "destabiliz", "helix"]):
-        expansion_kws.extend(["conformational change", "protein stability", "structural perturbation"])
-    if any(t in mech_text for t in ["disordered", "dynamic", "flexible"]):
-        expansion_kws.extend(["intrinsically disordered protein", "IDP", "conformational ensemble"])
 
-    expansion_deduped = list(dict.fromkeys(expansion_kws))[:4]
+    has_aggregation_signal = (
+        "hydrophobicity" in kw_categories
+        and any(t in mech_text for t in ["aggregation", "amyloid", "fibrillation", "aberrant"])
+    )
+    has_steric_signal = (
+        "volume" in kw_categories
+        and any(t in mech_text for t in ["steric", "cavity", "pocket", "destabiliz"])
+    )
+    has_disorder_signal = (
+        "disorder" in kw_categories
+        or ("structure" in kw_categories
+            and any(t in mech_text for t in ["disordered", "dynamic", "flexible", "helix"]))
+    )
+
+    if has_aggregation_signal:
+        expansion_kws.extend(["misfolding", "amyloidogenesis", "fibrillation", "Parkinson's disease"])
+    if has_steric_signal:
+        expansion_kws.extend(["conformational change", "protein stability", "structural perturbation"])
+    if has_disorder_signal:
+        expansion_kws.extend(["intrinsically disordered protein", "conformational ensemble"])
+
+    # If NO violations fired at all, use neutral variant-study expansion so the
+    # query still retrieves relevant population/susceptibility papers.
+    if not bio_keywords and not mechanisms:
+        expansion_kws = ["polymorphism", "susceptibility", "population genetics", "common variant"]
+
 
     # ── Assemble Final Query ──────────────────────────────────────────────────
+    expansion_deduped = list(dict.fromkeys(expansion_kws))[:4]
     query_parts = [
         f"Mutation {signature}, {struct_ctx}.",
         f"{narrative}.",
@@ -330,6 +380,7 @@ def construct_query(signals, mechanisms):
     if expansion_deduped:
         exp_str = ", ".join(expansion_deduped)
         query_parts.append(f"Relevant literature includes studies on: {exp_str}.")
+
 
     query_string = " ".join(query_parts)
     return query_string, variant_aliases
