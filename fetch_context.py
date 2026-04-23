@@ -6,7 +6,7 @@ import sys
 import re
 
 # ==========================================
-# ⚙️ CONFIGURATION
+# ️ CONFIGURATION
 # ==========================================
 DATA_DIR = "data/context"
 if not os.path.exists(DATA_DIR):
@@ -72,7 +72,7 @@ def normalize_variant(variant_code):
 # 1️⃣ IDENTITY LAYER: UniProt
 # ==========================================
 def get_protein_metadata(query):
-    print(f"🔍 [UniProt] Verifying Identity for: '{query}'...")
+    print(f">> [UniProt] Verifying Identity for: '{query}'...")
     search_query = f"(gene:{query} OR protein_name:{query}) AND organism_id:9606 AND reviewed:true"
     params = {"query": search_query, "format": "json", "size": 1}
     
@@ -81,7 +81,7 @@ def get_protein_metadata(query):
         data = response.json()
         
         if not data.get("results"):
-            print("❌ [UniProt] No reviewed human protein found.")
+            print("[ERROR] [UniProt] No reviewed human protein found.")
             return None, None, None, None
 
         result = data["results"][0]
@@ -98,10 +98,10 @@ def get_protein_metadata(query):
                 if rs_id.startswith("NP_"):
                     refseq_ids.append(rs_id)
         
-        print(f"✅ [UniProt] Confirmed: {gene_name} (ID: {uniprot_id})")
+        print(f"[OK] [UniProt] Confirmed: {gene_name} (ID: {uniprot_id})")
         return uniprot_id, sequence, gene_name, refseq_ids
     except Exception as e:
-        print(f"❌ [UniProt] Error: {e}")
+        print(f"[ERROR] [UniProt] Error: {e}")
         return None, None, None, None
 
 # ==========================================
@@ -191,7 +191,7 @@ def get_genomic_coordinates(gene, old_aa, pos, new_aa, *, uniprot_id: str | None
     Returns a dict with at least: {chrom, pos}. When Ensembl VEP provides alleles,
     also includes {ref, alt} for more precise downstream queries.
     """
-    print(f"   🗺️  [Mapping] Converting {gene} {old_aa}{pos}{new_aa} to Genome Coordinates...")
+    print(f"   >>  [Mapping] Converting {gene} {old_aa}{pos}{new_aa} to Genome Coordinates...")
 
     aa_old = AA_MAP.get(old_aa, "")
     aa_new = AA_MAP.get(new_aa, "")
@@ -241,10 +241,10 @@ def get_genomic_coordinates(gene, old_aa, pos, new_aa, *, uniprot_id: str | None
 
             if "ref" in mapping and "alt" in mapping:
                 print(
-                    f"      📍 Mapped via {ident} (offset {off:+d}) → chr{mapping['chrom']}:{mapping['pos']} {mapping['ref']}>{mapping['alt']}"
+                    f"      >> Mapped via {ident} (offset {off:+d}) → chr{mapping['chrom']}:{mapping['pos']} {mapping['ref']}>{mapping['alt']}"
                 )
             else:
-                print(f"      📍 Mapped via {ident} (offset {off:+d}) → chr{mapping['chrom']}:{mapping['pos']}")
+                print(f"      >> Mapped via {ident} (offset {off:+d}) → chr{mapping['chrom']}:{mapping['pos']}")
             return mapping
 
     return None
@@ -270,12 +270,12 @@ def get_alphamissense_sniper(
     # 2. Get Coordinates (hg38)
     mapping = genomic_mapping or get_genomic_coordinates(gene, old_aa, pos, new_aa, uniprot_id=uniprot_id)
     if not mapping:
-        print("      ⚠️ Could not resolve genomic coordinates. Skipping Sniper.")
+        print("      [WARN] Could not resolve genomic coordinates. Skipping Sniper.")
         return None
 
     chrom, loc = mapping["chrom"], mapping["pos"]
 
-    print(f"   🎯 [Sniper] Querying MyVariant Cloud at chr{chrom}:{loc} (hg38)...")
+    print(f"   >> [Sniper] Querying MyVariant Cloud at chr{chrom}:{loc} (hg38)...")
     
     # 3. Query MyVariant
     url = "https://myvariant.info/v1/query"
@@ -326,15 +326,15 @@ def get_alphamissense_sniper(
                 
                 verdict = "Pathogenic" if final_score > 0.56 else "Benign"
                 
-                print(f"      ✅ HIT: AlphaMissense Score {final_score} ({verdict})")
+                print(f"      [OK] HIT: AlphaMissense Score {final_score} ({verdict})")
                 return {"score": final_score, "verdict": verdict}
             else:
-                print("      ℹ️  Variant found, but AlphaMissense score not in DB.")
+                print("      [INFO]  Variant found, but AlphaMissense score not in DB.")
         else:
-            print("      ❌ No variant record found (Double-check coordinate mapping / MyVariant coverage).")
+            print("      [ERROR] No variant record found (Double-check coordinate mapping / MyVariant coverage).")
 
     except Exception as e:
-        print(f"      ❌ Sniper Error: {e}")
+        print(f"      [ERROR] Sniper Error: {e}")
         return None
         
     return None
@@ -369,7 +369,7 @@ def get_clinvar_myvariant(
         queries.append(f"chr{chrom}:g.{loc}{mapping['ref']}>{mapping['alt']}")
     queries.append(f"chr{chrom}:{loc}")
 
-    print(f"   🧬 [ClinVar] Querying MyVariant (hg38)...")
+    print(f"   >> [ClinVar] Querying MyVariant (hg38)...")
 
     url = "https://myvariant.info/v1/query"
     try:
@@ -388,13 +388,13 @@ def get_clinvar_myvariant(
                 break
 
         if not hit:
-            print("      ℹ️  No ClinVar record found.")
+            print("      [INFO]  No ClinVar record found.")
             return None
         clinvar = hit.get("clinvar")
         if not clinvar and "dbnsfp" in hit:
             clinvar = hit["dbnsfp"].get("clinvar")
         if not clinvar:
-            print("      ℹ️  Variant found, but ClinVar data not present.")
+            print("      [INFO]  Variant found, but ClinVar data not present.")
             return None
 
         # Normalize common fields while keeping raw for debugging.
@@ -434,10 +434,10 @@ def get_clinvar_myvariant(
             "raw": clinvar,
         }
         if sig:
-            print(f"      ✅ ClinVar: {sig}{' (' + accession + ')' if accession else ''}")
+            print(f"      [OK] ClinVar: {sig}{' (' + accession + ')' if accession else ''}")
         return normalized
     except Exception as e:
-        print(f"      ❌ ClinVar query error: {e}")
+        print(f"      [ERROR] ClinVar query error: {e}")
         return None
 
 
@@ -454,7 +454,7 @@ def get_clinvar_direct(gene: str, variant_code: str, *, uniprot_id: str | None =
         return None
     old_aa, pos, new_aa = parsed
     
-    print(f"   🧬 [ClinVar-Direct] Querying NCBI ClinVar API...")
+    print(f"   >> [ClinVar-Direct] Querying NCBI ClinVar API...")
     
     # Simplified approach: search for gene + pathogenic variants
     search_terms = [
@@ -496,14 +496,14 @@ def get_clinvar_direct(gene: str, variant_code: str, *, uniprot_id: str | None =
                     "source": "NCBI_Direct_Simplified",
                     "variant_count": len(id_list),
                 }
-                print(f"      ✅ ClinVar-Direct: Found {len(id_list)} pathogenic {gene} variants in database")
+                print(f"      [OK] ClinVar-Direct: Found {len(id_list)} pathogenic {gene} variants in database")
                 return normalized
         
-        print(f"      ℹ️  No ClinVar pathogenic variants found for {gene}.")
+        print(f"      [INFO]  No ClinVar pathogenic variants found for {gene}.")
         return None
         
     except Exception as e:
-        print(f"      ❌ ClinVar-Direct query error: {e}")
+        print(f"      [ERROR] ClinVar-Direct query error: {e}")
         return None
 
 
@@ -523,7 +523,7 @@ def get_lovd_variants(gene: str, variant_code: str):
         return None
     old_aa, pos, new_aa = parsed
     
-    print(f"   🧬 [LOVD] Querying Leiden Open Variation Database...")
+    print(f"   >> [LOVD] Querying Leiden Open Variation Database...")
     
     # LOVD shared database uses gene-specific URLs and API
     # First, try the shared database gene query
@@ -555,7 +555,7 @@ def get_lovd_variants(gene: str, variant_code: str):
                     data = resp.json()
                     # LOVD API typically returns list of variants
                     if isinstance(data, list) and len(data) > 0:
-                        print(f"      ✅ LOVD: Found {len(data)} variant(s)")
+                        print(f"      [OK] LOVD: Found {len(data)} variant(s)")
                         return {
                             "source": "LOVD",
                             "database_coverage": True,
@@ -568,7 +568,7 @@ def get_lovd_variants(gene: str, variant_code: str):
                     elif isinstance(data, dict):
                         if "data" in data and data["data"]:
                             variants = data["data"]
-                            print(f"      ✅ LOVD: Found {len(variants)} variant(s)")
+                            print(f"      [OK] LOVD: Found {len(variants)} variant(s)")
                             return {
                                 "source": "LOVD",
                                 "database_coverage": True,
@@ -580,11 +580,11 @@ def get_lovd_variants(gene: str, variant_code: str):
                 except json.JSONDecodeError:
                     continue
         
-        print(f"      ℹ️  No LOVD records found for {gene} {variant_code}")
+        print(f"      [INFO]  No LOVD records found for {gene} {variant_code}")
         return None
         
     except Exception as e:
-        print(f"      ❌ LOVD query error: {e}")
+        print(f"      [ERROR] LOVD query error: {e}")
         return None
 
 
@@ -604,7 +604,7 @@ def get_clingenreg_allele(gene: str, variant_code: str, *, genomic_mapping=None,
         return None
     old_aa, pos, new_aa = parsed
     
-    print(f"   🧬 [ClinGen] Querying Allele Registry...")
+    print(f"   >> [ClinGen] Querying Allele Registry...")
     
     # ClinGen Allele Registry PROPER API endpoint (from official docs)
     clingenreg_api = "https://reg.genome.network/allele"
@@ -642,7 +642,7 @@ def get_clingenreg_allele(gene: str, variant_code: str, *, genomic_mapping=None,
                     # ClinGen returns a single allele object when found
                     if isinstance(data, dict) and data.get("@id"):
                         ca_id = data.get("@id", "")
-                        print(f"      ✅ ClinGen: Found allele {ca_id}")
+                        print(f"      [OK] ClinGen: Found allele {ca_id}")
                         return {
                             "source": "ClinGen_Allele_Registry",
                             "allele_id": ca_id,
@@ -657,11 +657,11 @@ def get_clingenreg_allele(gene: str, variant_code: str, *, genomic_mapping=None,
             elif resp.status_code == 404:
                 continue  # Not found, try next notation
         
-        print(f"      ℹ️  No ClinGen Allele Registry records found")
+        print(f"      [INFO]  No ClinGen Allele Registry records found")
         return None
         
     except Exception as e:
-        print(f"      ❌ ClinGen query error: {e}")
+        print(f"      [ERROR] ClinGen query error: {e}")
         return None
 
 
@@ -685,7 +685,7 @@ def get_dbsnp_rsid(genomic_mapping):
     if not chrom or not pos:
         return None
     
-    print(f"   🧬 [dbSNP] Querying NCBI dbSNP for chr{chrom}:{pos}...")
+    print(f"   >> [dbSNP] Querying NCBI dbSNP for chr{chrom}:{pos}...")
     
     try:
         # Method 1: Try MyVariant.info for dbSNP data (fastest and most reliable)
@@ -727,7 +727,7 @@ def get_dbsnp_rsid(genomic_mapping):
                             rsid = hit_id
                     
                     if rsid:
-                        print(f"      ✅ dbSNP: Found {rsid}")
+                        print(f"      [OK] dbSNP: Found {rsid}")
                         return {
                             "source": "NCBI_dbSNP_via_MyVariant",
                             "rsid": rsid,
@@ -757,7 +757,7 @@ def get_dbsnp_rsid(genomic_mapping):
                             for clin in clinical_annot:
                                 if "rs" in str(clin):
                                     # Found an rsID reference
-                                    print(f"      ✅ dbSNP: Found via Variation Services API")
+                                    print(f"      [OK] dbSNP: Found via Variation Services API")
                                     return {
                                         "source": "NCBI_Variation_Services_API",
                                         "chromosome": chrom,
@@ -784,7 +784,7 @@ def get_dbsnp_rsid(genomic_mapping):
             
             if id_list:
                 rs_id = f"rs{id_list[0]}"
-                print(f"      ✅ dbSNP: Found {rs_id} via E-utilities")
+                print(f"      [OK] dbSNP: Found {rs_id} via E-utilities")
                 return {
                     "source": "NCBI_dbSNP_via_Eutilities",
                     "rsid": rs_id,
@@ -793,17 +793,17 @@ def get_dbsnp_rsid(genomic_mapping):
                     "snp_id": id_list[0]
                 }
         
-        print(f"      ℹ️  No dbSNP records found at chr{chrom}:{pos}")
+        print(f"      [INFO]  No dbSNP records found at chr{chrom}:{pos}")
         return None
         
     except Exception as e:
-        print(f"      ❌ dbSNP query error: {e}")
+        print(f"      [ERROR] dbSNP query error: {e}")
         return None
 # ==========================================
 # 3️⃣ RECALL LAYER: Ensembl
 # ==========================================
 def get_ensembl_phenotypes(gene_symbol):
-    print(f"   🔹 [Ensembl] Querying Aggregated Phenotypes (Recall Layer)...")
+    print(f"     - [Ensembl] Querying Aggregated Phenotypes (Recall Layer)...")
     url = f"{ENSEMBL_URL}{gene_symbol}"
     params = {"include_associated": 1}
     
@@ -824,7 +824,7 @@ def get_ensembl_phenotypes(gene_symbol):
             sorted_diseases = sorted(disease_counts.items(), key=lambda x: x[1], reverse=True)[:5]
             
             results = [{"disease": name, "count": count} for name, count in sorted_diseases]
-            print(f"      ✅ Success! Found {len(data)} associations.")
+            print(f"      [OK] Success! Found {len(data)} associations.")
             return {"total_associations": len(data), "top_diseases": results}
         else:
             return {"total_associations": 0, "top_diseases": []}
@@ -835,7 +835,7 @@ def get_ensembl_phenotypes(gene_symbol):
 # 4️⃣ PRECISION LAYER: Open Targets
 # ==========================================
 def get_opentargets_validation(gene_symbol):
-    print(f"   🔸 [OpenTargets] Querying Validation Scores (Precision Layer)...")
+    print(f"     - [OpenTargets] Querying Validation Scores (Precision Layer)...")
     
     search_query = """
     query search($queryString: String!) {
@@ -870,7 +870,7 @@ def get_opentargets_validation(gene_symbol):
         for item in sorted(rows, key=lambda x: x['score'], reverse=True)[:5]:
             results.append({"disease": item['disease']['name'], "overall_score": round(item['score'], 4)})
             
-        print(f"      ✅ Success! Validated {len(rows)} targets.")
+        print(f"      [OK] Success! Validated {len(rows)} targets.")
         return {"total_validated": len(rows), "top_diseases": results}
     except Exception:
         return {"total_validated": 0, "top_diseases": []}
@@ -884,7 +884,7 @@ def get_variant_specific_context(gene: str, variant_code: str, uniprot_id: str, 
     Tries multiple IDs: gene symbol, UniProt, HGVS protein, genomic coords.
     Returns counts of how many times the variant was found in different DBs.
     """
-    print(f"   🔬 [Variant-Specific] Searching for {gene} {variant_code} across databases...")
+    print(f"   >> [Variant-Specific] Searching for {gene} {variant_code} across databases...")
     
     results = {
         "variant_ids_tried": [],
@@ -1010,18 +1010,18 @@ def get_variant_specific_context(gene: str, variant_code: str, uniprot_id: str, 
     
     hit_count = len(results["sources_with_hits"])
     if hit_count > 0:
-        print(f"      ✅ Variant found in {hit_count} source(s): {', '.join(results['sources_with_hits'])}")
+        print(f"      [OK] Variant found in {hit_count} source(s): {', '.join(results['sources_with_hits'])}")
     else:
-        print(f"      ℹ️  Variant not found in variant-specific DBs (may be novel).")
+        print(f"      [INFO]  Variant not found in variant-specific DBs (may be novel).")
     
     return results
 
 
 # ==========================================
-# 🚀 MAIN CONTROLLER
+#  MAIN CONTROLLER
 # ==========================================
 def fetch_all_context(protein_name, variant_input=None):
-    print(f"\n--- 🌍 STARTING ROBUST CONTEXT RETRIEVAL: {protein_name} ---")
+    print(f"\n--- >> STARTING ROBUST CONTEXT RETRIEVAL: {protein_name} ---")
     
     # 1. Identity Verification
     uid, seq, gene, refseq_ids = get_protein_metadata(protein_name)
@@ -1063,12 +1063,12 @@ def fetch_all_context(protein_name, variant_input=None):
         # NEW: Variant-specific context
         variant_specific = get_variant_specific_context(gene, variant_input, uid, genomic_mapping)
         
-        # 🚦 FILTER LOGIC
+        #  FILTER LOGIC
         if am_data and am_data['score'] < 0.2:
-            print(f"\n   ⚠️  [FILTER WARNING] Variant {variant_input} appears BENIGN.")
+            print(f"\n   [WARN]  [FILTER WARNING] Variant {variant_input} appears BENIGN.")
             print("       The structural analysis may yield negative results.\n")
 
-    print("🏥 [Context] Executing Ensembl (Recall) + OpenTargets (Precision)...")
+    print(">> [Context] Executing Ensembl (Recall) + OpenTargets (Precision)...")
     
     # 3. Gene-level Data Fetch
     recall_data = get_ensembl_phenotypes(gene)
@@ -1114,7 +1114,7 @@ def fetch_all_context(protein_name, variant_input=None):
     with open(save_path, "w") as f:
         json.dump(context_data, f, indent=4)
         
-    print(f"✅ Context saved to {save_path}")
+    print(f"[OK] Context saved to {save_path}")
     return context_data
 
 if __name__ == "__main__":
@@ -1127,7 +1127,7 @@ if __name__ == "__main__":
 
 """\
 =============================================================================
-🧬 MODULE: Context Retrieval Engine (fetch_context.py)
+>> MODULE: Context Retrieval Engine (fetch_context.py)
 =============================================================================
 PURPOSE
     Fetches context for a protein (gene symbol) and an optional variant.

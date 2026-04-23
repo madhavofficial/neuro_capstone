@@ -106,9 +106,26 @@ def fetch_literature_json(gene: str, variant: str, *, literature_dir: str = "dat
 
     query = _literature_query(gene, variant)
     url = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
-    papers: list[dict] = []
-    seen: set[str] = set()
+    output_path = os.path.join(literature_dir, f"{gene}_{variant}_corpus.json")
+
+    cached_papers: list[dict] = []
+    if os.path.exists(output_path):
+        try:
+            with open(output_path, "r", encoding="utf-8") as cached_file:
+                loaded = json.load(cached_file)
+            if isinstance(loaded, list):
+                cached_papers = loaded
+        except Exception:
+            cached_papers = []
+
+    papers: list[dict] = list(cached_papers)
+    seen: set[str] = {
+        str(p.get("pmid", "")).strip()
+        for p in papers
+        if isinstance(p, dict) and str(p.get("pmid", "")).strip()
+    }
     cursor = "*"
+    last_fetch_error: Optional[Exception] = None
 
     while len(papers) < max_papers:
         params = {
@@ -123,14 +140,18 @@ def fetch_literature_json(gene: str, variant: str, *, literature_dir: str = "dat
         for attempt in range(3):
             try:
                 time.sleep(1)
-                response = requests.get(url, params=params, timeout=15)
+                response = requests.get(url, params=params, timeout=45)
                 response.raise_for_status()
                 data = response.json()
                 break
-            except Exception:
+            except (requests.RequestException, ValueError) as e:
+                last_fetch_error = e
                 if attempt == 2:
-                    raise
+                    break
                 time.sleep(2 ** attempt)
+
+        if data is None:
+            break
 
         if not isinstance(data, dict):
             break
@@ -170,9 +191,22 @@ def fetch_literature_json(gene: str, variant: str, *, literature_dir: str = "dat
             break
         cursor = next_cursor
 
-    output_path = os.path.join(literature_dir, f"{gene}_{variant}_corpus.json")
+    if not papers and cached_papers:
+        print(
+            f"[WARN]  Europe PMC unavailable for {gene} {variant}; "
+            f"using cached corpus with {len(cached_papers)} papers."
+        )
+        return output_path
+
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(papers, f, indent=4, ensure_ascii=False)
+
+    if last_fetch_error is not None:
+        print(
+            f"[WARN]  Europe PMC fetch interrupted for {gene} {variant}: {last_fetch_error}. "
+            f"Continuing with {len(papers)} papers."
+        )
+
     return output_path
 
 
@@ -431,22 +465,22 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
     try:
         targets = load_targets(args.batch, args.gene, args.variant)
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[ERROR] Error: {e}")
         return 2
 
     failures: list[str] = []
 
     for target in targets:
         label = f"{target.gene}{' ' + target.variant if target.variant else ''}".strip()
-        print(f"\n==============================\n🚀 PIPELINE TARGET: {label}\n==============================")
+        print(f"\n==============================\n PIPELINE TARGET: {label}\n==============================")
         try:
             effective_run_analysis = (not args.no_analysis) and bool(target.variant)
             if (not args.no_analysis) and (not target.variant):
-                print("ℹ️  No variant provided for this target; skipping physics analysis.")
+                print("[INFO]  No variant provided for this target; skipping physics analysis.")
             effective_run_fetch_lit = (not args.no_fetch_literature) and bool(target.variant)
             effective_run_process_lit = (not args.no_process_literature) and bool(target.variant)
             if (not args.no_fetch_literature or not args.no_process_literature) and (not target.variant):
-                print("ℹ️  No variant provided for this target; skipping literature stages.")
+                print("[INFO]  No variant provided for this target; skipping literature stages.")
 
             pdb_path, _context, physics_json_path = run_pipeline(
                 target.gene,
@@ -464,39 +498,98 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
             )
 
             if pdb_path:
-                print(f"✅ Structure: {pdb_path}")
+                print(f"[OK] Structure: {pdb_path}")
             if physics_json_path:
-                print(f"✅ Physics JSON: {physics_json_path}")
+                print(f"[OK] Physics JSON: {physics_json_path}")
 
             # Automatically invoke NLP query generation if both gene and variant are present
             if target.gene and target.variant:
                 try:
                     from nlp_formation import run_nlp_formation
-                    print(f"📝 Generating NLP query for {target.gene} {target.variant}...")
-                    nlp_query = run_nlp_formation(target.gene, target.variant, data_dir="data")
-                    print(f"✅ NLP Query Generated: {nlp_query[:100]}...")
+                    print(f">> Generating NLP query for {target.gene} {target.variant}...")
+                    nlp_query, keyword_boost_hints = run_nlp_formation(target.gene, target.variant, data_dir="data")
+                    print(f"[OK] NLP Query Generated: {nlp_query[:100]}...")
+                    print(f">> Keyword Boost Hints: {keyword_boost_hints}")
 
                     try:
                         from orchestration import phase_3_vector_engine, phase_4_assemble_payload
-                        
-                        print(f"\n🔎 Orchestrating vector retrieval and assembling payload...")
-                        ranked_results = phase_3_vector_engine(target.gene, target.variant, nlp_query)
-                        
+                        from vector_engine import EmptyCorpusError
+
+                        # ── Physics vector ────────────────────────────────────
+                        _physics_vec = None
+                        if physics_json_path and os.path.exists(physics_json_path):
+                            try:
+                                with open(physics_json_path, "r", encoding="utf-8") as _pf:
+                                    _physics_vec = json.load(_pf)
+                            except Exception:
+                                pass
+
+                        # ── Clinical context ──────────────────────────────────
+                        # _context is returned by run_pipeline from fetch_context;
+                        # also try loading from the saved context JSON as fallback.
+                        _clinical_ctx = _context or None
+                        if _clinical_ctx is None:
+                            _ctx_path = os.path.join(
+                                "data", "context",
+                                f"{target.gene}_{target.variant}_context.json"
+                            )
+                            if os.path.exists(_ctx_path):
+                                try:
+                                    with open(_ctx_path, "r", encoding="utf-8") as _cf:
+                                        _clinical_ctx = json.load(_cf)
+                                except Exception:
+                                    pass
+
+                        # ── RAG retrieval ─────────────────────────────────────
+                        print(f"\n>> Orchestrating vector retrieval and assembling payload...")
+                        _rag_status = "NULL_RESULTS"
+                        try:
+                            ranked_results = phase_3_vector_engine(
+                                target.gene, target.variant, nlp_query,
+                                keyword_boost_hints=keyword_boost_hints
+                            )
+                            _rag_status = "SUCCESS" if ranked_results else "NULL_RESULTS"
+                        except EmptyCorpusError as ece:
+                            _rag_status = "TIMEOUT_ERROR"
+                            print(
+                                f"\n[WARN]  Literature corpus is empty for {target.gene} {target.variant} \u2014 "
+                                "the Europe PMC fetch likely timed out.\n"
+                                "   RAG retrieval skipped. Re-run the pipeline once network access is restored.\n"
+                                f"   (Detail: {ece})"
+                            )
+                            ranked_results = []
+
+                        # ── Assemble payload ──────────────────────────────────
                         output_payload_path = f"data/{target.gene}_{target.variant}_payload.json"
                         payload = phase_4_assemble_payload(
                             query=nlp_query,
                             ranked_results=ranked_results,
-                            output_path=output_payload_path
+                            output_path=output_payload_path,
+                            physics_vector=_physics_vec,
+                            rag_status=_rag_status,
+                            clinical_context=_clinical_ctx,
                         )
-                        print(f"✅ Final payload successfully saved to {output_payload_path}")
+
+                        # ── Print summary ─────────────────────────────────────
+                        status = payload["status"]
+                        matrix = payload.get("confidence_matrix", {})
+                        print(f"[OK] Final payload saved to {output_payload_path}  [status={status}]")
+                        print(f"   >> Confidence Matrix:")
+                        print(f"      physics_engine:   {matrix.get('physics_engine', '?')}")
+                        print(f"      literature_rag:   {matrix.get('literature_rag', '?')}")
+                        print(f"      clinical_context: {matrix.get('clinical_context', '?')}")
+                        if status in {"STRUCTURAL_DISCOVERY_VUS", "PREDICTED_PATHOGENIC_VUS"}:
+                            n = payload.get("physics_violations", {}).get("count", 0)
+                            print(f"   >> Physics violations (severe): {n}")
+                            print(f"   >> Note: {payload.get('note', '')[:220]}...")
                     except Exception as e:
-                        print(f"⚠️  Orchestrator failed to retrieve and assemble evidence: {e}")
+                        print(f"[WARN]  Orchestrator failed to retrieve and assemble evidence: {e}")
 
                 except Exception as e:
-                    print(f"⚠️  Failed to generate NLP query: {e}")
+                    print(f"[WARN]  Failed to generate NLP query: {e}")
         except Exception as e:
             failures.append(f"{label}: {e}")
-            print(f"❌ Pipeline failed for {label}: {e}")
+            print(f"[ERROR] Pipeline failed for {label}: {e}")
 
     if failures:
         print("\nSome targets failed:")

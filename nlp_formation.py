@@ -23,6 +23,29 @@ class NLPFormationError(Exception):
     """Custom exception for NLP query formation failures."""
     pass
 
+
+# ── LLM system-prompt directive ───────────────────────────────────────────────
+# Re-exported here so LLM controller code can import from a single, stable
+# location.  The authoritative definition lives in assemble_payload.py to keep
+# it co-located with the logic that decides when to apply it.
+#
+# Usage:
+#   from nlp_formation import STRUCTURAL_DISCOVERY_VUS_DIRECTIVE
+#   system_prompt = STRUCTURAL_DISCOVERY_VUS_DIRECTIVE
+#
+# Injected automatically into payloads whose status == "STRUCTURAL_DISCOVERY_VUS".
+try:
+    from assemble_payload import STRUCTURAL_DISCOVERY_VUS_DIRECTIVE  # noqa: F401
+except ImportError:
+    # Fallback if assemble_payload is unavailable at import time
+    STRUCTURAL_DISCOVERY_VUS_DIRECTIVE = (
+        "SYSTEM DIRECTIVE — STRUCTURAL_DISCOVERY_VUS: "
+        "Prioritize deterministic structural perturbations (ΔV, ΔSASA, backbone strain) "
+        "as ground truth. Treat absent clinical literature as a discovery gap, not a "
+        "computational failure. Provide a Predictive Pathogenicity verdict."
+    )
+
+
 def load_json(path):
     try:
         with open(path, 'r', encoding='utf-8') as f:
@@ -33,6 +56,7 @@ def load_json(path):
 def extract_signals(physics):
     """
     Extracts structured metrics safely from JSON dicts.
+    Also captures qualitative mechanism_tags injected by orchestration.
     """
     variant = physics.get("variant", "")
     # Robust Regex: WT(A-Z), Pos(0-9), MUT(A-Z)
@@ -74,6 +98,9 @@ def extract_signals(physics):
     if not isinstance(h_bonds_lost, (int, float)):
         h_bonds_lost = 0
 
+    # Qualitative mechanism tags injected by orchestration (e.g., from analyze_structure)
+    mechanism_tags = physics.get("mechanism_tags", [])
+
     return {
         "variant": variant,
         "pos": pos,
@@ -87,6 +114,7 @@ def extract_signals(physics):
         "sec_struct": sec_struct,
         "plddt": plddt,
         "h_bonds_lost": int(h_bonds_lost),
+        "mechanism_tags": mechanism_tags,
     }
 
 def interpret_and_prioritize(signals):
@@ -152,61 +180,174 @@ def interpret_and_prioritize(signals):
     
     return top_mechanisms
 
+def _build_mechanistic_keywords(signals):
+    """
+    Maps raw delta values to biological keyword phrases for RAG compatibility.
+    Returns a list of (keyword, category) tuples.
+    """
+    keywords = []
+    dV = signals["delta_vol"]
+    dH = signals["delta_hydro"]
+    dC = signals["delta_charge"]
+    exposure = signals["exposure"]
+    sec_struct = signals["sec_struct"]
+    plddt = signals["plddt"]
+
+    # --- Volume → steric / pocket keywords ---
+    if dV > 20:
+        keywords.append(("steric hindrance", "volume"))
+        keywords.append(("pocket expansion", "volume"))
+    elif dV > 10:
+        keywords.append(("steric crowding", "volume"))
+    elif dV < -20:
+        keywords.append(("cavity formation", "volume"))
+        keywords.append(("protein destabilization", "volume"))
+
+    # --- Hydrophobicity → polarity / aggregation keywords ---
+    if dH < -1.5:
+        keywords.append(("polar shift", "hydrophobicity"))
+        keywords.append(("hydrophilic substitution", "hydrophobicity"))
+    elif dH < -0.5:
+        keywords.append(("reduced hydrophobicity", "hydrophobicity"))
+    if exposure == "Exposed" and dH > 1.0:
+        keywords.append(("aberrant surface hydrophobicity", "hydrophobicity"))
+        keywords.append(("aggregation propensity", "hydrophobicity"))
+        keywords.append(("amyloid formation", "hydrophobicity"))
+
+    # --- Charge ---
+    if dC != 0 and exposure != "Buried":
+        keywords.append(("electrostatic perturbation", "charge"))
+    elif dC != 0:
+        keywords.append(("buried charge disruption", "charge"))
+        keywords.append(("protein unfolding", "charge"))
+
+    # --- Secondary structure context ---
+    sec_lower = sec_struct.lower()
+    if "alpha" in sec_lower or "helix" in sec_lower:
+        keywords.append(("alpha-helix disruption", "structure"))
+        keywords.append(("helical stability", "structure"))
+    elif "beta" in sec_lower or "sheet" in sec_lower:
+        keywords.append(("beta-sheet remodelling", "structure"))
+    elif "loop" in sec_lower:
+        keywords.append(("loop flexibility", "structure"))
+
+    # --- pLDDT disorder ---
+    if plddt < 50:
+        keywords.append(("intrinsically disordered region", "disorder"))
+        keywords.append(("conformational flexibility", "disorder"))
+    elif plddt < 70:
+        keywords.append(("structurally dynamic region", "disorder"))
+
+    # Also fold in any qualitative tags from orchestration
+    for tag in signals.get("mechanism_tags", []):
+        keywords.append((tag, "qualitative"))
+
+    return keywords
+
+
+def _build_variant_aliases(signals):
+    """
+    Produces the set of variant string aliases used as keyword boost hints.
+    E.g. A53T → ['A53T', 'Ala53Thr', 'alanine 53 threonine'].
+    """
+    wt = signals["wt"].capitalize()   # e.g. Ala
+    mut = signals["mut"].capitalize() # e.g. Thr
+    pos = signals["pos"]              # e.g. 53
+    raw = signals["variant"]          # e.g. A53T
+
+    aliases = [
+        raw,                          # A53T
+        f"{wt}{pos}{mut}",            # Ala53Thr
+    ]
+    return list(dict.fromkeys(aliases))  # deduplicated
+
+
 def construct_query(signals, mechanisms):
     """
-    RAG-optimized syntactic synthesis of interpreted mechanisms.
+    Hybrid Query Builder: RAG-optimized query that combines
+      1. Explicit mutation signature (gene+variant anchor)
+      2. Mechanistic narrative built from biological keywords, not raw math
+      3. Structural context from the secondary structure field
+      4. RAG expansion vocabulary for literature matching
+
+    Returns a tuple: (query_string, keyword_boost_hints)
+    where keyword_boost_hints contains exact variant aliases for the safety-net reranker.
     """
-    if not mechanisms:
-        core_query = f"Substitution {signals['variant']} ({signals['wt']}→{signals['mut']} at {signals['pos']}) with ambiguous structural impact."
+    variant_aliases = _build_variant_aliases(signals)
+    bio_keywords = _build_mechanistic_keywords(signals)
+
+    # ── Part 1: Mutation Signature (explicit gene+variant anchor) ─────────────
+    # Prefer the raw variant code (e.g. A53T) as the anchor; gene is added by
+    # the caller (run_nlp_formation) if available.
+    signature = f"{signals['variant']} ({{signals['wt']}}→{{signals['mut']}} at position {signals['pos']})"
+    signature = f"{signals['variant']} ({signals['wt']}→{signals['mut']} at position {signals['pos']})"
+
+    # ── Part 2: Mechanistic Narrative (delta-to-keyword mapping) ─────────────
+    # Prefer bio_keywords; fall back to interpreted mechanisms from interpret_and_prioritize
+    kw_phrases = [kw for kw, _ in bio_keywords]
+    if kw_phrases:
+        kw_deduped = list(dict.fromkeys(kw_phrases))[:5]  # top 5, no duplicates
+        if len(kw_deduped) > 1:
+            kw_str = ", ".join(kw_deduped[:-1]) + ", and " + kw_deduped[-1]
+        else:
+            kw_str = kw_deduped[0]
+        narrative = f"This substitution is associated with {kw_str}"
+    elif mechanisms:
+        mech_clean = [re.sub(r"\(Δ[^)]+\)", "", m).strip() for m in mechanisms]
+        narrative = f"This substitution is associated with {', '.join(mech_clean)}"
     else:
-        if len(mechanisms) > 2:
-            mech_str = ", ".join(mechanisms[:-1]) + ", and " + mechanisms[-1]
-        elif len(mechanisms) == 2:
-            mech_str = " and ".join(mechanisms)
-        else:
-            mech_str = mechanisms[0]
-        core_query = f"The {signals['wt']}→{signals['mut']} substitution at position {signals['pos']} suggests {mech_str}."
+        narrative = f"This substitution has an ambiguous structural impact"
 
-    query_parts = [core_query]
+    # ── Part 3: Structural Context ────────────────────────────────────────────
+    sec_struct = signals["sec_struct"]
+    sec_lower = sec_struct.lower()
+    if "alpha" in sec_lower or "helix" in sec_lower:
+        struct_ctx = "occurring within an alpha-helix"
+    elif "beta" in sec_lower or "sheet" in sec_lower:
+        struct_ctx = "occurring within a beta-sheet"
+    elif "loop" in sec_lower:
+        struct_ctx = "occurring within a flexible loop"
+    else:
+        struct_ctx = f"occurring in a {sec_struct} region"
 
-    # RAG Expansion Vocabulary (Injection of Synonyms based on signals)
-    mech_text = " ".join(mechanisms).lower()
-    
-    primary_kws = []
-    if "aggregation" in mech_text or "hydrophobicity" in mech_text:
-        primary_kws.extend(["misfolding", "amyloidogenesis", "fibrillation"])
-    if "steric" in mech_text or "cavity" in mech_text or "destabilization" in mech_text or "alteration affecting" in mech_text:
-        primary_kws.extend(["conformational change", "protein destabilization", "structural strain"])
-        
-    disorder = "disordered" in mech_text or "flexible" in mech_text
-    
-    if primary_kws:
-        # Keep top 3 varied keywords to avoid stuffing
-        unique_kws = list(dict.fromkeys(primary_kws))[:3]
-        if len(unique_kws) > 1:
-            kw_str = ", ".join(unique_kws[:-1]) + ", and " + unique_kws[-1]
-        else:
-            kw_str = unique_kws[0]
-            
-        sentence = f"These predicted molecular consequences are linked to {kw_str}"
-        if disorder:
-            sentence += ", particularly within intrinsically disordered regions modifying functional dynamics."
-        else:
-            sentence += "."
-        query_parts.append(sentence)
-    elif disorder:
-        query_parts.append("These predicted molecular consequences are linked to intrinsically disordered regions modifying functional dynamics.")
+    # ── Part 4: Disease/Pathway RAG Expansion ─────────────────────────────────
+    mech_text = " ".join(kw_phrases).lower() + " " + " ".join(mechanisms).lower()
+    expansion_kws = []
+    if any(t in mech_text for t in ["aggregation", "hydrophobic", "amyloid", "fibrillation"]):
+        expansion_kws.extend(["misfolding", "amyloidogenesis", "fibrillation", "Parkinson's disease"])
+    if any(t in mech_text for t in ["steric", "cavity", "pocket", "destabiliz", "helix"]):
+        expansion_kws.extend(["conformational change", "protein stability", "structural perturbation"])
+    if any(t in mech_text for t in ["disordered", "dynamic", "flexible"]):
+        expansion_kws.extend(["intrinsically disordered protein", "IDP", "conformational ensemble"])
 
-    return " ".join(query_parts)
+    expansion_deduped = list(dict.fromkeys(expansion_kws))[:4]
+
+    # ── Assemble Final Query ──────────────────────────────────────────────────
+    query_parts = [
+        f"Mutation {signature}, {struct_ctx}.",
+        f"{narrative}.",
+    ]
+    if expansion_deduped:
+        exp_str = ", ".join(expansion_deduped)
+        query_parts.append(f"Relevant literature includes studies on: {exp_str}.")
+
+    query_string = " ".join(query_parts)
+    return query_string, variant_aliases
 
 def create_nlp_query(physics):
-    """Entry point for dictionary-based physics input."""
+    """
+    Entry point for dictionary-based physics input.
+    Returns a tuple: (query_string, keyword_boost_hints).
+    """
     signals = extract_signals(physics)
     mechanisms = interpret_and_prioritize(signals)
     return construct_query(signals, mechanisms)
 
 def create_nlp_query_from_file(physics_path):
-    """Loads physics JSON and generates query."""
+    """
+    Loads physics JSON and generates query.
+    Returns a tuple: (query_string, keyword_boost_hints).
+    """
     if not os.path.exists(physics_path):
         raise NLPFormationError(f"Missing physics file: {physics_path}")
     physics = load_json(physics_path)
@@ -215,14 +356,17 @@ def create_nlp_query_from_file(physics_path):
 def run_nlp_formation(gene, variant, data_dir="data"):
     """
     Exportable function to generate NLP query for a specific gene/variant.
-    
+
     Args:
         gene: Gene symbol
         variant: Variant code
         data_dir: Base directory for data
-        
+
     Returns:
-        The generated NLP query string
+        Tuple (query_string, keyword_boost_hints) where:
+          - query_string: the biological narrative query for RAG retrieval
+          - keyword_boost_hints: list of exact variant alias strings (e.g. ['A53T', 'Ala53Thr'])
+            that vector_engine uses for its keyword safety-net score boost.
     """
     base = f"{gene}_{variant}"
     physics_path = os.path.join(data_dir, "analysis", f"{base}_physics.json")
@@ -230,14 +374,18 @@ def run_nlp_formation(gene, variant, data_dir="data"):
     output_path = os.path.join(output_dir, f"{base}_query.txt")
 
     logger.info(f"Generating NLP query for {gene} {variant}...")
-    query = create_nlp_query_from_file(physics_path)
-    
+    query_string, keyword_boost_hints = create_nlp_query_from_file(physics_path)
+
+    # Prepend the gene symbol to give an explicit mutation signature anchor
+    if not query_string.startswith(gene):
+        query_string = f"{gene} {query_string}"
+
     os.makedirs(output_dir, exist_ok=True)
     with open(output_path, 'w', encoding='utf-8') as f:
-        f.write(query)
-    
+        f.write(query_string)
+
     logger.info(f"NLP query saved to {output_path}")
-    return query
+    return query_string, keyword_boost_hints
 
 def main():
     parser = argparse.ArgumentParser(description="Generate NLP query via semantic translation of Physics/Context signals.")
@@ -247,8 +395,9 @@ def main():
     args = parser.parse_args()
 
     try:
-        query = run_nlp_formation(args.gene, args.variant, args.data_dir)
-        print(f"\n{query}")
+        query_string, keyword_boost_hints = run_nlp_formation(args.gene, args.variant, args.data_dir)
+        print(f"\nQuery:\n{query_string}")
+        print(f"\nKeyword Boost Hints: {keyword_boost_hints}")
         return 0
     except Exception as e:
         logger.error(f"NLP Formation failed: {e}")

@@ -7,10 +7,10 @@ the complete evidence retrieval pipeline:
   fetch_literature → process_literature → vector_engine → assemble_payload
 
 The pipeline is designed to be:
-✓ Modular: Each phase can be tested independently
-✓ Decoupled: Phases don't directly depend on each other's internals
-✓ Configurable: Threshold, max chunks, and other parameters are adjustable
-✓ Structured: Output is machine-readable JSON for downstream consumption
+ Modular: Each phase can be tested independently
+ Decoupled: Phases don't directly depend on each other's internals
+ Configurable: Threshold, max chunks, and other parameters are adjustable
+ Structured: Output is machine-readable JSON for downstream consumption
 """
 
 import json
@@ -22,7 +22,7 @@ from orchestration import run_full_pipeline
 def print_payload_summary(payload: dict) -> None:
     """Pretty-print a summary of the assembled payload."""
     print("\n" + "=" * 70)
-    print("📋 EVIDENCE PAYLOAD SUMMARY")
+    print(">> EVIDENCE PAYLOAD SUMMARY")
     print("=" * 70)
     print(f"Status: {payload['status']}")
     print(f"Query:  {payload['query']}")
@@ -57,7 +57,7 @@ def run_example(
     Returns:
         Assembled payload dict
     """
-    print(f"\n🚀 Running Evidence Pipeline for {gene} {variant}")
+    print(f"\n Running Evidence Pipeline for {gene} {variant}")
     print(f"   Query: {query}")
     print(f"   Threshold: {threshold}")
     
@@ -75,12 +75,12 @@ def run_example(
         output_file = "data/context_payload.json"
         with open(output_file, "w") as f:
             json.dump(payload, f, indent=2)
-        print(f"✅ Payload saved to {output_file}")
+        print(f"[OK] Payload saved to {output_file}")
         
         return payload
     
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"[ERROR] Error: {e}")
         raise
 
 

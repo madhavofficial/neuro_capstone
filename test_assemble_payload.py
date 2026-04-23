@@ -37,7 +37,7 @@ def test_threshold_filtering():
     assert low_conf is True, "Should flag as low confidence"
     assert filtered[0]["rerank_score"] == 0.9, "Should return best result"
     
-    print("✅ test_threshold_filtering passed")
+    print("[OK] test_threshold_filtering passed")
 
 
 def test_deduplication():
@@ -67,7 +67,7 @@ def test_deduplication():
     deduped = deduplicate_by_pmid(results, max_per_pmid=1)
     assert len(deduped) == 3, "Should have 3 items (1 from each PMID)"
     
-    print("✅ test_deduplication passed")
+    print("[OK] test_deduplication passed")
 
 
 def test_deterministic_sorting():
@@ -88,7 +88,7 @@ def test_deterministic_sorting():
     scores = [r["rerank_score"] for r in sorted_asc]
     assert scores == [0.7, 0.8, 0.95], "Should be sorted ascending"
     
-    print("✅ test_deterministic_sorting passed")
+    print("[OK] test_deterministic_sorting passed")
 
 
 def test_evidence_construction():
@@ -107,7 +107,7 @@ def test_evidence_construction():
     assert item["title"] == "Effect of A53T on alpha-synuclein"
     assert item["score"] == 0.87
     
-    print("✅ test_evidence_construction passed")
+    print("[OK] test_evidence_construction passed")
 
 
 def test_full_assembly():
@@ -140,7 +140,7 @@ def test_full_assembly():
     scores = [e["score"] for e in payload["evidence"]]
     assert scores == sorted(scores, reverse=True), "Should be sorted descending"
     
-    print("✅ test_full_assembly passed")
+    print("[OK] test_full_assembly passed")
 
 
 def test_low_confidence_status():
@@ -155,7 +155,7 @@ def test_low_confidence_status():
     assert payload["status"] == "LOW_CONFIDENCE", "Should flag low confidence"
     assert len(payload["evidence"]) == 1, "Should still return best result"
     
-    print("✅ test_low_confidence_status passed")
+    print("[OK] test_low_confidence_status passed")
 
 
 def test_save_payload():
@@ -181,13 +181,13 @@ def test_save_payload():
         
         assert loaded == payload, "Loaded payload should match original"
     
-    print("✅ test_save_payload passed")
+    print("[OK] test_save_payload passed")
 
 
 def run_all_tests():
     """Run all unit tests."""
     print("\n" + "=" * 70)
-    print("🧪 RUNNING UNIT TESTS FOR ASSEMBLE_PAYLOAD")
+    print(" RUNNING UNIT TESTS FOR ASSEMBLE_PAYLOAD")
     print("=" * 70 + "\n")
     
     test_threshold_filtering()
@@ -199,7 +199,7 @@ def run_all_tests():
     test_save_payload()
     
     print("\n" + "=" * 70)
-    print("✅ ALL TESTS PASSED")
+    print("[OK] ALL TESTS PASSED")
     print("=" * 70 + "\n")
 
 

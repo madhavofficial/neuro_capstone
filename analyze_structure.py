@@ -85,7 +85,7 @@ def _default_physics_json_path(pdb_path: str, variant_code: str, out_dir: str = 
     return os.path.join(out_dir, f"{base_name}_{variant_code}_physics.json")
 
 # ==========================================
-# 🧪 BIOPHYSICAL LOOKUP TABLES (THE CONSTANTS)
+#  BIOPHYSICAL LOOKUP TABLES (THE CONSTANTS)
 # ==========================================
 
 AA_MAP_1_TO_3 = {
@@ -394,7 +394,7 @@ def safe_secondary_structure(model, pdb_path: str, chain_id: str, residue) -> st
             }
             sec_struct = sec_struct_map.get(code, "Loop")
     except Exception as e:
-        print(f"⚠️ DSSP Warning: {e}. (Is mkdssp installed?)")
+        print(f"[WARN] DSSP Warning: {e}. (Is mkdssp installed?)")
     return sec_struct
 
 
@@ -445,7 +445,7 @@ def compute_site_metrics(structure, pdb_path: str, *, model_id: int = 0, chain_i
     }
 
 # ==========================================
-# ⚙️ INTERACTION ENGINE (Features 7, 8, 9)
+# ️ INTERACTION ENGINE (Features 7, 8, 9)
 # ==========================================
 def get_interactions(structure, model_id, chain_id, res_id, wt_resname, mut_resname):
     """
@@ -662,12 +662,12 @@ def get_interactions(structure, model_id, chain_id, res_id, wt_resname, mut_resn
     return interactions
 
 # ==========================================
-# 🧠 MAIN ANALYSIS LOGIC (Features 1-10)
+#  MAIN ANALYSIS LOGIC (Features 1-10)
 # ==========================================
 def analyze_protein(pdb_path, variant_code, *, chain_id: str | None = None, verbose: bool = True):
     chain_label = chain_id if chain_id is not None else "<first>"
     if verbose:
-        print(f"--- 🧬 ANALYZING {variant_code} (chain {chain_label}) ---")
+        print(f"--- >> ANALYZING {variant_code} (chain {chain_label}) ---")
     
     # A. Parse Variant
     try:
@@ -675,7 +675,7 @@ def analyze_protein(pdb_path, variant_code, *, chain_id: str | None = None, verb
         wt_3 = normalize_resname(wt_3)
         mut_3 = normalize_resname(mut_3)
     except ValueError as e:
-        print(f"❌ {e}")
+        print(f"[ERROR] {e}")
         return None
     
     # B. Load Structure
@@ -684,7 +684,7 @@ def analyze_protein(pdb_path, variant_code, *, chain_id: str | None = None, verb
     chain = get_chain(model, chain_id)
     target_res = find_residue_by_resseq(chain, res_id)
     if target_res is None:
-        print(f"❌ Error: Residue {res_id} not found in PDB.")
+        print(f"[ERROR] Error: Residue {res_id} not found in PDB.")
         return None
 
     # C. Run DSSP (Feature 2: Secondary Structure)
@@ -898,7 +898,7 @@ if __name__ == "__main__":
 
     if args.wt_pdb or args.mut_pdb:
         if not args.wt_pdb or not args.mut_pdb or not args.variant:
-            print("❌ Compare mode requires --wt-pdb, --mut-pdb, and <variant>.")
+            print("[ERROR] Compare mode requires --wt-pdb, --mut-pdb, and <variant>.")
             sys.exit(2)
         data = analyze_variant_pair(args.wt_pdb, args.mut_pdb, args.variant, chain_wt=args.chain_wt, chain_mut=args.chain_mut)
         if args.out:
@@ -909,7 +909,7 @@ if __name__ == "__main__":
             out_file = os.path.join(args.analysis_out_dir, f"{base_name}_{args.variant}_compare.json")
     else:
         if not args.pdb or not args.variant:
-            print("❌ Single-structure mode requires <pdb> <variant>.")
+            print("[ERROR] Single-structure mode requires <pdb> <variant>.")
             sys.exit(2)
         data = analyze_protein(args.pdb, args.variant, chain_id=args.chain, verbose=True)
         out_file = args.out or _default_physics_json_path(args.pdb, args.variant, out_dir=args.analysis_out_dir)
@@ -921,11 +921,11 @@ if __name__ == "__main__":
 
     with open(out_file, "w") as f:
         json.dump(data, f, indent=4)
-    print(f"✅ Analysis saved to {out_file}")
+    print(f"[OK] Analysis saved to {out_file}")
 
 
 # ==========================================
-# 📝 10 BIOPHYSICAL FEATURES & NEURODEGENERATION RISK
+# >> 10 BIOPHYSICAL FEATURES & NEURODEGENERATION RISK
 # ==========================================
 """
 HOW EACH FEATURE CONTRIBUTES TO NEURODEGENERATIVE DISEASE RISK:
