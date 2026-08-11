@@ -14,7 +14,9 @@ from assemble_payload import (
     sort_by_score,
     construct_evidence_item,
     assemble_payload,
-    save_payload
+    save_payload,
+    run,
+    build_confidence_matrix,
 )
 
 
@@ -106,6 +108,7 @@ def test_evidence_construction():
     assert item["pmid"] == "15331649"
     assert item["title"] == "Effect of A53T on alpha-synuclein"
     assert item["score"] == 0.87
+    assert item["score_type"] == "raw_cross_encoder_score"
     
     print("[OK] test_evidence_construction passed")
 
@@ -128,7 +131,7 @@ def test_full_assembly():
     assert "evidence" in payload
     
     # Check status
-    assert payload["status"] == "success", "Should pass threshold"
+    assert payload["status"] == "SUCCESS", "Should pass threshold"
     
     # Check query
     assert payload["query"] == query
@@ -158,10 +161,62 @@ def test_low_confidence_status():
     print("[OK] test_low_confidence_status passed")
 
 
+def test_run_forwards_confidence_threshold():
+    """The file-writing wrapper must honor a caller-provided threshold."""
+    results = [
+        {"chunk": "text", "pmid": "111", "title": "t1", "rerank_score": 0.8},
+    ]
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        output_path = os.path.join(tmpdir, "payload.json")
+        payload = run(
+            "query",
+            results,
+            confidence_threshold=0.85,
+            output_path=output_path,
+        )
+
+    assert payload["status"] == "LOW_CONFIDENCE"
+    print("[OK] test_run_forwards_confidence_threshold passed")
+
+
+def test_confidence_matrix_distinguishes_evidence_scope():
+    """Gene-level coverage must not be reported as exact-variant evidence."""
+    gene_level = {
+        "clinvar": {
+            "scope": "gene_level",
+            "variant_match": False,
+            "clinical_significance": "Gene has pathogenic variants in ClinVar",
+        }
+    }
+    matrix = build_confidence_matrix(
+        {"deltas": {"delta_volume": 54}},
+        "SUCCESS",
+        gene_level,
+    )
+    assert matrix["clinical_context"] == "PARTIAL"
+    assert matrix["clinical_context_scope"] == "GENE_LEVEL"
+    assert matrix["physics_engine"] == "HEURISTIC"
+    assert matrix["physics_evidence_scope"] == "SITE_PROPERTY_HEURISTIC"
+
+    exact = {
+        "clinvar": {
+            "scope": "exact_variant",
+            "variant_match": True,
+            "clinical_significance": "Pathogenic",
+        }
+    }
+    exact_matrix = build_confidence_matrix(None, "NULL_RESULTS", exact)
+    assert exact_matrix["clinical_context"] == "HIGH"
+    assert exact_matrix["clinical_context_scope"] == "EXACT_VARIANT"
+
+    print("[OK] test_confidence_matrix_distinguishes_evidence_scope passed")
+
+
 def test_save_payload():
     """Test payload file saving."""
     payload = {
-        "status": "success",
+        "status": "SUCCESS",
         "query": "test query",
         "evidence": [
             {"text": "text", "pmid": "123", "title": "title", "score": 0.9}
@@ -196,6 +251,8 @@ def run_all_tests():
     test_evidence_construction()
     test_full_assembly()
     test_low_confidence_status()
+    test_run_forwards_confidence_threshold()
+    test_confidence_matrix_distinguishes_evidence_scope()
     test_save_payload()
     
     print("\n" + "=" * 70)

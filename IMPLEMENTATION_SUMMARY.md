@@ -154,7 +154,7 @@ Comprehensive guide covering:
 **Success Case**:
 ```json
 {
-  "status": "success",
+  "status": "SUCCESS",
   "query": "steric clash at position 53",
   "evidence": [
     {

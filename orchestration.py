@@ -91,16 +91,15 @@ def phase_2_process_literature(gene: str, variant: str, corpus_path: str) -> str
         
         logger.info(f"   - Loaded {len(corpus) if isinstance(corpus, list) else 1} papers")
         
-        # Import processing function
-        try:
-            from pipeline import chunk_literature
-            chunked_results = chunk_literature(corpus, gene, variant)
-            logger.info(f"[OK] Phase 2 complete: {chunked_results}")
-            return chunked_results
-        except ImportError:
-            # Fallback: assume corpus is already chunked or use alternative processor
-            logger.warning("   - chunk_literature not found, assuming pre-chunked corpus")
-            return corpus_path
+        # Use the canonical implementation from pipeline.py.  The old code
+        # referenced a nonexistent chunk_literature() function and then
+        # returned the raw corpus path, which caused vector retrieval to read
+        # an unchunked corpus (or fail later with a misleading error).
+        from pipeline import process_literature_json
+
+        chunked_path = process_literature_json(gene, variant)
+        logger.info(f"[OK] Phase 2 complete: {chunked_path}")
+        return chunked_path
     
     except Exception as e:
         logger.error(f"[ERROR] Phase 2 failed: {e}")
@@ -211,6 +210,7 @@ def phase_4_assemble_payload(
         payload = assemble_payload.run(
             query=query,
             ranked_results=ranked_results,
+            confidence_threshold=confidence_threshold,
             output_path=output_path,
             physics_vector=physics_vector,
             rag_status=rag_status,
