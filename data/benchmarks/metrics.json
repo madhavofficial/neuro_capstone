@@ -1,0 +1,122 @@
+{
+  "n_runs": 52,
+  "completion_rate": 0.0,
+  "pipeline_completion_rate": 0.0,
+  "exact_variant_clinical_lookup_accuracy": null,
+  "literature_relevance_top5": null,
+  "citation_validity": null,
+  "unsupported_claim_rate": null,
+  "json_schema_validity": null,
+  "pathogenic_benign_agreement": null,
+  "vus_uncertainty_preservation": null,
+  "mean_runtime_seconds": null,
+  "external_api_failure_rate": 0.0,
+  "compatibility_failure_rate": 1.0,
+  "failure_by_stage": {
+    "structure": 0,
+    "clinical": 0,
+    "physics": 0,
+    "literature_fetch": 0,
+    "literature_process": 0,
+    "retrieval": 0,
+    "payload": 0
+  },
+  "by_ablation": {
+    "clinical_only": {
+      "n_runs": 13,
+      "completion_rate": 0.0,
+      "pipeline_completion_rate": 0.0,
+      "exact_variant_clinical_lookup_accuracy": null,
+      "literature_relevance_top5": null,
+      "citation_validity": null,
+      "unsupported_claim_rate": null,
+      "json_schema_validity": null,
+      "pathogenic_benign_agreement": null,
+      "vus_uncertainty_preservation": null,
+      "mean_runtime_seconds": null,
+      "external_api_failure_rate": 0.0,
+      "compatibility_failure_rate": 1.0,
+      "failure_by_stage": {
+        "structure": 0,
+        "clinical": 0,
+        "physics": 0,
+        "literature_fetch": 0,
+        "literature_process": 0,
+        "retrieval": 0,
+        "payload": 0
+      }
+    },
+    "literature_only": {
+      "n_runs": 13,
+      "completion_rate": 0.0,
+      "pipeline_completion_rate": 0.0,
+      "exact_variant_clinical_lookup_accuracy": null,
+      "literature_relevance_top5": null,
+      "citation_validity": null,
+      "unsupported_claim_rate": null,
+      "json_schema_validity": null,
+      "pathogenic_benign_agreement": null,
+      "vus_uncertainty_preservation": null,
+      "mean_runtime_seconds": null,
+      "external_api_failure_rate": 0.0,
+      "compatibility_failure_rate": 1.0,
+      "failure_by_stage": {
+        "structure": 0,
+        "clinical": 0,
+        "physics": 0,
+        "literature_fetch": 0,
+        "literature_process": 0,
+        "retrieval": 0,
+        "payload": 0
+      }
+    },
+    "physics_only": {
+      "n_runs": 13,
+      "completion_rate": 0.0,
+      "pipeline_completion_rate": 0.0,
+      "exact_variant_clinical_lookup_accuracy": null,
+      "literature_relevance_top5": null,
+      "citation_validity": null,
+      "unsupported_claim_rate": null,
+      "json_schema_validity": null,
+      "pathogenic_benign_agreement": null,
+      "vus_uncertainty_preservation": null,
+      "mean_runtime_seconds": null,
+      "external_api_failure_rate": 0.0,
+      "compatibility_failure_rate": 1.0,
+      "failure_by_stage": {
+        "structure": 0,
+        "clinical": 0,
+        "physics": 0,
+        "literature_fetch": 0,
+        "literature_process": 0,
+        "retrieval": 0,
+        "payload": 0
+      }
+    },
+    "all_evidence": {
+      "n_runs": 13,
+      "completion_rate": 0.0,
+      "pipeline_completion_rate": 0.0,
+      "exact_variant_clinical_lookup_accuracy": null,
+      "literature_relevance_top5": null,
+      "citation_validity": null,
+      "unsupported_claim_rate": null,
+      "json_schema_validity": null,
+      "pathogenic_benign_agreement": null,
+      "vus_uncertainty_preservation": null,
+      "mean_runtime_seconds": null,
+      "external_api_failure_rate": 0.0,
+      "compatibility_failure_rate": 1.0,
+      "failure_by_stage": {
+        "structure": 0,
+        "clinical": 0,
+        "physics": 0,
+        "literature_fetch": 0,
+        "literature_process": 0,
+        "retrieval": 0,
+        "payload": 0
+      }
+    }
+  }
+}

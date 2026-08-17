@@ -23,6 +23,11 @@ env/
 # We ignore the entire data directory but keep the structure
 data/*
 !data/**/.gitkeep
+!data/benchmarks/
+!data/benchmarks/*.csv
+!data/benchmarks/*.json
+!data/benchmarks/*.jsonl
+!data/benchmarks/*.md
 
 # Specifically ignore large/binary data that might be outside white-listing
 *.bin
