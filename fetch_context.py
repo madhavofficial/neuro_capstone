@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import requests
 import json
+
 import os
 import argparse
 import sys

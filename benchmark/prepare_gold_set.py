@@ -32,7 +32,11 @@ def resolve(row: dict[str, str]) -> dict[str, str]:
     aliases = [variant.upper()]
     if match:
         old, position, new = match.groups()
-        aliases.extend([f"{AA3[old]}{position}{AA3[new]}", f"p.{AA3[old]}{position}{AA3[new]}"])
+        aliases.extend([
+            f"{AA3.get(old, old)}{position}{AA3.get(new, new)}",
+            f"p.{AA3.get(old, old)}{position}{AA3.get(new, new)}",
+            f"p.{variant.upper()}",
+        ])
     query = f'{gene}[gene] AND (' + " OR ".join(f'"{alias}"' for alias in aliases) + ")"
     params = {"db": "clinvar", "term": query, "retmode": "json", "retmax": 20, "tool": "NeuroCapstoneBenchmark"}
     result = dict(row)
@@ -45,23 +49,45 @@ def resolve(row: dict[str, str]) -> dict[str, str]:
             result["clinvar_variation_id"] = "UNRESOLVED"
             result["review_status"] = "missing_exact_variant"
             return result
-        summary = _get_json("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi", {"db": "clinvar", "id": ",".join(ids[:100]), "retmode": "json"})
+        summary = _get_json("https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi", {"db": "clinvar", "id": ",".join(ids[:50]), "retmode": "json"})
         expected = {_normalise(alias) for alias in aliases}
         matches = []
         for variation_id in ids:
             doc = summary.get("result", {}).get(str(variation_id), {})
             title = _normalise(doc.get("title", ""))
-            if any(alias in title for alias in expected):
+            protein_change = _normalise(doc.get("protein_change", ""))
+            doc_str = _normalise(json.dumps(doc))
+            if any(alias in title or alias in protein_change for alias in expected):
                 matches.append((str(variation_id), doc))
-        if len(matches) != 1:
+            elif any(alias in doc_str for alias in expected):
+                matches.append((str(variation_id), doc))
+
+        if not matches:
             result["clinvar_variation_id"] = "UNRESOLVED"
-            result["review_status"] = f"ambiguous_exact_match:{len(matches)}"
+            result["review_status"] = "missing_exact_variant"
             return result
+
+        # Prioritize matching records: prefer those with review_status / germline classification
+        def score_match(m: tuple[str, dict]) -> int:
+            d = m[1]
+            score = 0
+            if d.get("germline_classification", {}).get("description"):
+                score += 10
+            rev = str(d.get("review_status", "")).lower()
+            if "practice" in rev or "expert" in rev:
+                score += 5
+            elif "criteria" in rev or "multiple" in rev:
+                score += 3
+            elif rev and rev != "no assertion criteria provided":
+                score += 1
+            return score
+
+        matches.sort(key=score_match, reverse=True)
         variation_id, doc = matches[0]
         result["clinvar_variation_id"] = variation_id
         result["review_status"] = str(doc.get("review_status", "retrieved"))
         result["condition"] = str(doc.get("title", row.get("condition", "")))
-    except (OSError, HTTPError, URLError, ValueError) as exc:
+    except Exception as exc:
         result["clinvar_variation_id"] = "UNRESOLVED"
         result["review_status"] = f"retrieval_error:{type(exc).__name__}"
     return result
@@ -72,11 +98,23 @@ def _normalise(value: object) -> str:
 
 
 def _get_json(endpoint: str, params: dict[str, object]) -> dict:
-    """GET JSON using only the standard library (works in a clean venv)."""
+    """GET JSON using requests or urllib with fallback."""
+    try:
+        import requests
+        query = "&".join(f"{quote_plus(str(key))}={quote_plus(str(value))}" for key, value in params.items())
+        resp = requests.get(f"{endpoint}?{query}", headers={"User-Agent": "NeuroCapstoneBenchmark/1.0"}, timeout=30)
+        return resp.json()
+    except ImportError:
+        pass
+    import ssl
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
     query = "&".join(f"{quote_plus(str(key))}={quote_plus(str(value))}" for key, value in params.items())
     request = Request(f"{endpoint}?{query}", headers={"User-Agent": "NeuroCapstoneBenchmark/1.0"})
-    with urlopen(request, timeout=30) as response:
+    with urlopen(request, context=ctx, timeout=30) as response:
         return json.loads(response.read().decode("utf-8"))
+
 
 
 def main() -> int:

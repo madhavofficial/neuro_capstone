@@ -1,0 +1,49 @@
+{
+  "status": "SUCCESS",
+  "confidence_matrix": {
+    "physics_engine": "ERROR",
+    "literature_rag": "SUCCESS",
+    "clinical_context": "UNAVAILABLE",
+    "clinical_context_scope": "UNAVAILABLE",
+    "physics_evidence_scope": "UNAVAILABLE"
+  },
+  "query": "SNCA A53T",
+  "evidence_score_type": "raw_cross_encoder_score",
+  "evidence": [
+    {
+      "text": "Animal and cellular models harboring SNCA gene mutations have been instrumental in synucleinopathy, but faithful human brain models remain limited. Here, we report the development of a human cerebral organoid (CO) model of synucleinopathy carrying the Ala53Thr mutation in SNCA ( SNCA A53T ). Using a human embryonic stem cell (hESC) line overexpressing SNCA A53T (A53T hESC line), we generated COs (A53T COs) that recapitulate hallmark features of synucleinopathy. These A53T COs exhibited elevated α-synuclein (α-Syn) expression, the increased phosphorylation of α-Syn, and Lewy body-like aggregations. Notably, we also observed the increased expression of phosphorylated tau and neurofibrillary tangle-like silver deposits, although amyloid β expression and accumulation remained unchanged. To evaluate the utility of this model in drug screening, we treated A53T COs with synuclean D (SynD), an inhibitor of α-Syn aggregation, which significantly reduced both α-Syn and tau phosphorylation without affecting total α-Syn levels. Together, our findings establish a robust hESC-derived synucleinopathy CO model harboring the SNCA A53T mutation, demonstrating its potential as a valuable tool for therapeutic drug screening.",
+      "pmid": "41002401",
+      "title": "Modeling Synucleinopathy Using hESC-Derived Cerebral Organoids.",
+      "score": 8.563069343566895,
+      "score_type": "raw_cross_encoder_score"
+    },
+    {
+      "text": "Alpha-synuclein (aSyn) is linked to Parkinson's disease (PD) through SNCA genetic mutations, phosphorylated aSyn in Lewy bodies and Lewy neurites, and most recently through evidence of aSyn aggregation in patient spinal fluid using the aSyn seed amplification assay. Therefore, understanding the biology of this protein and developing therapeutic interventions targeting pathological processing of aSyn are a key area of focus for novel treatments to slow or stop PD. Reliable preclinical models are imperative for these efforts. To this end, we developed a novel model using CRISPR/Cas9 to humanize the regions surrounding the naturally occurring threonine 53 amino acid in the Sprague Dawley rat to generate a humanized A53T aSyn rat model (aSyn A53T KI). We also generated an Snca knockout (aSyn KO) line to pair with the humanized A53T aSyn rat line to confirm that phenotypes were not due to loss of endogenous rat aSyn protein. A systematic phenotyping study was performed on these lines, assessing PD-related pathology and phenotypes at multiple timepoints. The aSyn KO rat line was profiled at 6 and 12 months of age, revealing successful aSyn protein knockout. The aSyn A53T KI model was profiled at 4, 8, 12, and 18 months of age for motor and non-motor phenotypes, nigrostriatal degeneration, and brain pathology. We confirmed the aSyn A53T KI rat expresses human aSyn while lacking endogenous rat aSyn. Motor function and non-motor function remain largely unaffected in this model, and no overt nigrostriatal degeneration or brain pathology are observed up to 18 months of age. Although the aSyn A53T KI rat lacks the ability to model PD pathology and phenotypes at baseline, it is an ideal model for investigating the impact of exogenous synuclein aggregates or environmental triggers on human aSyn in an in vivo model system.",
+      "pmid": "40779487",
+      "title": "Expression of human A53T alpha-synuclein without endogenous rat alpha-synuclein fails to elicit Parkinson's disease-related phenotypes in a novel humanized rat model.",
+      "score": 7.116003513336182,
+      "score_type": "raw_cross_encoder_score"
+    },
+    {
+      "text": "While the etiology of most cases of Parkinson's disease (PD) are idiopathic, it has been estimated that 5-10% of PD arise from known genetic mutations. The first mutations described that leads to the development of an autosomal dominant form of PD are in the SNCA gene that codes for the protein alpha-synuclein (α-syn). α-syn is an abundant presynaptic protein that is natively disordered and whose function is still unclear. In PD, α-syn misfolds into multimeric b-pleated sheets that aggregate in neurons (Lewy Bodies/neurites) and spread throughout the neuraxis in a pattern that aligns with disease progression. Here, using IHC, HC, HPLC, and cytokine analysis, we examined the sequelae of intraparenchymal brain seeding of pre-formed fibrils (PFFs) and monomeric α-syn in C57BL/6J (WT) and A53T SNCA mutant mice. We found that injection of PFFs, but not monomeric α-syn, into the striatum of C57BL/6J mice induced spread of aggregated α-syn, loss of SNpc DA neurons and increased neuroinflammation. However, in A53T SNCA mice, we found that both PFFs and monomeric α-syn induced this pathology. This suggests that the conformation changes in α-syn seen in the A53T strain can recruit wild-type α-syn to a pathological misfolded conformation which may provide a mechanism for the induction of PD in humans with SNCA duplication/triplication.",
+      "pmid": "40691198",
+      "title": "Templating of monomeric alpha-synuclein results in inflammation and SNpc dopamine neuron death in a genetic mouse model of induced synucleinopathy.",
+      "score": 7.008465766906738,
+      "score_type": "raw_cross_encoder_score"
+    },
+    {
+      "text": "Mutations in the SNCA gene encoding α-synuclein (α-syn) underlie familial early-onset Parkinson's disease (PD). Pathological α-syn deposition may commence decades prior to the emergence of cardinal motor symptoms. Long-term investigation of brain and behavioral development in an SNCA-A53T transgenic macaque model offers critical insights into PD progression. In this study, we systematically characterized SNCA-A53T transgenic rhesus monkeys through multimodal assessments. Our results showed that these transgenic monkeys exhibited phosphorylated α-syn aggregation patterns and dopaminergic degeneration resembling PD patients. Progressive motor and cognitive deficits were observed in transgenic monkeys with aging. Polysomnographic analysis revealed REM sleep behavior disorder manifestations in transgenic animals. Four-year longitudinal MRI tracking demonstrated abnormal developmental patterns of cortical surface area alongside thickness and volume alterations. Single-cell transcriptome revealed that astrocyte-specific gene dysregulation and cell loss contribute to brain atrophy in transgenic monkeys. Cortical and subcortical gray matter regions showing volume reduction were functionally associated with behavioral deficits and differentiated transgenic animals from wild-type controls. Collectively, this comprehensive study provides evidence that SNCA-A53T transgenic monkeys recapitulate PD pathophysiology while demonstrating the utility of longitudinal monitoring in genetically engineered nonhuman primates for tracking neurodegenerative disease progression.",
+      "pmid": "41653051",
+      "title": "α-Synuclein aggregation and brain atrophy in SNCA-A53T transgenic monkeys correlate with parkinsonism.",
+      "score": 6.993619918823242,
+      "score_type": "raw_cross_encoder_score"
+    },
+    {
+      "text": "Parkinson's disease is a multisystem disorder with a prodromal phase marked by non-motor symptoms such as olfactory dysfunction and REM sleep behavior disorder, which may precede classical motor features by several years. Accurately capturing this prodromal-to-motor progression remains a key challenge in preclinical models. This study investigated whether transgenic bacterial artificial chromosome mice expressing human A53T α-Synuclein recapitulate the progression from prodromal to motor stages of Parkinson's disease. Heterozygous A53T-SNCA mice (n = 20) and wild-type controls (n = 21) were longitudinally assessed over 24 months using behavioral, electrophysiological, and neuropathological approaches. EEG-EMG and local field potential recordings were used to evaluate sleep disturbances and neuronal activity, while olfactory and motor function were assessed using behavioral paradigms. A53T-SNCA mice showed transgene dose-dependent overexpression of α-Synuclein monomers with Serine129 phosphorylation and C-terminal truncation across olfactory bulb, striatum, and cortex. However, no higher-molecular-weight α-Synuclein species, indicative of aggregation, were detected. Furthermore, mice did not exhibit olfactory deficits, REM sleep abnormalities, motor impairments, or robust dopaminergic neurodegeneration. In summary, overexpression of modified α-Synuclein monomers was insufficient to drive fibrillar aggregation, neurodegeneration, or (non-) motor symptoms relevant to Parkinson's disease. These findings highlight key limitations of overexpression-based models and suggest that additional drivers are required to recapitulate the pathogenesis.",
+      "pmid": "42350418",
+      "title": "Overexpression of phosphorylated and truncated α-Synuclein does not trigger Parkinsonian readouts in A53T-SNCA mice.",
+      "score": 5.27278995513916,
+      "score_type": "raw_cross_encoder_score"
+    }
+  ]
+}

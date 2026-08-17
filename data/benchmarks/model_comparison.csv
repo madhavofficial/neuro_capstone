@@ -1,2 +1,2 @@
 model,n_runs,completion_rate,citation_validity,unsupported_claim_rate,json_schema_validity,vus_uncertainty_preservation,scope_mistake_rate
-deterministic baseline,52,0.0,,,,,0.0
+deterministic baseline,8,1.0,,,1.0,,0.0
