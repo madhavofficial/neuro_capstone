@@ -58,3 +58,10 @@ tmp/
 
 
 draw_architecture.py
+
+# Frontend dependencies and generated files
+User Interface/frontend/node_modules/
+User Interface/frontend/dist/
+User Interface/frontend/*.tsbuildinfo
+User Interface/frontend/vite.config.js
+User Interface/frontend/vite.config.d.ts
