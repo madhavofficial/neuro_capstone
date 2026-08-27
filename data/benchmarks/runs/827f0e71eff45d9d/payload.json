@@ -1,0 +1,42 @@
+{
+  "status": "SUCCESS",
+  "confidence_matrix": {
+    "physics_engine": "ERROR",
+    "literature_rag": "SUCCESS",
+    "clinical_context": "UNAVAILABLE",
+    "clinical_context_scope": "UNAVAILABLE",
+    "physics_evidence_scope": "UNAVAILABLE"
+  },
+  "query": "SNCA E46K",
+  "evidence_score_type": "raw_cross_encoder_score",
+  "evidence": [
+    {
+      "text": "Alpha synuclein (α-Syn) is a neuronal protein encoded by the SNCA gene and is involved in the development of Parkinson's disease (PD). The objective of this study was to examine in silico the functional implications of non-synonymous single nucleotide polymorphisms (nsSNPs) in the SNCA gene. We used a range of computational algorithms such as sequence conservation, structural analysis, physicochemical properties, and machine learning. The sequence of the SNCA gene was analyzed, resulting in the mapping of 42,272 SNPs that are classified into different functional categories. A total of 177 nsSNPs were identified within the coding region; there were 20 variants that may influence the α-Syn protein structure and function. This identification was made by employing different analytical tools including SIFT, PolyPhen2, Mut-pred, SNAP2, PANTHER, PhD-SNP, SNP&Go, MUpro, Cosurf, I-Mut, and HOPE. Three mutations, V82A, K80E, and E46K, were selected for further examinations due to their spatial positioning within the α-Syn as determined by PyMol. Results indicated that these mutations may affect the stability and function of α-Syn. Then, a molecular dynamics simulation was conducted for the SNCA wildtype and the four mutant variants (p.A18G, p.V82A, p.K80E, and p.E46K). The simulation examined temperature, pressure, density, root-mean-square deviation (RMSD), root-mean-square fluctuation (RMSF), solvent-accessible surface area (SASA), and radius of gyration (Rg). The data indicate that the mutations p.V82A, p.K80E, and p.E46K reduce the stability and functionality of α-Syn. These findings highlight the importance of understanding the impact of nsSNPs on α-syn structure and function. Our results required verifications in further protein functional and case-",
+      "pmid": "37754311",
+      "title": "In Silico Evaluation of the Potential Association of the Pathogenic Mutations of Alpha Synuclein Protein with Induction of Synucleinopathies.",
+      "score": 6.0728759765625,
+      "score_type": "raw_cross_encoder_score"
+    },
+    {
+      "text": "α-synuclein (αS) is the key component of synucleinopathies such as Parkinson's disease (PD), dementia with Lewy bodies, and multiple system atrophy. αS was first linked to PD through the identification of point mutations in the SNCA gene, causing single amino acid substitutions within αS and familial autosomal dominant forms of PD that profoundly accelerated disease onset by up to several decades. At least eight single-point mutations linked to familial PD (A30G/P, E46K, H50Q, G51D, and A53T/E/V) are located in proximity of the region preceding the non-β amyloid component (preNAC) region, strongly implicating its pathogenic role in αS-mediated cytotoxicity. Furthermore, lipids are known to be important for native αS function, where they play a key role in the regulation of synaptic vesicle docking to presynaptic membranes and dopamine transmission. However, the role of lipids in the function of mutant αS is unclear. Here, we studied αS aggregation properties of WT αS and five of the most predominant single-point missense mutants associated with early onset PD in the presence of anionic 1,2-dimyristoyl-sn-glycero-3-phospho-l-serine lipid vesicles. Our results highlight significant differences between aggregation rates, the number of aggregates produced, and overall fibril morphologies of WT αS and the A30P, E46K, H50Q, G51D, and A53T missense mutants in the presence of lipid vesicles. These findings have important implications regarding the interplay between the lipids required for αS function and the individual point mutations known to accelerate PD and related diseases.",
+      "pmid": "36208776",
+      "title": "Anionic lipid vesicles have differential effects on the aggregation of early onset-associated α-synuclein missense mutants.",
+      "score": 3.262392520904541,
+      "score_type": "raw_cross_encoder_score"
+    },
+    {
+      "text": "α-Synuclein phosphorylation at serine-129 (pS129) is a widely used surrogate marker of pathology in Parkinson's disease and other synucleinopathies. However, we recently demonstrated that phosphorylation of S129 is also a physiological activator of synaptic transmission. In a feed-forward fashion, neuronal activity triggers reversible pS129. Here, we show that Parkinson's disease-linked missense mutations in SNCA impact activity-dependent pS129. Under basal conditions, cytosol-enriched A30P, H50Q, and G51D mutant forms of α-synuclein exhibit reduced pS129 levels in rat primary cortical neurons. A53T pS129 levels are similar to wild-type, and E46K pS129 levels are higher. A30P and E46K mutants show impaired reversibility of pS129 after stimulation. For the engineered profoundly membrane-associated α-synuclein mutant \"3K\" (E35K + E46K + E61K), de-phosphorylation was virtually absent after blocking stimulation, implying that reversible pS129 is severely compromised. Importantly, pS129 excess resulting from proteasome inhibition is also associated with reduced reversibility by neuronal inhibition, kinase inhibition, or phosphatase activation. Our findings suggest that perturbed pS129 dynamics are probably a shared characteristic of pathology-associated α-synuclein, with possible implications for synucleinopathy treatment and diagnosis.",
+      "pmid": "37870370",
+      "title": "Dynamic reversibility of α-synuclein serine-129 phosphorylation is impaired in synucleinopathy models.",
+      "score": 2.9244327545166016,
+      "score_type": "raw_cross_encoder_score"
+    },
+    {
+      "text": "Animal and cellular models harboring SNCA gene mutations have been instrumental in synucleinopathy, but faithful human brain models remain limited. Here, we report the development of a human cerebral organoid (CO) model of synucleinopathy carrying the Ala53Thr mutation in SNCA ( SNCA A53T ). Using a human embryonic stem cell (hESC) line overexpressing SNCA A53T (A53T hESC line), we generated COs (A53T COs) that recapitulate hallmark features of synucleinopathy. These A53T COs exhibited elevated α-synuclein (α-Syn) expression, the increased phosphorylation of α-Syn, and Lewy body-like aggregations. Notably, we also observed the increased expression of phosphorylated tau and neurofibrillary tangle-like silver deposits, although amyloid β expression and accumulation remained unchanged. To evaluate the utility of this model in drug screening, we treated A53T COs with synuclean D (SynD), an inhibitor of α-Syn aggregation, which significantly reduced both α-Syn and tau phosphorylation without affecting total α-Syn levels. Together, our findings establish a robust hESC-derived synucleinopathy CO model harboring the SNCA A53T mutation, demonstrating its potential as a valuable tool for therapeutic drug screening.",
+      "pmid": "41002401",
+      "title": "Modeling Synucleinopathy Using hESC-Derived Cerebral Organoids.",
+      "score": 2.245161533355713,
+      "score_type": "raw_cross_encoder_score"
+    }
+  ]
+}

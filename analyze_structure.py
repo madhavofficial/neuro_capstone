@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import Bio.PDB
 from Bio.PDB import PDBParser, ShrakeRupley, PPBuilder, NeighborSearch
+
 from Bio.PDB.DSSP import DSSP
 import argparse
 import os
