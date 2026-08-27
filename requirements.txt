@@ -16,3 +16,9 @@ biopython==1.86
 numpy==2.4.1
 requests==2.32.5
 urllib3==2.6.3
+
+# Literature retrieval and reranking
+faiss-cpu
+sentence-transformers
+torch
+transformers

@@ -394,6 +394,24 @@ def run_pipeline(
             raise RuntimeError(f"Analysis step failed for {gene} {variant}")
 
         physics_json_path = save_physics_json(pdb_path, variant, physics_data, analysis_out_dir)
+    elif variant:
+        # A rerun may intentionally skip structure/physics computation while
+        # still assembling a payload from previously generated artifacts.
+        # Preserve that existing physics input instead of silently reporting
+        # the physics engine as unavailable.
+        candidate_paths = []
+        if analysis_out_dir:
+            candidate_paths.append(
+                os.path.join(analysis_out_dir, f"{gene}_{variant}_physics.json")
+            )
+        candidate_paths.extend([
+            os.path.join("data", "analysis", f"{gene}_{variant}_physics.json"),
+            os.path.join("data", "structure", f"{gene}_{variant}_physics.json"),
+        ])
+        physics_json_path = next(
+            (path for path in candidate_paths if os.path.exists(path)),
+            None,
+        )
 
     if run_fetch_literature or run_process_literature:
         if not variant:

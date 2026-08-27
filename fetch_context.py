@@ -456,14 +456,19 @@ def get_clinvar_direct(gene: str, variant_code: str, *, uniprot_id: str | None =
     
     print(f"   >> [ClinVar-Direct] Querying NCBI ClinVar API...")
     
-    # Simplified approach: search for gene + pathogenic variants
+    # Search the exact protein change first.  Only an exact match may be
+    # reported as variant-level ClinVar evidence.  The pathogenic gene query
+    # below is retained as a coverage fallback, but is explicitly marked as
+    # gene-level so downstream confidence logic cannot mistake it for an
+    # assertion about the requested variant.
     search_terms = [
-        f"{gene}[gene] AND ({variant_code} OR {old_aa}{pos}{new_aa} OR p.{old_aa}{pos}{new_aa})",
-        f"{gene}[gene] AND pathogenic",
+        (f"{gene}[gene] AND ({variant_code} OR p.{AA_MAP.get(old_aa, old_aa)}{pos}"
+         f"{AA_MAP.get(new_aa, new_aa)})", True),
+        (f"{gene}[gene] AND pathogenic", False),
     ]
     
     try:
-        for search_term in search_terms:
+        for search_term, exact_query in search_terms:
             # Step 1: Search for variant IDs
             search_params = {
                 "db": "clinvar",
@@ -484,9 +489,48 @@ def get_clinvar_direct(gene: str, variant_code: str, *, uniprot_id: str | None =
             if not id_list:
                 continue
                 
-            # Step 2: For now, if we find any pathogenic variants in the gene, report success
-            # This is a simplified approach that indicates ClinVar coverage exists
-            if "pathogenic" in search_term.lower() and len(id_list) > 0:
+            if exact_query and id_list:
+                summary_params = {
+                    "db": "clinvar",
+                    "id": ",".join(id_list),
+                    "retmode": "json",
+                    "tool": "NeuroCapstone",
+                    "email": "research@example.com",
+                }
+                summary_resp = requests.get(CLINVAR_ESUMMARY, params=summary_params, timeout=10)
+                summary_resp.raise_for_status()
+                summaries = summary_resp.json().get("result", {})
+
+                expected_three = f"{AA_MAP.get(old_aa, old_aa)}{pos}{AA_MAP.get(new_aa, new_aa)}".lower()
+                for record_id in summaries.get("uids", []):
+                    record = summaries.get(str(record_id), {})
+                    record_text = json.dumps(record).lower()
+                    if expected_three not in record_text and variant_code.lower() not in record_text:
+                        continue
+
+                    classification = record.get("germline_classification", {}) or {}
+                    traits = classification.get("trait_set", []) or []
+                    conditions = [t.get("trait_name") for t in traits if t.get("trait_name")]
+                    print(
+                        f"      [OK] ClinVar exact variant match: "
+                        f"{classification.get('description', 'classification unavailable')}"
+                    )
+                    return {
+                        "accession": record.get("accession_version") or record.get("accession"),
+                        "variation_id": str(record_id),
+                        "clinical_significance": classification.get(
+                            "description", "Classification unavailable"
+                        ),
+                        "review_status": classification.get("review_status", ""),
+                        "conditions": conditions[:20],
+                        "search_term_used": search_term,
+                        "source": "NCBI_ClinVar_Exact",
+                        "variant_match": True,
+                        "scope": "exact_variant",
+                    }
+
+            # Gene-level fallback: this establishes database coverage only.
+            if not exact_query and id_list:
                 normalized = {
                     "accession": f"ClinVar_Gene_Coverage",
                     "clinical_significance": "Gene has pathogenic variants in ClinVar",
@@ -495,6 +539,8 @@ def get_clinvar_direct(gene: str, variant_code: str, *, uniprot_id: str | None =
                     "search_term_used": search_term,
                     "source": "NCBI_Direct_Simplified",
                     "variant_count": len(id_list),
+                    "variant_match": False,
+                    "scope": "gene_level",
                 }
                 print(f"      [OK] ClinVar-Direct: Found {len(id_list)} pathogenic {gene} variants in database")
                 return normalized
@@ -1095,7 +1141,12 @@ def fetch_all_context(protein_name, variant_input=None):
             "variant_literature_count": variant_specific.get("litvar_publications", 0) if variant_specific else 0,
             "variant_uniprot_annotations": variant_specific.get("uniprot_variant_annotations", 0) if variant_specific else 0,
             "variant_ensembl_phenotypes": variant_specific.get("ensembl_variant_phenotypes", 0) if variant_specific else 0,
-            "variant_in_clinvar": clinvar_data is not None,
+            "variant_in_clinvar": bool(
+                clinvar_data and clinvar_data.get("variant_match") is True
+            ),
+            "gene_has_clinvar_pathogenic": bool(
+                clinvar_data and clinvar_data.get("scope") == "gene_level"
+            ),
             "variant_in_alphamissense": am_data is not None,
             "variant_in_lovd": lovd_data is not None,
             "variant_in_clingenreg": clingenreg_data is not None,

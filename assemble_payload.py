@@ -16,7 +16,7 @@ Key responsibilities:
   CONFIDENCE MATRIX SCHEMA
 ───────────────────────────────────────────────────
   confidence_matrix: {
-    physics_engine:    "HIGH" | "ERROR"
+    physics_engine:    "HEURISTIC" | "ERROR"
     literature_rag:    "SUCCESS" | "NULL_RESULTS" | "TIMEOUT_ERROR"
     clinical_context:  "HIGH" | "PARTIAL" | "UNAVAILABLE"
   }
@@ -24,9 +24,9 @@ Key responsibilities:
 ───────────────────────────────────────────────────
   GLOBAL STATUS VALUES
 ───────────────────────────────────────────────────
-  SUCCESS                  ≥1 RAG hit above threshold + physics HIGH
+  SUCCESS                  ≥1 RAG hit above threshold
   LOW_CONFIDENCE           some RAG hits, none above threshold
-  STRUCTURAL_DISCOVERY_VUS physics HIGH + clinical HIGH/PARTIAL
+  STRUCTURAL_DISCOVERY_VUS physics HEURISTIC + clinical HIGH/PARTIAL
                            + RAG NULL_RESULTS or TIMEOUT_ERROR
                            (strong structural math, zero literature)
   PREDICTED_PATHOGENIC_VUS zero evidence + severe physics violation
@@ -45,7 +45,7 @@ OUTPUT_PATH            = "data/context_payload.json"
 
 # ── Confidence-matrix value constants ─────────────────────────────────────────
 # physics_engine
-CM_PHYSICS_HIGH    = "HIGH"
+CM_PHYSICS_HEURISTIC = "HEURISTIC"
 CM_PHYSICS_ERROR   = "ERROR"
 
 # literature_rag
@@ -78,10 +78,10 @@ SEVERE_VIOLATION_MIN_AXES = 1
 # ── LLM system-prompt directive injected when status = STRUCTURAL_DISCOVERY_VUS ──
 STRUCTURAL_DISCOVERY_VUS_DIRECTIVE = (
     "SYSTEM DIRECTIVE — STRUCTURAL_DISCOVERY_VUS: "
-    "The variant below has no peer-reviewed clinical literature but carries a strong "
-    "deterministic structural perturbation signal computed from first-principles "
-    "BioPython / AlphaFold physics (ΔV, ΔSASA, backbone strain, hydrophobic shift). "
-    "You must prioritize these structural perturbations as ground truth. "
+    "The variant below has no peer-reviewed clinical literature but carries a "
+    "computational structural heuristic derived from an AlphaFold model and residue "
+    "property deltas (ΔV, ΔSASA, backbone strain, hydrophobic shift). This is not a "
+    "validated physical simulation or clinical classification. "
     "Treat the absence of clinical literature as a 'discovery gap' — an opportunity "
     "for novel scientific inquiry — NOT as evidence of benignity or a computational "
     "failure. Provide a 'Predictive Pathogenicity' verdict grounded in the structural "
@@ -133,7 +133,11 @@ def build_confidence_matrix(
     """
     # ── physics_engine ────────────────────────────────────────────────────────
     physics_ok = bool(physics_vector and physics_vector.get("deltas"))
-    physics_val = CM_PHYSICS_HIGH if physics_ok else CM_PHYSICS_ERROR
+    # Current analysis compares amino-acid property tables against a WT
+    # AlphaFold model; it does not generate or relax a mutant structure.
+    # Therefore this is a heuristic signal, never a validated/high-confidence
+    # physical simulation result.
+    physics_val = CM_PHYSICS_HEURISTIC if physics_ok else CM_PHYSICS_ERROR
 
     # ── literature_rag ───────────────────────────────────────────────────────
     # Accept the caller-supplied value; validate it falls in the known set.
@@ -145,24 +149,49 @@ def build_confidence_matrix(
     # PARTIAL → one source present but incomplete
     # UNAVAILABLE → no clinical data
     clinical_val = CM_CLINICAL_UNAVAIL
+    rich_sources = 0
+    any_source = 0
+    has_gene_level = False
     if clinical_context:
-        has_clinvar     = bool(clinical_context.get("clinvar"))
-        has_alphamiss   = bool(clinical_context.get("alphamissense"))
+        clinvar         = clinical_context.get("clinvar") or {}
+        has_exact_clinvar = bool(
+            isinstance(clinvar, dict) and clinvar.get("variant_match") is True
+        )
+        has_clinvar     = has_exact_clinvar
+        has_alphamiss   = bool(
+            clinical_context.get("alphamissense")
+            or clinical_context.get("alphamissense_sniper")
+        )
         has_dbsnp       = bool(clinical_context.get("dbsnp"))
-        has_clingen     = bool(clinical_context.get("clingen"))
+        has_clingen     = bool(
+            clinical_context.get("clingen")
+            or clinical_context.get("clingenreg")
+        )
 
         rich_sources = sum([has_clinvar, has_alphamiss])
         any_source   = sum([has_clinvar, has_alphamiss, has_dbsnp, has_clingen])
 
+        has_gene_level = bool(
+            isinstance(clinvar, dict) and clinvar.get("scope") == "gene_level"
+        )
+
         if rich_sources >= 1:
             clinical_val = CM_CLINICAL_HIGH
-        elif any_source >= 1:
+        elif any_source >= 1 or has_gene_level:
             clinical_val = CM_CLINICAL_PARTIAL
 
     return {
         "physics_engine":   physics_val,
         "literature_rag":   rag_val,
         "clinical_context": clinical_val,
+        "clinical_context_scope": (
+            "EXACT_VARIANT" if rich_sources >= 1 else
+            "GENE_LEVEL" if (any_source >= 1 or has_gene_level) else
+            "UNAVAILABLE"
+        ),
+        "physics_evidence_scope": (
+            "SITE_PROPERTY_HEURISTIC" if physics_ok else "UNAVAILABLE"
+        ),
     }
 
 
@@ -181,7 +210,7 @@ def derive_global_status(
 
     Priority (highest → lowest):
       1. STRUCTURAL_DISCOVERY_VUS
-           physics HIGH  AND  clinical HIGH or PARTIAL
+           physics HEURISTIC  AND  clinical HIGH or PARTIAL
            AND  RAG is NULL_RESULTS or TIMEOUT_ERROR
       2. SUCCESS
            has_evidence AND NOT low_confidence
@@ -208,7 +237,7 @@ def derive_global_status(
     rag_absent = rag in {CM_RAG_NULL, CM_RAG_TIMEOUT}
     clinical_good = cc in {CM_CLINICAL_HIGH, CM_CLINICAL_PARTIAL}
 
-    if pe == CM_PHYSICS_HIGH and rag_absent and clinical_good:
+    if pe == CM_PHYSICS_HEURISTIC and rag_absent and clinical_good:
         return "STRUCTURAL_DISCOVERY_VUS"
 
     # ── Rule 2: SUCCESS ───────────────────────────────────────────────────────
@@ -437,6 +466,7 @@ def construct_evidence_item(result: Dict[str, Any]) -> Dict[str, Any]:
         "pmid":  result.get("pmid", ""),
         "title": result.get("title", ""),
         "score": result.get("rerank_score", 0.0),
+        "score_type": "raw_cross_encoder_score",
     }
 
 
@@ -499,6 +529,7 @@ def assemble_payload(
         "status":            status,
         "confidence_matrix": matrix,
         "query":             query,
+        "evidence_score_type": "raw_cross_encoder_score",
         "evidence":          evidence,
     }
 
@@ -529,7 +560,9 @@ def assemble_payload(
 
 def save_payload(payload: Dict[str, Any], output_path: str = OUTPUT_PATH) -> str:
     """Persist payload to JSON file; returns path written."""
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
     return output_path
@@ -539,6 +572,7 @@ def run(
     query:            str,
     ranked_results:   List[Dict[str, Any]],
     output_path:      Optional[str] = None,
+    confidence_threshold: float = CONFIDENCE_THRESHOLD,
     physics_vector:   Optional[Dict[str, Any]] = None,
     rag_status:       str = CM_RAG_NULL,
     clinical_context: Optional[Dict[str, Any]] = None,
@@ -560,6 +594,7 @@ def run(
     payload = assemble_payload(
         query,
         ranked_results,
+        confidence_threshold=confidence_threshold,
         physics_vector=physics_vector,
         rag_status=rag_status,
         clinical_context=clinical_context,

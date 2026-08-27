@@ -41,8 +41,9 @@ except ImportError:
     STRUCTURAL_DISCOVERY_VUS_DIRECTIVE = (
         "SYSTEM DIRECTIVE — STRUCTURAL_DISCOVERY_VUS: "
         "Prioritize deterministic structural perturbations (ΔV, ΔSASA, backbone strain) "
-        "as ground truth. Treat absent clinical literature as a discovery gap, not a "
-        "computational failure. Provide a Predictive Pathogenicity verdict."
+        "as preliminary hypotheses, not ground truth. Treat absent clinical literature "
+        "as a discovery gap, not a computational failure, and recommend experimental "
+        "validation before any pathogenicity conclusion."
     )
 
 
@@ -316,10 +317,10 @@ def construct_query(signals, mechanisms):
             kw_str = ", ".join(kw_deduped[:-1]) + ", and " + kw_deduped[-1]
         else:
             kw_str = kw_deduped[0]
-        narrative = f"This substitution is associated with {kw_str}"
+        narrative = f"This substitution may affect {kw_str}"
     elif mechanisms:
         mech_clean = [re.sub(r"\(Δ[^)]+\)", "", m).strip() for m in mechanisms]
-        narrative = f"This substitution is associated with {', '.join(mech_clean)}"
+        narrative = f"This substitution may affect {', '.join(mech_clean)}"
     else:
         narrative = f"This substitution has an ambiguous structural impact"
 
@@ -331,7 +332,7 @@ def construct_query(signals, mechanisms):
     elif "beta" in sec_lower or "sheet" in sec_lower:
         struct_ctx = "occurring within a beta-sheet"
     elif "loop" in sec_lower:
-        struct_ctx = "occurring within a flexible loop"
+        struct_ctx = "located in an AlphaFold low-confidence loop region"
     else:
         struct_ctx = f"occurring in a {sec_struct} region"
 
@@ -359,7 +360,7 @@ def construct_query(signals, mechanisms):
     )
 
     if has_aggregation_signal:
-        expansion_kws.extend(["misfolding", "amyloidogenesis", "fibrillation", "Parkinson's disease"])
+        expansion_kws.extend(["misfolding", "amyloidogenesis", "fibrillation", "protein aggregation"])
     if has_steric_signal:
         expansion_kws.extend(["conformational change", "protein stability", "structural perturbation"])
     if has_disorder_signal:
@@ -456,4 +457,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-

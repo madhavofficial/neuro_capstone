@@ -99,7 +99,7 @@ ranked_results = vector_engine.retrieve_evidence(
 **Key Features**:
 - Bi-encoder: Fast approximate retrieval (Top-50)
 - Cross-encoder: Precise reranking (Top-3 final)
-- Normalized scores: 0 to 1 range (0.7+ is high confidence)
+- Raw cross-encoder scores: thresholded for retrieval ranking, not calibrated probabilities
 
 ### Phase 4: Assemble Payload
 
@@ -134,7 +134,7 @@ ranked_results = vector_engine.retrieve_evidence(
 4. **Structured Construction**
    ```json
    {
-     "status": "success" | "LOW_CONFIDENCE",
+     "status": "SUCCESS" | "LOW_CONFIDENCE",
      "query": "...",
      "evidence": [
        {
@@ -243,7 +243,7 @@ payload = run_full_pipeline(
 
 ```json
 {
-  "status": "success",
+    "status": "SUCCESS",
   "query": "steric clash at position 53",
   "evidence": [
     {
@@ -304,7 +304,7 @@ mock_results = [
 
 payload = assemble_payload("query", mock_results, threshold=0.7)
 assert len(payload['evidence']) == 2
-assert payload['status'] == 'success'
+assert payload['status'] == 'SUCCESS'
 ```
 
 ### Logging
@@ -329,7 +329,7 @@ The orchestration controller logs each phase:
 
 | Error | Handling |
 |-------|----------|
-| No papers found | Return empty evidence list with `"status": "success"` |
+| No papers found | Return empty evidence list with `"status": "LOW_CONFIDENCE"` |
 | All scores below threshold | Return best result with `"status": "LOW_CONFIDENCE"` |
 | Invalid corpus path | Raise `FileNotFoundError` with helpful message |
 | Vector engine timeout | Re-raise with context about which phase failed |

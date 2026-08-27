@@ -101,7 +101,7 @@ def main():
     )
     parser.add_argument(
         "--query",
-        required=True,
+        required=False,
         help="Search query for evidence retrieval"
     )
     parser.add_argument(
@@ -122,7 +122,7 @@ def main():
         run_example()
     else:
         if not args.query:
-            parser.error("--query is required (unless using --example)")
+            parser.error("--query is required unless using --example")
         
         run_example(
             gene=args.gene,
