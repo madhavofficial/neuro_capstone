@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import AnalyzeForm from '../components/AnalyzeForm';
 import ResultsDashboard from '../components/ResultsDashboard';
 import { analyzeVariant } from '../api/client';
@@ -10,23 +10,99 @@ import {
   Loader2,
   RefreshCcw,
   ShieldCheck,
+  Circle,
 } from 'lucide-react';
+
+interface ProgressStep {
+  id: number;
+  title: string;
+  description: string;
+  threshold: number;
+}
+
+const PROGRESS_STEPS: ProgressStep[] = [
+  {
+    id: 1,
+    title: 'Resolving AlphaFold 3D coordinates',
+    description: 'Resolving the target protein and retrieving the structural model.',
+    threshold: 20,
+  },
+  {
+    id: 2,
+    title: 'Querying ClinVar, dbSNP & AlphaMissense',
+    description: 'Collecting clinical and pathogenicity evidence.',
+    threshold: 45,
+  },
+  {
+    id: 3,
+    title: 'Calculating SASA & Biophysical Deltas',
+    description: 'Computing structural and physicochemical changes.',
+    threshold: 70,
+  },
+  {
+    id: 4,
+    title: 'BioBERT RAG Retrieval & Cross-Encoder Reranking',
+    description: 'Retrieving and ranking relevant biomedical literature.',
+    threshold: 95,
+  },
+];
 
 export default function AnalysisPage() {
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AnalyzeResponse | null>(null);
   const [lastRequest, setLastRequest] =
     useState<AnalyzeRequest | null>(null);
 
+  useEffect(() => {
+    if (!loading) {
+      return;
+    }
+
+    /*
+     * The backend currently exposes one /analyze request rather than
+     * streaming individual pipeline stages. Therefore this tracker
+     * reflects the expected pipeline sequence while the request runs.
+     * It does not claim backend completion for a stage that the API
+     * has not explicitly reported.
+     */
+    const timer = window.setInterval(() => {
+      setProgress((current) => {
+        if (current >= 92) {
+          return current;
+        }
+
+        if (current < 20) {
+          return Math.min(current + 4, 20);
+        }
+
+        if (current < 45) {
+          return Math.min(current + 3, 45);
+        }
+
+        if (current < 70) {
+          return Math.min(current + 2, 70);
+        }
+
+        return Math.min(current + 1, 92);
+      });
+    }, 700);
+
+    return () => window.clearInterval(timer);
+  }, [loading]);
+
   const handleAnalyze = async (request: AnalyzeRequest) => {
     setLoading(true);
+    setProgress(1);
     setError(null);
     setData(null);
     setLastRequest(request);
 
     try {
       const result = await analyzeVariant(request);
+
+      setProgress(100);
       setData(result);
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -45,6 +121,7 @@ export default function AnalysisPage() {
     setData(null);
     setError(null);
     setLastRequest(null);
+    setProgress(0);
   };
 
   const handleRetry = () => {
@@ -59,15 +136,11 @@ export default function AnalysisPage() {
       {/* HERO */}
       {!data && !loading && !error && (
         <section className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-soft">
-
-          {/* decorative geometry */}
           <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full border border-teal-100" />
           <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full border border-teal-100/70" />
           <div className="pointer-events-none absolute bottom-[-100px] left-[-70px] h-56 w-56 rounded-full bg-teal-100/30 blur-3xl" />
 
           <div className="relative grid gap-10 px-6 py-10 sm:px-10 sm:py-12 lg:grid-cols-[1.35fr_0.65fr] lg:items-center lg:px-12">
-
-            {/* COPY */}
             <div>
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-teal-100 bg-teal-50 px-3 py-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
@@ -112,7 +185,6 @@ export default function AnalysisPage() {
               </div>
             </div>
 
-            {/* SIDE PANEL */}
             <div className="hidden lg:block">
               <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
                 <div className="mb-5 flex items-center justify-between">
@@ -161,6 +233,7 @@ export default function AnalysisPage() {
           <div className="mb-3 flex items-end justify-between gap-4">
             <div>
               <p className="eyebrow">Target specification</p>
+
               <h2 className="mt-1 text-lg font-semibold tracking-tight text-ink">
                 Start an analysis
               </h2>
@@ -179,30 +252,9 @@ export default function AnalysisPage() {
         />
       </section>
 
-      {/* LOADING */}
+      {/* PROGRESS TRACKER */}
       {loading && (
-        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center shadow-soft">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50">
-            <Loader2 className="h-5 w-5 animate-spin text-teal-700" />
-          </div>
-
-          <p className="eyebrow mt-5">
-            Pipeline execution
-          </p>
-
-          <h3 className="mt-2 text-xl font-semibold tracking-tight text-ink">
-            Building the evidence view
-          </h3>
-
-          <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-slate-500">
-            Fetching structural coordinates, resolving biological
-            context, and executing the active validation stages.
-          </p>
-
-          <div className="mx-auto mt-6 h-1 max-w-xs overflow-hidden rounded-full bg-slate-100">
-            <div className="h-full w-1/2 animate-pulse rounded-full bg-teal-500" />
-          </div>
-        </div>
+        <PipelineProgress progress={progress} />
       )}
 
       {/* ERROR */}
@@ -249,5 +301,122 @@ export default function AnalysisPage() {
         </div>
       )}
     </div>
+  );
+}
+
+
+/* ========================================================================
+   PIPELINE PROGRESS
+   ======================================================================== */
+
+function PipelineProgress({
+  progress,
+}: {
+  progress: number;
+}) {
+  const activeStep =
+    PROGRESS_STEPS.findIndex(
+      (step) => progress < step.threshold
+    );
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-soft sm:p-8">
+
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="eyebrow">
+            Pipeline execution
+          </p>
+
+          <h3 className="mt-1 text-xl font-semibold tracking-tight text-ink">
+            Analyzing {progress}%
+          </h3>
+
+          <p className="mt-2 max-w-2xl text-xs leading-5 text-slate-500">
+            The analysis is moving through the structural, clinical,
+            physicochemical, and literature evidence stages.
+          </p>
+        </div>
+
+        <Loader2 className="h-5 w-5 animate-spin text-teal-700" />
+      </div>
+
+      {/* PROGRESS BAR */}
+      <div className="mt-6 h-2 overflow-hidden rounded-full bg-slate-100">
+        <div
+          className="h-full rounded-full bg-teal-500 transition-all duration-500 ease-out"
+          style={{
+            width: `${progress}%`,
+          }}
+        />
+      </div>
+
+      {/* STEPS */}
+      <div className="mt-7 space-y-3">
+        {PROGRESS_STEPS.map((step, index) => {
+          const completed =
+            progress >= step.threshold;
+
+          const current =
+            index === activeStep &&
+            !completed;
+
+          return (
+            <div
+              key={step.id}
+              className={`flex items-start gap-4 rounded-xl border px-4 py-4 transition-all duration-300 ${
+                completed
+                  ? 'border-teal-100 bg-teal-50/50'
+                  : current
+                    ? 'border-teal-200 bg-white shadow-sm'
+                    : 'border-slate-200 bg-slate-50/50'
+              }`}
+            >
+              <div className="mt-0.5 shrink-0">
+                {completed ? (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-100">
+                    <CheckCircle2 className="h-4 w-4 text-teal-700" />
+                  </div>
+                ) : current ? (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-50">
+                    <Loader2 className="h-4 w-4 animate-spin text-teal-700" />
+                  </div>
+                ) : (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100">
+                    <Circle className="h-3.5 w-3.5 text-slate-400" />
+                  </div>
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <p
+                    className={`text-sm font-semibold ${
+                      completed || current
+                        ? 'text-ink'
+                        : 'text-slate-400'
+                    }`}
+                  >
+                    Step {step.id}: {step.title}
+                  </p>
+
+                  <span className="font-mono text-[9px] uppercase tracking-wider text-slate-400">
+                    {completed
+                      ? 'Completed'
+                      : current
+                        ? 'In progress'
+                        : 'Waiting'}
+                  </span>
+                </div>
+
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  {step.description}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

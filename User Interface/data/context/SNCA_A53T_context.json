@@ -163,17 +163,39 @@
             "chr4:g.89828149G>A"
         ],
         "litvar_publications": 4908,
-        "ensembl_variant_phenotypes": 0,
+        "ensembl_variant_phenotypes": 4,
         "uniprot_variant_annotations": 1,
         "sources_with_hits": [
             "LitVar",
-            "UniProt"
+            "UniProt",
+            "Ensembl"
         ]
     },
     "gene_level_context": {
         "recall_layer_ensembl": {
-            "total_associations": 0,
-            "top_diseases": []
+            "total_associations": 300,
+            "top_diseases": [
+                {
+                    "disease": "Parkinson Disease, Dominant",
+                    "count": 91
+                },
+                {
+                    "disease": "Lewy body dementia",
+                    "count": 65
+                },
+                {
+                    "disease": "ClinVar: phenotype not specified",
+                    "count": 54
+                },
+                {
+                    "disease": "Parkinson's disease",
+                    "count": 22
+                },
+                {
+                    "disease": "Parkinson disease",
+                    "count": 12
+                }
+            ]
         },
         "precision_layer_opentargets": {
             "total_validated": 25,
@@ -202,11 +224,11 @@
         }
     },
     "evidence_summary": {
-        "gene_ensembl_associations": 0,
+        "gene_ensembl_associations": 300,
         "gene_opentargets_validated": 25,
         "variant_literature_count": 4908,
         "variant_uniprot_annotations": 1,
-        "variant_ensembl_phenotypes": 0,
+        "variant_ensembl_phenotypes": 4,
         "variant_in_clinvar": true,
         "gene_has_clinvar_pathogenic": false,
         "variant_in_alphamissense": true,
