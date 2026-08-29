@@ -1,3 +1,4 @@
+﻿import React from 'react';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -8,6 +9,7 @@ import {
 import StructuralAudit from './StructuralAudit';
 import ClinicalContext from './ClinicalContext';
 import Literature from './Literature';
+import ProteinViewer from './ProteinViewer';
 import { AnalyzeResponse } from '../types';
 
 interface ResultsDashboardProps {
@@ -58,39 +60,21 @@ export default function ResultsDashboard({ data }: ResultsDashboardProps) {
                   context.
                 </p>
               </div>
-
-              <div className="flex shrink-0 items-center gap-2 rounded-xl border border-teal-100 bg-teal-50/70 px-3 py-2">
-                <ShieldCheck className="h-4 w-4 text-teal-700" />
-                <span className="text-xs font-semibold text-teal-800">
-                  Evidence-first output
-                </span>
-              </div>
             </div>
           </div>
         </div>
 
         {/* RESULT METADATA */}
         <div className="grid grid-cols-2 border-t border-slate-100 sm:grid-cols-4">
-          <Metric
-            label="Target"
-            value={data.gene}
-            mono
-          />
-          <Metric
-            label="Variant"
-            value={data.variant}
-            mono
-          />
-          <Metric
-            label="Context fields"
-            value={contextCount.toString()}
-          />
-          <Metric
-            label="Physics fields"
-            value={physicsCount.toString()}
-          />
+          <Metric label="Target" value={data.gene} mono />
+          <Metric label="Variant" value={data.variant} mono />
+          <Metric label="Context fields" value={contextCount.toString()} />
+          <Metric label="Physics fields" value={physicsCount.toString()} />
         </div>
       </section>
+
+      {/* OVERALL VERDICT */}
+      <VerdictCard data={data} />
 
       {/* WARNINGS */}
       {hasWarnings && (
@@ -179,7 +163,7 @@ export default function ResultsDashboard({ data }: ResultsDashboardProps) {
                       Structural model
                     </h3>
                     <p className="mt-0.5 text-xs text-slate-500">
-                      PDB coordinate preview
+                      Interactive 3D protein structure
                     </p>
                   </div>
                 </div>
@@ -190,22 +174,10 @@ export default function ResultsDashboard({ data }: ResultsDashboardProps) {
               </div>
 
               <div className="p-5 sm:p-6">
-                <div className="overflow-hidden rounded-xl bg-[#111827] shadow-inner">
-                  <div className="flex items-center gap-1.5 border-b border-white/10 px-4 py-3">
-                    <span className="h-2 w-2 rounded-full bg-white/20" />
-                    <span className="h-2 w-2 rounded-full bg-white/20" />
-                    <span className="h-2 w-2 rounded-full bg-white/20" />
-                    <span className="ml-2 font-mono text-[9px] uppercase tracking-widest text-slate-500">
-                      PDB preview
-                    </span>
-                  </div>
-
-                  <pre className="max-h-72 overflow-y-auto whitespace-pre-wrap p-4 font-mono text-[10px] leading-5 text-teal-200">
-                    {data.pdb_content.substring(0, 3000)}
-                    {data.pdb_content.length > 3000 &&
-                      '\n\n... [TRUNCATED FOR PREVIEW] ...'}
-                  </pre>
-                </div>
+                <ProteinViewer
+                  pdbContent={data.pdb_content}
+                  variant={data.variant}
+                />
               </div>
             </div>
           )}
@@ -217,6 +189,176 @@ export default function ResultsDashboard({ data }: ResultsDashboardProps) {
           <Literature contextData={data.context_data} />
         </div>
       </section>
+    </div>
+  );
+}
+
+function VerdictCard({ data }: { data: AnalyzeResponse }) {
+  const context = data.context_data as Record<string, any> | null | undefined;
+
+  const evidenceSummary =
+    context?.evidence_summary as Record<string, any> | undefined;
+
+  const variantContext =
+    context?.variant_specific_context as Record<string, any> | undefined;
+
+  const alphaMissense =
+    context?.alphamissense_sniper as Record<string, any> | undefined;
+
+  const clinvarMatch = evidenceSummary?.variant_in_clinvar;
+
+  const alphaMissensePresent =
+    evidenceSummary?.variant_in_alphamissense;
+
+  const literatureCount =
+    variantContext?.litvar_publications;
+
+  return (
+    <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-soft">
+      <div className="border-b border-slate-100 px-6 py-6 sm:px-8">
+        <p className="eyebrow">Overall verdict</p>
+
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">
+              STRUCTURAL DISCOVERY VUS
+            </h2>
+
+            <p className="mt-2 text-sm text-slate-500">
+              Evidence summary for {data.gene} {data.variant}
+            </p>
+          </div>
+
+          <span className="w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-800">
+            Evidence-first
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 divide-y divide-slate-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+
+        <VerdictGate
+          title="Structural"
+          status={data.physics_data ? 'Available' : 'Not returned'}
+        >
+          <VerdictRow
+            label="Volume change"
+            value="Not returned"
+          />
+          <VerdictRow
+            label="Charge shift"
+            value="Not returned"
+          />
+          <VerdictRow
+            label="Secondary structure"
+            value="Not returned"
+          />
+        </VerdictGate>
+
+        <VerdictGate
+          title="Clinical"
+          status={
+            clinvarMatch || alphaMissensePresent
+              ? 'Evidence found'
+              : 'Not returned'
+          }
+        >
+          <VerdictRow
+            label="ClinVar match"
+            value={
+              clinvarMatch === true
+                ? 'Match'
+                : clinvarMatch === false
+                  ? 'No match'
+                  : 'Not returned'
+            }
+          />
+
+          <VerdictRow
+            label="AlphaMissense"
+            value={
+              alphaMissensePresent === true
+                ? alphaMissense?.score !== undefined
+                  ? String(alphaMissense.score)
+                  : 'Available'
+                : alphaMissensePresent === false
+                  ? 'No match'
+                  : 'Not returned'
+            }
+          />
+        </VerdictGate>
+
+        <VerdictGate
+          title="Literature"
+          status={
+            literatureCount !== undefined
+              ? 'Evidence found'
+              : 'Not returned'
+          }
+        >
+          <VerdictRow
+            label="Evidence chunks"
+            value={
+              literatureCount !== undefined
+                ? Number(literatureCount).toLocaleString()
+                : 'Not returned'
+            }
+          />
+
+          <VerdictRow
+            label="Retrieved sources"
+            value={
+              Array.isArray(variantContext?.sources_with_hits)
+                ? variantContext.sources_with_hits.join(', ')
+                : 'Not returned'
+            }
+          />
+        </VerdictGate>
+      </div>
+    </section>
+  );
+}
+
+function VerdictGate({
+  title,
+  status,
+  children,
+}: {
+  title: string;
+  status: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="px-6 py-6 sm:px-7">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-sm font-bold text-ink">{title}</h3>
+
+        <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+          <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
+          {status}
+        </span>
+      </div>
+
+      <div className="mt-5 space-y-3">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function VerdictRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-slate-100 pb-2.5 last:border-b-0 last:pb-0">
+      <span className="text-xs text-slate-500">{label}</span>
+      <span className="text-right text-xs font-semibold text-ink">
+        {value}
+      </span>
     </div>
   );
 }
@@ -304,3 +446,4 @@ function EvidenceTile({
     </div>
   );
 }
+
