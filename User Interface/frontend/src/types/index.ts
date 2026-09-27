@@ -55,4 +55,21 @@ export interface AnalyzeResponse {
   evidence?: LiteratureEvidence[];
 
   clinical_narrative?: string | null;
+
+  structured_reasoning?: {
+    executive_bottom_line?: string;
+    molecular_mechanism?: {
+      key_disruption?: string;
+      biophysical_rationale?: string;
+      affected_motif?: string;
+    };
+    clinical_phenotypes?: Array<{ disease?: string; confidence?: string }>;
+    experimental_highlights?: Array<{ system?: string; finding?: string; pmid?: string }>;
+    verdict_badge?: string;
+    confidence_assessment?: string;
+    cited_pmids?: string[];
+    [key: string]: unknown;
+  } | null;
+
+  reasoning_model?: string | null;
 }

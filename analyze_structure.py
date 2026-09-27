@@ -191,11 +191,15 @@ def normalize_resname(name: str) -> str:
 
 
 def parse_variant_code(variant_code: str) -> tuple[str, int, str, str, str]:
-    """Parses 'A53T' or 'Ala53Thr' -> (wt_1, pos, mut_1, wt_3, mut_3)."""
+    """Parses 'A53T', 'Ala53Thr', 'p.A53T', or 'p.Ala53Thr' -> (wt_1, pos, mut_1, wt_3, mut_3)."""
     import re
     
+    cleaned = variant_code.strip()
+    if cleaned.startswith("p."):
+        cleaned = cleaned[2:]
+    
     # Try 1-letter format first: A53T
-    match_1 = re.match(r"^([A-Z])(\d+)([A-Z])$", variant_code.upper())
+    match_1 = re.match(r"^([A-Z])(\d+)([A-Z])$", cleaned.upper())
     if match_1:
         wt_1, pos_str, mut_1 = match_1.groups()
         pos = int(pos_str)
@@ -206,7 +210,7 @@ def parse_variant_code(variant_code: str) -> tuple[str, int, str, str, str]:
         return wt_1, pos, mut_1, wt_3, mut_3
 
     # Try 3-letter format: Ala53Thr
-    match_3 = re.match(r"^([A-Z][a-z]{2})(\d+)([A-Z][a-z]{2})$", variant_code)
+    match_3 = re.match(r"^([A-Za-z]{3})(\d+)([A-Za-z]{3})$", cleaned)
     if match_3:
         wt_3_raw, pos_str, mut_3_raw = match_3.groups()
         wt_3 = wt_3_raw.upper()

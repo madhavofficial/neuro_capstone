@@ -1,20 +1,20 @@
 {
-    "variant": "A53T",
+    "variant": "T139M",
     "comparison_view": {
         "residue": {
-            "wt": "ALA",
-            "mut": "THR",
+            "wt": "THR",
+            "mut": "MET",
             "delta": null
         },
         "volume": {
-            "wt": 88.6,
-            "mut": 116.1,
-            "delta": 27.5
+            "wt": 116.1,
+            "mut": 162.9,
+            "delta": 46.8
         },
         "hydrophobicity": {
-            "wt": 1.8,
-            "mut": -0.7,
-            "delta": -2.5
+            "wt": -0.7,
+            "mut": 1.9,
+            "delta": 2.6
         },
         "charge": {
             "wt": 0.0,
@@ -22,17 +22,17 @@
             "delta": 0.0
         },
         "sasa": {
-            "wt": 51.54,
+            "wt": 77.23,
             "mut": null,
             "delta": null
         },
         "plddt_confidence": {
-            "wt": 89.62,
+            "wt": 98.62,
             "mut": null,
             "delta": null
         },
         "secondary_structure": {
-            "wt": "Alpha Helix",
+            "wt": "Beta Sheet",
             "mut": null,
             "delta": null
         },
@@ -43,27 +43,27 @@
         }
     },
     "wild_type": {
-        "residue": "ALA",
-        "volume": 88.6,
-        "hydrophobicity": 1.8,
-        "charge": 0.0
-    },
-    "mutant_properties": {
         "residue": "THR",
         "volume": 116.1,
         "hydrophobicity": -0.7,
         "charge": 0.0
     },
+    "mutant_properties": {
+        "residue": "MET",
+        "volume": 162.9,
+        "hydrophobicity": 1.9,
+        "charge": 0.0
+    },
     "deltas": {
-        "delta_volume": 27.5,
-        "delta_hydrophobicity": -2.5,
+        "delta_volume": 46.8,
+        "delta_hydrophobicity": 2.6,
         "delta_charge": 0
     },
     "structural_context_wt": {
-        "sasa": 51.54,
+        "sasa": 77.23,
         "exposure": "Exposed",
-        "secondary_structure": "Alpha Helix",
-        "plddt_confidence": 89.62
+        "secondary_structure": "Beta Sheet",
+        "plddt_confidence": 98.62
     },
     "stability_audit": {
         "salt_bridges_lost": [],
@@ -71,7 +71,7 @@
         "disulfides_lost": [],
         "disulfides_gained": [],
         "h_bonds_lost_est": 0,
-        "h_bonds_gained_est": 16,
+        "h_bonds_gained_est": 0,
         "backbone_strain": "None"
     }
 }

@@ -1,19 +1,21 @@
 {
-  "n_runs": 8,
-  "completion_rate": 1.0,
-  "pipeline_completion_rate": 1.0,
+  "n_runs": 144,
+  "completion_rate": 0.9861,
+  "pipeline_completion_rate": 0.9861,
   "exact_variant_clinical_lookup_accuracy": 0.5,
-  "literature_relevance_top5": 0.8889,
+  "literature_relevance_top5": 0.7203,
   "citation_validity": null,
   "unsupported_claim_rate": null,
   "json_schema_validity": 1.0,
-  "pathogenic_benign_agreement": 0.5,
-  "vus_uncertainty_preservation": null,
-  "mean_runtime_seconds": 55.4282,
+  "prediction_accuracy": 0.331,
+  "pathogenic_benign_agreement": 0.2759,
+  "pathogenic_benign_macro_agreement": 0.2414,
+  "vus_uncertainty_preservation": 0.8462,
+  "mean_runtime_seconds": 37.4711,
   "external_api_failure_rate": 0.0,
   "compatibility_failure_rate": 0.0,
   "failure_by_stage": {
-    "pipeline_entry": 0,
+    "pipeline_entry": 2,
     "structure": 0,
     "clinical": 0,
     "physics": 0,
@@ -22,9 +24,21 @@
     "retrieval": 0,
     "payload": 0
   },
+  "prediction_by_class": {
+    "pathogenic": {
+      "n": 68,
+      "correct": 30,
+      "agreement": 0.4412
+    },
+    "benign": {
+      "n": 48,
+      "correct": 2,
+      "agreement": 0.0417
+    }
+  },
   "by_ablation": {
     "clinical_only": {
-      "n_runs": 2,
+      "n_runs": 36,
       "completion_rate": 1.0,
       "pipeline_completion_rate": 1.0,
       "exact_variant_clinical_lookup_accuracy": 1.0,
@@ -32,9 +46,11 @@
       "citation_validity": null,
       "unsupported_claim_rate": null,
       "json_schema_validity": 1.0,
-      "pathogenic_benign_agreement": 1.0,
-      "vus_uncertainty_preservation": null,
-      "mean_runtime_seconds": 86.9542,
+      "prediction_accuracy": 0.4722,
+      "pathogenic_benign_agreement": 0.5517,
+      "pathogenic_benign_macro_agreement": 0.4828,
+      "vus_uncertainty_preservation": 1.0,
+      "mean_runtime_seconds": 67.3076,
       "external_api_failure_rate": 0.0,
       "compatibility_failure_rate": 0.0,
       "failure_by_stage": {
@@ -46,24 +62,38 @@
         "literature_process": 0,
         "retrieval": 0,
         "payload": 0
+      },
+      "prediction_by_class": {
+        "pathogenic": {
+          "n": 17,
+          "correct": 15,
+          "agreement": 0.8824
+        },
+        "benign": {
+          "n": 12,
+          "correct": 1,
+          "agreement": 0.0833
+        }
       }
     },
     "literature_only": {
-      "n_runs": 2,
-      "completion_rate": 1.0,
-      "pipeline_completion_rate": 1.0,
+      "n_runs": 36,
+      "completion_rate": 0.9722,
+      "pipeline_completion_rate": 0.9722,
       "exact_variant_clinical_lookup_accuracy": 0.0,
-      "literature_relevance_top5": 0.8889,
+      "literature_relevance_top5": 0.7203,
       "citation_validity": null,
       "unsupported_claim_rate": null,
       "json_schema_validity": 1.0,
+      "prediction_accuracy": 0.1714,
       "pathogenic_benign_agreement": 0.0,
-      "vus_uncertainty_preservation": null,
-      "mean_runtime_seconds": 53.6003,
+      "pathogenic_benign_macro_agreement": 0.0,
+      "vus_uncertainty_preservation": 1.0,
+      "mean_runtime_seconds": 8.9257,
       "external_api_failure_rate": 0.0,
       "compatibility_failure_rate": 0.0,
       "failure_by_stage": {
-        "pipeline_entry": 0,
+        "pipeline_entry": 1,
         "structure": 0,
         "clinical": 0,
         "physics": 0,
@@ -71,10 +101,22 @@
         "literature_process": 0,
         "retrieval": 0,
         "payload": 0
+      },
+      "prediction_by_class": {
+        "pathogenic": {
+          "n": 17,
+          "correct": 0,
+          "agreement": 0.0
+        },
+        "benign": {
+          "n": 12,
+          "correct": 0,
+          "agreement": 0.0
+        }
       }
     },
     "physics_only": {
-      "n_runs": 2,
+      "n_runs": 36,
       "completion_rate": 1.0,
       "pipeline_completion_rate": 1.0,
       "exact_variant_clinical_lookup_accuracy": 0.0,
@@ -82,9 +124,11 @@
       "citation_validity": null,
       "unsupported_claim_rate": null,
       "json_schema_validity": 1.0,
+      "prediction_accuracy": 0.1944,
       "pathogenic_benign_agreement": 0.0,
-      "vus_uncertainty_preservation": null,
-      "mean_runtime_seconds": 4.6743,
+      "pathogenic_benign_macro_agreement": 0.0,
+      "vus_uncertainty_preservation": 1.0,
+      "mean_runtime_seconds": 3.4109,
       "external_api_failure_rate": 0.0,
       "compatibility_failure_rate": 0.0,
       "failure_by_stage": {
@@ -96,24 +140,38 @@
         "literature_process": 0,
         "retrieval": 0,
         "payload": 0
+      },
+      "prediction_by_class": {
+        "pathogenic": {
+          "n": 17,
+          "correct": 0,
+          "agreement": 0.0
+        },
+        "benign": {
+          "n": 12,
+          "correct": 0,
+          "agreement": 0.0
+        }
       }
     },
     "all_evidence": {
-      "n_runs": 2,
-      "completion_rate": 1.0,
-      "pipeline_completion_rate": 1.0,
+      "n_runs": 36,
+      "completion_rate": 0.9722,
+      "pipeline_completion_rate": 0.9722,
       "exact_variant_clinical_lookup_accuracy": 1.0,
-      "literature_relevance_top5": 0.8889,
+      "literature_relevance_top5": 0.7203,
       "citation_validity": null,
       "unsupported_claim_rate": null,
       "json_schema_validity": 1.0,
-      "pathogenic_benign_agreement": 1.0,
-      "vus_uncertainty_preservation": null,
-      "mean_runtime_seconds": 76.484,
+      "prediction_accuracy": 0.4857,
+      "pathogenic_benign_agreement": 0.5517,
+      "pathogenic_benign_macro_agreement": 0.4828,
+      "vus_uncertainty_preservation": 0.3333,
+      "mean_runtime_seconds": 70.3609,
       "external_api_failure_rate": 0.0,
       "compatibility_failure_rate": 0.0,
       "failure_by_stage": {
-        "pipeline_entry": 0,
+        "pipeline_entry": 1,
         "structure": 0,
         "clinical": 0,
         "physics": 0,
@@ -121,6 +179,18 @@
         "literature_process": 0,
         "retrieval": 0,
         "payload": 0
+      },
+      "prediction_by_class": {
+        "pathogenic": {
+          "n": 17,
+          "correct": 15,
+          "agreement": 0.8824
+        },
+        "benign": {
+          "n": 12,
+          "correct": 1,
+          "agreement": 0.0833
+        }
       }
     }
   }

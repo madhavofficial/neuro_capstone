@@ -1,7 +1,10 @@
 import sys
 import os
 import json
+import logging
 from typing import Any, Dict, Optional, List
+
+logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -117,8 +120,12 @@ class AnalyzeResponse(BaseModel):
     # Top reranked literature evidence
     evidence: List[LiteratureEvidence] = []
 
-    # Human-readable evidence synthesis
+    # Human-readable evidence synthesis / LLM Reasoning
     clinical_narrative: Optional[str] = None
+
+    # Structured multi-card reasoning data from Phase 8 LLM
+    structured_reasoning: Optional[Dict[str, Any]] = None
+    reasoning_model: Optional[str] = None
 
     warnings: Optional[Dict[str, str]] = None
 
@@ -705,34 +712,46 @@ async def analyze_variant(
         )
 
     # ========================================================================
-    # 5. CLINICAL NARRATIVE
+    # 5. CLINICAL NARRATIVE & LLM REASONING (Phase 8)
     # ========================================================================
 
-    clinical_narrative = (
-        extract_clinical_narrative(
-            context_data
+    clinical_narrative = None
+    structured_reasoning = None
+    reasoning_model = None
+
+    try:
+        from reasoning_engine import generate_reasoning
+        reasoning_res = await run_in_threadpool(
+            generate_reasoning,
+            gene=gene,
+            variant=variant,
+            physics_data=physics_data,
+            context_data=context_data,
+            evidence=evidence,
+            status=pipeline_status,
         )
-    )
+        if reasoning_res:
+            clinical_narrative = reasoning_res.get("unstructured_verdict") or clinical_narrative
+            structured_reasoning = reasoning_res.get("structured_data")
+            reasoning_model = reasoning_res.get("model_used")
+    except Exception as re_exc:
+        logger.warning(f"Phase 8 reasoning engine failed: {re_exc}")
 
     if not clinical_narrative:
+        clinical_narrative = extract_clinical_narrative(context_data)
 
-        clinical_narrative = (
-            build_evidence_synthesis(
-                gene=gene,
-                variant=variant,
-                status_value=pipeline_status,
-                confidence_matrix=confidence_matrix,
-                context_data=context_data,
-                physics_data=physics_data,
-                evidence=evidence,
-            )
+    if not clinical_narrative:
+        clinical_narrative = build_evidence_synthesis(
+            gene=gene,
+            variant=variant,
+            status_value=pipeline_status,
+            confidence_matrix=confidence_matrix,
+            context_data=context_data,
+            physics_data=physics_data,
+            evidence=evidence,
         )
 
-    # If assemble_payload produced a specific VUS note,
-    # preserve it as an additional warning/context signal,
-    # but do not replace the synthesis.
     if payload_note and not clinical_narrative:
-
         clinical_narrative = payload_note
 
     # ========================================================================
@@ -740,24 +759,16 @@ async def analyze_variant(
     # ========================================================================
 
     return AnalyzeResponse(
-
         gene=gene,
-
         variant=variant,
-
         status=pipeline_status,
-
         confidence_matrix=confidence_matrix,
-
         context_data=context_data,
-
         physics_data=physics_data,
-
         pdb_content=pdb_content,
-
         evidence=evidence,
-
         clinical_narrative=clinical_narrative,
-
+        structured_reasoning=structured_reasoning,
+        reasoning_model=reasoning_model,
         warnings=warnings if warnings else None,
     )

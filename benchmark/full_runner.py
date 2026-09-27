@@ -15,21 +15,23 @@ import html
 import json
 import os
 import re
+import ssl
 import time
 from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from benchmark.benchmark import ABLATIONS, ROOT, calculate_metrics, load_gold, validate_payload
+from benchmark.benchmark import ABLATIONS, ROOT, calculate_metrics, load_gold, normalise_prediction, validate_payload, _clinical_class
 
 OUT = ROOT / "data" / "benchmarks"
 RUNS = OUT / "runs"
 
 SYNTHESIS_SCHEMA = {
     "type": "object", "additionalProperties": False,
-    "required": ["conclusion", "uncertainty", "claims", "scope"],
+    "required": ["prediction", "conclusion", "uncertainty", "claims", "scope"],
     "properties": {
+        "prediction": {"type": "string", "enum": ["pathogenic", "benign", "vus"]},
         "conclusion": {"type": "string"},
         "uncertainty": {"type": "boolean"},
         "scope": {"type": "string", "enum": ["variant", "gene", "unknown"]},
@@ -46,16 +48,38 @@ def _safe_name(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", value)
 
 
+def _load_project_env() -> None:
+    """Load simple KEY=VALUE entries from the project .env when present."""
+    env_path = ROOT / ".env"
+    if not env_path.exists():
+        return
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, value = line.split("=", 1)
+        name = name.strip()
+        value = value.strip().strip("\"'")
+        if name and name not in os.environ:
+            os.environ[name] = value
+
+
 def _json_request(url: str, payload: dict[str, Any], key: str) -> dict[str, Any]:
     request = Request(url, data=json.dumps(payload).encode(), headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json", "User-Agent": "NeuroCapstoneBenchmark/1.0"})
-    with urlopen(request, timeout=120) as response:
+    try:
+        import certifi
+        tls_context = ssl.create_default_context(cafile=certifi.where())
+    except ImportError:
+        tls_context = ssl.create_default_context()
+    with urlopen(request, timeout=120, context=tls_context) as response:
         return json.loads(response.read().decode())
 
 
 def _baseline_synthesis(payload: dict[str, Any], target: dict[str, str]) -> dict[str, Any]:
     status = str(payload.get("status", "LOW_CONFIDENCE"))
-    uncertain = target["label"] == "vus" or status != "SUCCESS"
-    return {"conclusion": "uncertain; evidence is insufficient for a definitive classification" if uncertain else "classification should be based on the supplied clinical and literature evidence", "uncertainty": uncertain, "scope": "variant", "claims": []}
+    prediction = _clinical_class(payload.get("clinical_label")) or "vus"
+    uncertain = prediction == "vus" or status != "SUCCESS"
+    return {"prediction": prediction, "conclusion": "uncertain; evidence is insufficient for a definitive classification" if uncertain else f"evidence supports a {prediction} classification", "uncertainty": uncertain, "scope": "variant", "claims": []}
 
 
 def _model_synthesis(payload: dict[str, Any], target: dict[str, str], spec: dict[str, str]) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -64,7 +88,7 @@ def _model_synthesis(payload: dict[str, Any], target: dict[str, str], spec: dict
     if not key:
         return _baseline_synthesis(payload, target), {"provider": provider, "model": spec["model"], "mode": "deterministic_baseline", "error": "missing_api_key"}
     endpoint = "https://api.groq.com/openai/v1/chat/completions" if provider == "groq" else "https://openrouter.ai/api/v1/chat/completions"
-    system = "You are a cautious biomedical evidence synthesizer. Use only supplied evidence. Preserve VUS uncertainty. Every factual claim must cite a supplied PMID or be explicitly marked as unsupported. Do not use gene-level evidence as exact-variant evidence. Return only JSON matching the schema."
+    system = "You are a cautious biomedical evidence synthesizer. Use only supplied evidence. Set prediction to exactly one of pathogenic, benign, or vus; use vus for conflicting, insufficient, or uncertain evidence. Preserve VUS uncertainty. Every factual claim must cite a supplied PMID or be explicitly marked as unsupported. Do not use gene-level evidence as exact-variant evidence. Return only JSON matching the schema."
     user = json.dumps({"target": target, "payload": payload}, ensure_ascii=False)
     request_payload = {"model": spec["model"], "temperature": 0, "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}], "response_format": {"type": "json_schema", "json_schema": {"name": "evidence_synthesis", "strict": True, "schema": SYNTHESIS_SCHEMA}}}
     try:
@@ -76,14 +100,14 @@ def _model_synthesis(payload: dict[str, Any], target: dict[str, str], spec: dict
 
 
 def _check_synthesis(synthesis: dict[str, Any], payload: dict[str, Any], target: dict[str, str]) -> tuple[bool, list[dict[str, Any]], bool, bool]:
-    valid = isinstance(synthesis, dict) and all(key in synthesis for key in SYNTHESIS_SCHEMA["required"]) and isinstance(synthesis.get("claims"), list)
+    valid = isinstance(synthesis, dict) and all(key in synthesis for key in SYNTHESIS_SCHEMA["required"]) and isinstance(synthesis.get("claims"), list) and synthesis.get("prediction") in {"pathogenic", "benign", "vus"} and isinstance(synthesis.get("uncertainty"), bool)
     evidence = payload.get("evidence", [])
     pmids = {str(item.get("pmid")) for item in evidence}
     checks = []
     for claim in synthesis.get("claims", []) if isinstance(synthesis.get("claims"), list) else []:
         pmid = claim.get("pmid") if isinstance(claim, dict) else None
         checks.append({"pmid": pmid, "citation_valid": pmid is not None and str(pmid) in pmids, "unsupported": pmid is None or str(pmid) not in pmids, "scope_mistake": target["variant"].lower() not in str(claim).lower() and target["gene"].lower() not in str(claim).lower()})
-    uncertainty = target["label"] != "vus" or synthesis.get("uncertainty") is True or "uncertain" in str(synthesis).lower()
+    uncertainty = synthesis.get("uncertainty") is True or normalise_prediction(synthesis) == "vus"
     return valid, checks, uncertainty, any(check["scope_mistake"] for check in checks)
 
 
@@ -120,6 +144,7 @@ def _run_stages(target: dict[str, str], ablation: str, run_dir: Path) -> tuple[d
 
 
 def run_full(gold_path: Path, *, model_specs: list[dict[str, str]], ablations: tuple[str, ...] = ABLATIONS) -> list[dict[str, Any]]:
+    _load_project_env()
     targets = load_gold(gold_path)
     OUT.mkdir(parents=True, exist_ok=True)
     RUNS.mkdir(parents=True, exist_ok=True)
@@ -144,7 +169,8 @@ def run_full(gold_path: Path, *, model_specs: list[dict[str, str]], ablations: t
                     synthesis_path.write_text(json.dumps(synthesis, indent=2), encoding="utf-8")
                     schema_ok, claims, uncertainty, scope_mistake = _check_synthesis(synthesis, payload, target)
                     clinical = payload.get("clinical_context", {}).get("clinvar", {}) if isinstance(payload.get("clinical_context"), dict) else {}
-                    row.update({"completed": True, "stage_status": stages, "model_meta": model_meta, "payload_path": str((run_dir / "payload.json").relative_to(OUT)), "synthesis_path": str(synthesis_path.relative_to(OUT)), "json_schema_valid": schema_ok, "claim_checks": claims, "exact_clinvar_match": clinical.get("variant_match") is True, "top5_evidence_count": len(payload.get("evidence", [])[:5]), "top5_variant_mentions": sum(target["gene"].lower() in str(item).lower() and target["variant"].lower() in str(item).lower() for item in payload.get("evidence", [])[:5]), "clinical_agreement": target["label"] == "vus" or target["label"] in str(payload.get("clinical_label", "")).lower(), "uncertainty_preserved": uncertainty, "scope_mistake": scope_mistake, "synthesis": synthesis})
+                    predicted = normalise_prediction(synthesis)
+                    row.update({"completed": True, "stage_status": stages, "model_meta": model_meta, "payload_path": str((run_dir / "payload.json").relative_to(OUT)), "synthesis_path": str(synthesis_path.relative_to(OUT)), "json_schema_valid": schema_ok, "claim_checks": claims, "exact_clinvar_match": clinical.get("variant_match") is True, "top5_evidence_count": len(payload.get("evidence", [])[:5]), "top5_variant_mentions": sum(target["gene"].lower() in str(item).lower() and target["variant"].lower() in str(item).lower() for item in payload.get("evidence", [])[:5]), "prediction": predicted, "clinical_agreement": predicted == target["label"], "uncertainty_preserved": uncertainty, "scope_mistake": scope_mistake, "synthesis": synthesis})
                 except Exception as exc:
                     error_type = type(exc).__name__
                     row.update({"stage_status": {"pipeline_entry": "failed"}, "error_type": error_type, "error": str(exc), "external_api_failure": error_type in {"HTTPError", "URLError", "TimeoutError", "ConnectionError"}, "compatibility_failure": error_type in {"ModuleNotFoundError", "TypeError", "ImportError"}})
@@ -160,7 +186,7 @@ def write_html_report(rows: list[dict[str, Any]], path: Path) -> None:
     metrics = calculate_metrics(rows)
     def pct(value: Any) -> str:
         return "n/a" if value is None else f"{float(value) * 100:.1f}%"
-    cards = "".join(f"<div class='card'><div class='label'>{html.escape(key.replace('_',' '))}</div><div class='value'>{html.escape(pct(value) if isinstance(value,(float,int)) and 'runtime' not in key else str(value if value is not None else 'n/a'))}</div></div>" for key, value in metrics.items() if key != "by_ablation" and not key.startswith("n_"))
+    cards = "".join(f"<div class='card'><div class='label'>{html.escape(key.replace('_',' '))}</div><div class='value'>{html.escape(pct(value) if isinstance(value,(float,int)) and 'runtime' not in key else str(value if value is not None else 'n/a'))}</div></div>" for key, value in metrics.items() if key not in {"by_ablation", "prediction_by_class", "failure_by_stage"} and not key.startswith("n_"))
     failures = [r for r in rows if not r.get("completed")]
     failure_rows = "".join(f"<tr><td>{html.escape(r.get('run_id',''))}</td><td>{html.escape(r.get('variant',''))}</td><td>{html.escape(r.get('ablation',''))}</td><td>{html.escape(r.get('error',''))}</td></tr>" for r in failures[:30]) or "<tr><td colspan='4'>No failures recorded</td></tr>"
     ablation_rows = "".join(f"<tr><td>{html.escape(a)}</td><td>{pct(v.get('completion_rate'))}</td><td>{pct(v.get('literature_relevance_top5'))}</td><td>{pct(v.get('citation_validity'))}</td><td>{pct(v.get('vus_uncertainty_preservation'))}</td></tr>" for a,v in metrics.get("by_ablation", {}).items())
@@ -169,21 +195,24 @@ def write_html_report(rows: list[dict[str, Any]], path: Path) -> None:
 
 
 def write_model_comparison(rows: list[dict[str, Any]], path: Path) -> None:
-    fields = ["model", "n_runs", "completion_rate", "citation_validity", "unsupported_claim_rate", "json_schema_validity", "vus_uncertainty_preservation", "scope_mistake_rate"]
+    fields = ["model", "n_runs", "completion_rate", "prediction_accuracy", "pathogenic_benign_agreement", "pathogenic_benign_macro_agreement", "citation_validity", "unsupported_claim_rate", "json_schema_validity", "vus_uncertainty_preservation", "scope_mistake_rate"]
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
         for model in sorted({str(row.get("model", "")) for row in rows}):
             subset = [row for row in rows if row.get("model") == model]
             metrics = calculate_metrics(subset)
-            writer.writerow({"model": model, "n_runs": len(subset), "completion_rate": metrics["completion_rate"], "citation_validity": metrics["citation_validity"], "unsupported_claim_rate": metrics["unsupported_claim_rate"], "json_schema_validity": metrics["json_schema_validity"], "vus_uncertainty_preservation": metrics["vus_uncertainty_preservation"], "scope_mistake_rate": round(sum(bool(row.get("scope_mistake")) for row in subset) / len(subset), 4) if subset else None})
+            writer.writerow({"model": model, "n_runs": len(subset), "completion_rate": metrics["completion_rate"], "prediction_accuracy": metrics["prediction_accuracy"], "pathogenic_benign_agreement": metrics["pathogenic_benign_agreement"], "pathogenic_benign_macro_agreement": metrics["pathogenic_benign_macro_agreement"], "citation_validity": metrics["citation_validity"], "unsupported_claim_rate": metrics["unsupported_claim_rate"], "json_schema_validity": metrics["json_schema_validity"], "vus_uncertainty_preservation": metrics["vus_uncertainty_preservation"], "scope_mistake_rate": round(sum(bool(row.get("scope_mistake")) for row in subset) / len(subset), 4) if subset else None})
 
 
 def write_markdown_report(rows: list[dict[str, Any]], path: Path) -> None:
     metrics = calculate_metrics(rows)
     lines = ["# Neuro-Capstone benchmark report", "", "Generated from the full stage runner. Physics is a heuristic and is not treated as a clinical diagnosis.", "", "## Summary", "", "| Metric | Value |", "|---|---:|"]
-    for key in ("n_runs", "pipeline_completion_rate", "exact_variant_clinical_lookup_accuracy", "literature_relevance_top5", "citation_validity", "unsupported_claim_rate", "json_schema_validity", "pathogenic_benign_agreement", "vus_uncertainty_preservation", "mean_runtime_seconds", "external_api_failure_rate", "compatibility_failure_rate"):
+    for key in ("n_runs", "pipeline_completion_rate", "exact_variant_clinical_lookup_accuracy", "literature_relevance_top5", "citation_validity", "unsupported_claim_rate", "json_schema_validity", "prediction_accuracy", "pathogenic_benign_agreement", "pathogenic_benign_macro_agreement", "vus_uncertainty_preservation", "mean_runtime_seconds", "external_api_failure_rate", "compatibility_failure_rate"):
         lines.append(f"| {key} | {metrics.get(key)} |")
+    lines.extend(["", "## Pathogenic/benign agreement by gold class", "", "| Gold class | N | Correct | Agreement |", "|---|---:|---:|---:|"])
+    for label, values in metrics.get("prediction_by_class", {}).items():
+        lines.append(f"| {label} | {values.get('n')} | {values.get('correct')} | {values.get('agreement')} |")
     lines.extend(["", "## Ablation comparison", "", "| Setting | Completion | Top-5 relevance | Citation validity | VUS uncertainty |", "|---|---:|---:|---:|---:|"])
     for ablation, values in metrics.get("by_ablation", {}).items():
         lines.append(f"| {ablation} | {values.get('completion_rate')} | {values.get('literature_relevance_top5')} | {values.get('citation_validity')} | {values.get('vus_uncertainty_preservation')} |")
@@ -196,13 +225,21 @@ def write_markdown_report(rows: list[dict[str, Any]], path: Path) -> None:
 
 
 def main() -> int:
+    _load_project_env()
     parser = argparse.ArgumentParser(description="Run the full Neuro-Capstone benchmark")
     parser.add_argument("--gold", type=Path, default=OUT / "gold_variants.csv")
     parser.add_argument("--models", type=Path, default=ROOT / "benchmark" / "model_catalog.json")
+    parser.add_argument("--model", help="Run only the catalog model with this name or provider model ID")
     parser.add_argument("--ablation", action="append", choices=ABLATIONS)
     parser.add_argument("--html", type=Path, default=OUT / "benchmark_report.html")
     args = parser.parse_args()
-    configured = [model for model in json.loads(args.models.read_text()).get("models", []) if model.get("enabled")]
+    catalog = json.loads(args.models.read_text()).get("models", [])
+    if args.model:
+        configured = [model for model in catalog if args.model in {model.get("name"), model.get("model")}]
+        if not configured:
+            parser.error(f"no catalog model matched {args.model!r}")
+    else:
+        configured = [model for model in catalog if model.get("enabled")]
     if os.getenv("BENCHMARK_OFFLINE", "").lower() in {"1", "true", "yes"} or not configured:
         configured = [{"name": "deterministic baseline"}]
     rows = run_full(args.gold, model_specs=configured, ablations=tuple(args.ablation or ABLATIONS))

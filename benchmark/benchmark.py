@@ -103,13 +103,30 @@ def _claims_from_synthesis(synthesis: Any) -> list[dict[str, Any]]:
 
 def _clinical_class(value: Any) -> str:
     text = str(value or "").lower()
+    if any(token in text for token in ("conflicting", "uncertain", "vus", "unknown", "indeterminate")):
+        return "vus"
     if "pathogenic" in text:
         return "pathogenic"
     if "benign" in text:
         return "benign"
-    if any(token in text for token in ("uncertain", "vus", "conflicting")):
-        return "vus"
     return ""
+
+
+def normalise_prediction(value: Any) -> str:
+    """Map an explicit synthesis prediction or conclusion to one safe class."""
+    if isinstance(value, dict):
+        explicit = str(value.get("prediction", "")).strip().lower()
+        if explicit in VALID_LABELS:
+            return explicit
+        value = value.get("conclusion", "")
+    text = str(value or "").lower()
+    if any(token in text for token in ("conflicting", "uncertain", "variant of uncertain significance", "indeterminate", "insufficient evidence", "unknown")):
+        return "vus"
+    if re.search(r"\b(?:likely\s+)?pathogenic\b", text) and not re.search(r"\b(?:not|non|unlikely)\s+(?:likely\s+)?pathogenic\b", text):
+        return "pathogenic"
+    if re.search(r"\b(?:likely\s+)?benign\b", text) and not re.search(r"\b(?:not|non|unlikely)\s+(?:likely\s+)?benign\b", text):
+        return "benign"
+    return "vus"
 
 
 def calculate_metrics(rows: list[dict[str, Any]], *, _nested: bool = False) -> dict[str, Any]:
@@ -125,6 +142,15 @@ def calculate_metrics(rows: list[dict[str, Any]], *, _nested: bool = False) -> d
     schema_valid = sum(r.get("json_schema_valid") is True for r in completed)
     def rate(n: int, d: int) -> float | None:
         return round(n / d, 4) if d else None
+    prediction_matches = {
+        id(r): normalise_prediction(r.get("prediction", r.get("synthesis"))) == r.get("gold_label")
+        for r in completed
+    }
+    class_rates = [
+        sum(prediction_matches[id(r)] for r in non_vus if r.get("gold_label") == label) / sum(1 for r in non_vus if r.get("gold_label") == label)
+        for label in ("pathogenic", "benign")
+        if any(r.get("gold_label") == label for r in non_vus)
+    ]
     metrics = {
         "n_runs": len(rows),
         "completion_rate": rate(len(completed), len(rows)),
@@ -134,7 +160,9 @@ def calculate_metrics(rows: list[dict[str, Any]], *, _nested: bool = False) -> d
         "citation_validity": rate(valid_claims, len(claims)),
         "unsupported_claim_rate": rate(unsupported, len(claims)),
         "json_schema_validity": rate(schema_valid, len(completed)),
-        "pathogenic_benign_agreement": rate(sum(r.get("clinical_agreement") is True for r in non_vus), len(non_vus)),
+        "prediction_accuracy": rate(sum(prediction_matches[id(r)] for r in completed), len(completed)),
+        "pathogenic_benign_agreement": rate(sum(prediction_matches[id(r)] for r in non_vus), len(non_vus)),
+        "pathogenic_benign_macro_agreement": round(sum(class_rates) / len(class_rates), 4) if class_rates else None,
         "vus_uncertainty_preservation": rate(sum(r.get("uncertainty_preserved") is True for r in vus), len(vus)),
         "mean_runtime_seconds": round(sum(r.get("runtime_seconds", 0) for r in completed) / len(completed), 4) if completed else None,
         "external_api_failure_rate": rate(sum(r.get("external_api_failure") is True for r in rows), len(rows)),
@@ -142,6 +170,14 @@ def calculate_metrics(rows: list[dict[str, Any]], *, _nested: bool = False) -> d
         "failure_by_stage": {
             stage: sum(1 for r in rows if r.get("stage_status", {}).get(stage) in {"failed", "error", "empty"})
             for stage in ("pipeline_entry", "structure", "clinical", "physics", "literature_fetch", "literature_process", "retrieval", "payload")
+        },
+        "prediction_by_class": {
+            label: {
+                "n": sum(1 for r in non_vus if r.get("gold_label") == label),
+                "correct": sum(1 for r in non_vus if r.get("gold_label") == label and prediction_matches[id(r)]),
+                "agreement": rate(sum(1 for r in non_vus if r.get("gold_label") == label and prediction_matches[id(r)]), sum(1 for r in non_vus if r.get("gold_label") == label)),
+            }
+            for label in ("pathogenic", "benign")
         },
     }
     if not _nested:
@@ -156,9 +192,11 @@ def calculate_metrics(rows: list[dict[str, Any]], *, _nested: bool = False) -> d
 def _default_synthesis(payload: dict[str, Any], gold_label: str) -> dict[str, Any]:
     """Deterministic baseline; useful for schema/grounding tests and offline CI."""
     status = str(payload.get("status", "UNCERTAIN"))
-    uncertainty = gold_label == "vus" or status in {"LOW_CONFIDENCE", "STRUCTURAL_DISCOVERY_VUS", "PREDICTED_PATHOGENIC_VUS"}
+    prediction = _clinical_class(payload.get("clinical_label")) or "vus"
+    uncertainty = prediction == "vus" or status in {"LOW_CONFIDENCE", "STRUCTURAL_DISCOVERY_VUS", "PREDICTED_PATHOGENIC_VUS"}
     return {
-        "conclusion": "uncertain; additional evidence is required" if uncertainty else "see supplied clinical evidence",
+        "prediction": prediction,
+        "conclusion": "uncertain; additional evidence is required" if uncertainty else f"evidence supports a {prediction} classification",
         "uncertainty": uncertainty,
         "claims": [],
     }
@@ -187,7 +225,8 @@ def run_one(target: dict[str, Any], ablation: str, pipeline: Callable[..., dict[
             "exact_clinvar_match": bool(payload.get("clinical_context", {}).get("clinvar", {}).get("variant_match")) if isinstance(payload, dict) else False,
             "top5_evidence_count": len(evidence[:5]),
             "top5_variant_mentions": sum(_variant_mentions(e, target["gene"], target["variant"]) for e in evidence[:5]),
-            "clinical_agreement": (target["label"] == "vus" or _clinical_class(payload.get("clinical_label")) == target["label"]),
+            "prediction": normalise_prediction(synth),
+            "clinical_agreement": normalise_prediction(synth) == target["label"],
             "uncertainty_preserved": target["label"] != "vus" or bool(synth.get("uncertainty") is True or "uncertain" in str(synth).lower()),
             "claim_checks": checked_claims, "synthesis": synth,
         })
@@ -203,22 +242,13 @@ def run_one(target: dict[str, Any], ablation: str, pipeline: Callable[..., dict[
 
 
 def default_pipeline(gene: str, variant: str, *, ablation: str) -> dict[str, Any]:
-    """Adapter around the repository pipeline; ablations disable evidence sources."""
-    from assemble_payload import run as assemble
-    from fetch_context import fetch_all_context
-    context = fetch_all_context(gene, variant) if ablation in {"clinical_only", "all_evidence"} else None
-    physics = None
-    ranked: list[dict[str, Any]] = []
-    if ablation in {"literature_only", "all_evidence"}:
-        from orchestration import phase_3_vector_engine
-        ranked = phase_3_vector_engine(gene, variant, f"{gene} {variant}")
-    if ablation in {"physics_only", "all_evidence"}:
-        physics = {"deltas": {}, "variant": variant, "source": "benchmark physics-only adapter"}
-    payload = assemble(query=f"{gene} {variant}", ranked_results=ranked, physics_vector=physics, rag_status="SUCCESS" if ranked else "NULL_RESULTS", clinical_context=context)
-    if context and isinstance(context.get("clinvar"), dict):
-        payload["clinical_label"] = context["clinvar"].get("clinical_significance", "")
-        payload["clinical_context"] = context
-    return payload
+    """Canonical pipeline adapter delegating to full_runner to execute genuine stages."""
+    import tempfile
+    from benchmark.full_runner import _run_stages
+    with tempfile.TemporaryDirectory() as tmpdir:
+        target = {"gene": gene, "variant": variant, "variant_id": f"{gene}_{variant}"}
+        payload, _ = _run_stages(target, ablation, Path(tmpdir))
+        return payload
 
 
 def run_benchmark(gold_path: Path, output_dir: Path, ablations: Iterable[str] = ABLATIONS, pipeline: Callable[..., dict[str, Any]] = default_pipeline) -> list[dict[str, Any]]:

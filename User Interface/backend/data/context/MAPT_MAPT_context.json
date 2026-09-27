@@ -1,0 +1,83 @@
+{
+    "gene": "MAPT",
+    "uniprot_id": "P10636",
+    "variant": "MAPT",
+    "alphamissense_sniper": null,
+    "clinvar": null,
+    "lovd": null,
+    "clingenreg": null,
+    "dbsnp": null,
+    "variant_specific_context": {
+        "variant_ids_tried": [],
+        "litvar_publications": 0,
+        "ensembl_variant_phenotypes": 0,
+        "uniprot_variant_annotations": 0,
+        "sources_with_hits": []
+    },
+    "gene_level_context": {
+        "recall_layer_ensembl": {
+            "total_associations": 12045,
+            "top_diseases": [
+                {
+                    "disease": "ClinVar: phenotype not specified",
+                    "count": 3604
+                },
+                {
+                    "disease": "FRONTOTEMPORAL DEMENTIA",
+                    "count": 3068
+                },
+                {
+                    "disease": "MAPT-Related Spectrum Disorders",
+                    "count": 2028
+                },
+                {
+                    "disease": "Syndromic intellectual disability",
+                    "count": 500
+                },
+                {
+                    "disease": "MAPT-related disorder",
+                    "count": 480
+                }
+            ]
+        },
+        "precision_layer_opentargets": {
+            "total_validated": 25,
+            "top_diseases": [
+                {
+                    "disease": "frontotemporal dementia",
+                    "overall_score": 0.7893
+                },
+                {
+                    "disease": "Pick disease",
+                    "overall_score": 0.7573
+                },
+                {
+                    "disease": "supranuclear palsy, progressive, 1",
+                    "overall_score": 0.7251
+                },
+                {
+                    "disease": "Progressive supranuclear palsy - parkinsonism",
+                    "overall_score": 0.7149
+                },
+                {
+                    "disease": "Atypical progressive supranuclear palsy",
+                    "overall_score": 0.7146
+                }
+            ]
+        }
+    },
+    "evidence_summary": {
+        "gene_ensembl_associations": 12045,
+        "gene_opentargets_validated": 25,
+        "variant_literature_count": 0,
+        "variant_uniprot_annotations": 0,
+        "variant_ensembl_phenotypes": 0,
+        "variant_in_clinvar": false,
+        "gene_has_clinvar_pathogenic": false,
+        "variant_in_alphamissense": false,
+        "variant_in_lovd": false,
+        "variant_in_clingenreg": false,
+        "variant_in_dbsnp": false,
+        "total_clinical_databases": 0
+    }
+}

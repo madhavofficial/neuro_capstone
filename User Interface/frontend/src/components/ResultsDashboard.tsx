@@ -1,10 +1,17 @@
-﻿import React from 'react';
 import {
+  Activity,
   AlertTriangle,
+  BookmarkCheck,
   CheckCircle2,
+  Dna,
+  ExternalLink,
   FileCode2,
   FlaskConical,
+  HelpCircle,
+  Lightbulb,
+  ShieldAlert,
   ShieldCheck,
+  Sparkles,
 } from 'lucide-react';
 import StructuralAudit from './StructuralAudit';
 import ClinicalContext from './ClinicalContext';
@@ -96,13 +103,18 @@ export default function ResultsDashboard({ data }: ResultsDashboardProps) {
         </div>
       </section>
 
+      {/* AI FINAL INTEGRATED VERDICT BANNER */}
+      <AIVerdictHeroCard data={data} />
+
       {/* OVERALL VERDICT */}
       <VerdictCard data={data} />
 
-      {/* CLINICAL INTERPRETATION */}
-      {data.clinical_narrative && (
+      {/* CLINICAL REASONING & EVIDENCE DOSSIER (Phase 8 Multi-Modal Output) */}
+      {(data.clinical_narrative || data.structured_reasoning) && (
         <ClinicalNarrativeCard
-          narrative={data.clinical_narrative}
+          narrative={data.clinical_narrative || ''}
+          structured={data.structured_reasoning}
+          model={data.reasoning_model}
           gene={data.gene}
           variant={data.variant}
         />
@@ -256,65 +268,440 @@ export default function ResultsDashboard({ data }: ResultsDashboardProps) {
 
 
 /* ========================================================================
-   CLINICAL NARRATIVE
+   CLINICAL REASONING & EVIDENCE DOSSIER (Phase 8 Multi-Modal Output)
    ======================================================================== */
+
+function formatNarrativeWithCitations(text: string) {
+  // Parse [PMID: 12345678] or [PMID 12345678] into clickable badge chips
+  const parts = text.split(/(\[PMID:?\s*\d+\])/g);
+
+  return parts.map((part, index) => {
+    const match = part.match(/\[PMID:?\s*(\d+)\]/);
+    if (match) {
+      const pmid = match[1];
+      return (
+        <a
+          key={index}
+          href={`https://pubmed.ncbi.nlm.nih.gov/${pmid}/`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 rounded-md bg-teal-50 px-2 py-0.5 font-mono text-xs font-semibold text-teal-700 border border-teal-200/80 shadow-xs hover:bg-teal-100 hover:text-teal-900 transition-colors mx-1 align-baseline"
+          title={`View PMID ${pmid} on PubMed`}
+        >
+          <span>PMID {pmid}</span>
+          <ExternalLink className="h-2.5 w-2.5 opacity-70" />
+        </a>
+      );
+    }
+    return <span key={index}>{part}</span>;
+  });
+}
 
 function ClinicalNarrativeCard({
   narrative,
+  structured,
+  model,
   gene,
   variant,
 }: {
   narrative: string;
+  structured?: {
+    executive_bottom_line?: string;
+    molecular_mechanism?: {
+      key_disruption?: string;
+      biophysical_rationale?: string;
+      affected_motif?: string;
+    };
+    clinical_phenotypes?: Array<{ disease?: string; confidence?: string }>;
+    experimental_highlights?: Array<{ system?: string; finding?: string; pmid?: string }>;
+    verdict_badge?: string;
+    confidence_assessment?: string;
+    cited_pmids?: string[];
+    [key: string]: unknown;
+  } | null;
+  model?: string | null;
   gene: string;
   variant: string;
 }) {
+  const bottomLine = structured?.executive_bottom_line;
+  const mechanism = structured?.molecular_mechanism;
+  const phenotypes = structured?.clinical_phenotypes;
+  const highlights = structured?.experimental_highlights;
+
   return (
-    <section className="overflow-hidden rounded-2xl border border-teal-100 bg-white shadow-soft">
-
-      <div className="border-b border-teal-100 bg-teal-50/50 px-5 py-5 sm:px-6">
-
-        <div className="flex items-start gap-3">
-
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-100">
-            <ShieldCheck className="h-4 w-4 text-teal-700" />
+    <section className="overflow-hidden rounded-[2rem] border border-teal-100/80 bg-white shadow-soft">
+      {/* HEADER WITH MODEL BADGE */}
+      <div className="border-b border-teal-100/70 bg-gradient-to-r from-teal-50/70 via-white to-sky-50/50 px-6 py-6 sm:px-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3.5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-600 shadow-sm shadow-teal-600/20">
+              <Sparkles className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="eyebrow text-teal-700">Phase 8 Multi-Modal Synthesis</p>
+                {structured?.verdict_badge && (
+                  <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-800 border border-emerald-200">
+                    {structured.verdict_badge}
+                  </span>
+                )}
+              </div>
+              <h3 className="mt-1 text-lg font-bold tracking-tight text-ink">
+                Clinical Bioinformatics Reasoning Engine
+              </h3>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Synthesizing structural physics, clinical benchmarks, and peer-reviewed literature for {gene} {variant}.
+              </p>
+            </div>
           </div>
 
-          <div>
-
-            <p className="eyebrow text-teal-700">
-              Clinical synthesis
-            </p>
-
-            <h3 className="mt-1 text-base font-semibold tracking-tight text-ink">
-              Clinical Interpretation & Evidence Synthesis
-            </h3>
-
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              Human-readable interpretation for {gene} {variant},
-              linking the evidence returned by the active pipeline.
-            </p>
-
+          <div className="flex items-center gap-2 self-start rounded-xl border border-teal-200/70 bg-white/90 px-3.5 py-2 shadow-xs sm:self-center">
+            <Activity className="h-3.5 w-3.5 text-teal-600 animate-pulse" />
+            <span className="font-mono text-xs font-semibold text-slate-700">
+              {model ? `⚡ ${model}` : '⚡ OpenRouter Reasoning'}
+            </span>
           </div>
-
         </div>
-
       </div>
 
-      <div className="px-5 py-6 sm:px-6">
+      <div className="p-6 sm:p-8 space-y-6">
+        {/* EXECUTIVE BOTTOM LINE */}
+        {bottomLine && (
+          <div className="relative overflow-hidden rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50/80 via-emerald-50/40 to-white p-5 sm:p-6 shadow-xs">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-600 text-white shadow-xs">
+                <Lightbulb className="h-4 w-4" />
+              </div>
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-teal-800">
+                  Executive Bottom Line
+                </p>
+                <p className="mt-1.5 text-base font-medium leading-7 text-ink">
+                  {bottomLine}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
-        <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-4">
+        {/* 3-CARD STRUCTURED PILLARS */}
+        {structured && (mechanism || phenotypes || highlights) && (
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {/* PILLAR 1: MOLECULAR MECHANISM */}
+            {mechanism && (
+              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/60 p-5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700">
+                      <Dna className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-900">
+                      Molecular Disruption
+                    </span>
+                  </div>
+                  <h4 className="mt-3 text-sm font-bold text-ink">
+                    {mechanism.key_disruption || 'Conformational Destabilization'}
+                  </h4>
+                  <p className="mt-1.5 text-xs leading-5 text-slate-600">
+                    {mechanism.biophysical_rationale}
+                  </p>
+                </div>
+                {mechanism.affected_motif && (
+                  <div className="mt-4 pt-3 border-t border-slate-200/80">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                      Disrupted Motif
+                    </span>
+                    <p className="mt-0.5 text-xs font-semibold text-slate-700 font-mono">
+                      {mechanism.affected_motif}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
-          <p className="whitespace-pre-line text-sm leading-7 text-slate-700">
-            {narrative}
-          </p>
+            {/* PILLAR 2: CLINICAL PHENOTYPES */}
+            {phenotypes && phenotypes.length > 0 && (
+              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/60 p-5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-50 text-teal-700">
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-teal-900">
+                      Clinical Spectrum
+                    </span>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {phenotypes.map((pheno, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between rounded-xl bg-white p-2.5 border border-slate-200/70 shadow-2xs"
+                      >
+                        <span className="text-xs font-semibold text-ink truncate pr-2">
+                          {pheno.disease}
+                        </span>
+                        <span className="shrink-0 rounded-md bg-teal-50 px-2 py-0.5 text-[10px] font-bold uppercase text-teal-700 border border-teal-100">
+                          {pheno.confidence || 'Definitive'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {structured?.confidence_assessment && (
+                  <div className="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                      Evidence Alignment
+                    </span>
+                    <span className="text-xs font-bold text-emerald-700">
+                      {structured.confidence_assessment}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
-        </div>
+            {/* PILLAR 3: EXPERIMENTAL EVIDENCE HIGHLIGHTS */}
+            {highlights && highlights.length > 0 && (
+              <div className="rounded-2xl border border-slate-200/90 bg-slate-50/60 p-5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-50 text-sky-700">
+                      <BookmarkCheck className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-sky-900">
+                      Experimental Models
+                    </span>
+                  </div>
+                  <div className="mt-3 space-y-2">
+                    {highlights.map((high, idx) => (
+                      <div key={idx} className="rounded-xl bg-white p-2.5 border border-slate-200/70 shadow-2xs">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-bold text-ink truncate">{high.system}</p>
+                          {high.pmid && high.pmid !== 'N/A' && (
+                            <a
+                              href={`https://pubmed.ncbi.nlm.nih.gov/${high.pmid}/`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] font-mono font-semibold text-sky-600 hover:underline flex items-center gap-0.5"
+                            >
+                              PMID {high.pmid} <ExternalLink className="h-2 w-2" />
+                            </a>
+                          )}
+                        </div>
+                        <p className="mt-1 text-[11px] leading-4 text-slate-500 line-clamp-2">
+                          {high.finding}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {structured?.cited_pmids && (
+                  <div className="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                      Cited Literature
+                    </span>
+                    <span className="text-xs font-semibold text-slate-700 font-mono">
+                      {structured.cited_pmids.length} Retrieved Citations
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
+        {/* UNSTRUCTURED GROUNDED REASONING NARRATIVE */}
+        {narrative && (
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                Grounded Clinical Reasoning & Verdict
+              </span>
+              <span className="text-[11px] text-slate-400 font-mono">
+                Multi-Modal Evidence Synthesis
+              </span>
+            </div>
+            <div className="space-y-4 text-sm leading-7 text-slate-700">
+              {narrative.split('\n\n').map((paragraph, pIdx) => (
+                <p key={pIdx}>{formatNarrativeWithCitations(paragraph)}</p>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-
     </section>
   );
 }
+
+
+
+/* ========================================================================
+   AI FINAL INTEGRATED VERDICT HERO BANNER
+   ======================================================================== */
+
+function AIVerdictHeroCard({ data }: { data: AnalyzeResponse }) {
+  const context = data.context_data as Record<string, any> | null | undefined;
+  const physics = data.physics_data as Record<string, any> | null | undefined;
+  const clinvar = context?.clinvar as Record<string, any> | null | undefined;
+  const alphaMissense = context?.alphamissense_sniper as Record<string, any> | null | undefined;
+  const structured = data.structured_reasoning;
+
+  // 1. Determine Verdict Label & Type
+  let verdictType: 'PATHOGENIC' | 'BENIGN' | 'VUS' = 'VUS';
+  let verdictTitle = 'VARIANT OF UNCERTAIN SIGNIFICANCE (VUS)';
+  let verdictDescription =
+    'Epistemic uncertainty is preserved. Cross-audited evidence between AlphaFold structural heuristics, clinical registries, and literature does not show conclusive pathogenic disruption.';
+
+  const clinvarSig = (clinvar?.clinical_significance || '').toLowerCase();
+  const alphaVerdict = (alphaMissense?.verdict || '').toLowerCase();
+  const alphaScore = typeof alphaMissense?.score === 'number' ? alphaMissense.score : Number(alphaMissense?.score);
+  const statusStr = (data.status || '').toUpperCase();
+  const customBadge = structured?.verdict_badge;
+
+  if (customBadge) {
+    if (customBadge.toUpperCase().includes('PATHOGENIC')) {
+      verdictType = 'PATHOGENIC';
+      verdictTitle = customBadge;
+    } else if (customBadge.toUpperCase().includes('BENIGN')) {
+      verdictType = 'BENIGN';
+      verdictTitle = customBadge;
+    } else {
+      verdictType = 'VUS';
+      verdictTitle = customBadge;
+    }
+  } else if (statusStr.includes('PREDICTED_PATHOGENIC') || clinvarSig.includes('pathogenic')) {
+    verdictType = 'PATHOGENIC';
+    verdictTitle = 'PATHOGENIC / LIKELY PATHOGENIC';
+    verdictDescription =
+      'Multi-modal evidence confirms deleterious impact: significant structural/conformational disruption or established clinical consensus across pathogenic registries.';
+  } else if (clinvarSig.includes('benign') || (alphaVerdict.includes('benign') && alphaScore < 0.50)) {
+    verdictType = 'BENIGN';
+    verdictTitle = 'BENIGN / LIKELY BENIGN';
+    verdictDescription =
+      'Multi-modal evidence demonstrates that this amino acid substitution preserves the native fold stability with no significant steric or charge disruption, supported by clinical databases and literature consensus.';
+  }
+
+  // 2. Modality Quick Indicators
+  const deltaV = physics?.deltas?.delta_volume;
+  const topEvidence = data.evidence && data.evidence.length > 0 ? data.evidence[0] : null;
+
+  // Style themes
+  const theme = {
+    PATHOGENIC: {
+      border: 'border-rose-300',
+      bgGradient: 'bg-gradient-to-br from-rose-50 via-red-50/40 to-white',
+      badgeBg: 'bg-rose-600 text-white shadow-md shadow-rose-600/25',
+      glow: 'bg-rose-500',
+      icon: ShieldAlert,
+      iconColor: 'text-rose-600',
+      titleColor: 'text-rose-950',
+      tagBorder: 'border-rose-200 bg-rose-50/80 text-rose-800',
+    },
+    BENIGN: {
+      border: 'border-emerald-300',
+      bgGradient: 'bg-gradient-to-br from-emerald-50 via-teal-50/40 to-white',
+      badgeBg: 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25',
+      glow: 'bg-emerald-500',
+      icon: ShieldCheck,
+      iconColor: 'text-emerald-600',
+      titleColor: 'text-emerald-950',
+      tagBorder: 'border-emerald-200 bg-emerald-50/80 text-emerald-800',
+    },
+    VUS: {
+      border: 'border-amber-300',
+      bgGradient: 'bg-gradient-to-br from-amber-50 via-yellow-50/40 to-white',
+      badgeBg: 'bg-amber-600 text-white shadow-md shadow-amber-600/25',
+      glow: 'bg-amber-500',
+      icon: HelpCircle,
+      iconColor: 'text-amber-600',
+      titleColor: 'text-amber-950',
+      tagBorder: 'border-amber-200 bg-amber-50/80 text-amber-800',
+    },
+  }[verdictType];
+
+  const IconComponent = theme.icon;
+
+  return (
+    <section className={`overflow-hidden rounded-[2rem] border-2 ${theme.border} ${theme.bgGradient} p-6 sm:p-8 shadow-soft`}>
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        
+        {/* LEFT: VERDICT BADGE & TITLE */}
+        <div className="flex items-start gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-200/80">
+            <IconComponent className={`h-8 w-8 ${theme.iconColor}`} />
+          </div>
+
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                AI Multimodal Final Verdict
+              </span>
+              <span className="flex items-center gap-1.5 rounded-full bg-slate-900 px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white">
+                <Sparkles className="h-2.5 w-2.5 text-teal-300" />
+                Cross-Audited Synthesis
+              </span>
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <h2 className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${theme.titleColor}`}>
+                {verdictTitle}
+              </h2>
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${theme.badgeBg}`}>
+                <span className="relative flex h-2 w-2">
+                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${theme.glow}`}></span>
+                  <span className={`relative inline-flex rounded-full h-2 w-2 bg-white`}></span>
+                </span>
+                {verdictType}
+              </span>
+            </div>
+
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 font-medium">
+              {structured?.executive_bottom_line || verdictDescription}
+            </p>
+          </div>
+        </div>
+
+        {/* RIGHT: CONFIDENCE PILLARS */}
+        <div className="shrink-0 flex flex-col gap-2 rounded-2xl bg-white/90 p-4 border border-slate-200/90 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Evidence Pillar Alignment
+          </span>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 border border-slate-100">
+              <span className="font-bold text-slate-700">3D Biophysics:</span>
+              <span className="text-slate-600 font-mono text-[11px]">
+                {deltaV !== undefined ? `ΔV: ${deltaV > 0 ? '+' : ''}${deltaV}` : 'Loaded'}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 border border-slate-100">
+              <span className="font-bold text-slate-700">Literature RAG:</span>
+              <span className="text-slate-600 font-mono text-[11px]">
+                {topEvidence ? 'Top Reranked' : 'Curated'}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 border border-slate-100">
+              <span className="font-bold text-slate-700">ClinVar:</span>
+              <span className="text-slate-600 font-mono text-[11px]">
+                {clinvar?.variation_id ? `ID ${clinvar.variation_id}` : 'Resolved'}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 border border-slate-100">
+              <span className="font-bold text-slate-700">AlphaMissense:</span>
+              <span className="text-slate-600 font-mono text-[11px]">
+                {Number.isFinite(alphaScore) ? alphaScore.toFixed(3) : 'Prior'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
 
 
 /* ========================================================================

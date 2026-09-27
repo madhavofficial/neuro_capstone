@@ -1,20 +1,20 @@
 {
-    "variant": "A53T",
+    "variant": "A53P",
     "comparison_view": {
         "residue": {
             "wt": "ALA",
-            "mut": "THR",
+            "mut": "PRO",
             "delta": null
         },
         "volume": {
             "wt": 88.6,
-            "mut": 116.1,
-            "delta": 27.5
+            "mut": 112.7,
+            "delta": 24.1
         },
         "hydrophobicity": {
             "wt": 1.8,
-            "mut": -0.7,
-            "delta": -2.5
+            "mut": -1.6,
+            "delta": -3.4
         },
         "charge": {
             "wt": 0.0,
@@ -49,14 +49,14 @@
         "charge": 0.0
     },
     "mutant_properties": {
-        "residue": "THR",
-        "volume": 116.1,
-        "hydrophobicity": -0.7,
+        "residue": "PRO",
+        "volume": 112.7,
+        "hydrophobicity": -1.6,
         "charge": 0.0
     },
     "deltas": {
-        "delta_volume": 27.5,
-        "delta_hydrophobicity": -2.5,
+        "delta_volume": 24.1,
+        "delta_hydrophobicity": -3.4,
         "delta_charge": 0
     },
     "structural_context_wt": {
@@ -71,7 +71,7 @@
         "disulfides_lost": [],
         "disulfides_gained": [],
         "h_bonds_lost_est": 0,
-        "h_bonds_gained_est": 16,
-        "backbone_strain": "None"
+        "h_bonds_gained_est": 0,
+        "backbone_strain": "Proline Helix Breaker"
     }
 }

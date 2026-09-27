@@ -162,12 +162,13 @@
             "SNCA:p.Ala53Thr",
             "chr4:g.89828149G>A"
         ],
-        "litvar_publications": 4908,
-        "ensembl_variant_phenotypes": 0,
+        "litvar_publications": 4909,
+        "ensembl_variant_phenotypes": 4,
         "uniprot_variant_annotations": 1,
         "sources_with_hits": [
             "LitVar",
-            "UniProt"
+            "UniProt",
+            "Ensembl"
         ]
     },
     "gene_level_context": {
@@ -204,9 +205,9 @@
     "evidence_summary": {
         "gene_ensembl_associations": 0,
         "gene_opentargets_validated": 25,
-        "variant_literature_count": 4908,
+        "variant_literature_count": 4909,
         "variant_uniprot_annotations": 1,
-        "variant_ensembl_phenotypes": 0,
+        "variant_ensembl_phenotypes": 4,
         "variant_in_clinvar": true,
         "gene_has_clinvar_pathogenic": false,
         "variant_in_alphamissense": true,

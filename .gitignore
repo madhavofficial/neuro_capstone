@@ -8,6 +8,14 @@ __pycache__/
 dist/
 build/
 *.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+pytest.xml
 
 # Virtual Environment
 .venv/
@@ -20,7 +28,7 @@ env/
 */.ipynb_checkpoints/*
 
 # Data and Artifacts
-# We ignore the entire data directory but keep the structure
+# Ignore generated data by default, but keep benchmark artifacts intentionally tracked.
 data/*
 !data/**/.gitkeep
 !data/benchmarks/
@@ -29,13 +37,25 @@ data/*
 !data/benchmarks/*.jsonl
 !data/benchmarks/*.md
 
-# Specifically ignore large/binary data that might be outside white-listing
+data/benchmarks/runs/
+data/benchmarks/runs/**
+
+# Large/binary/generated data
 *.bin
 *.npy
 *.pdb
+*.sqlite3
+*.db
+*.pickle
+*.pkl
+
+# Browser automation/session artifacts
+.playwright-mcp/
 
 # Local environment secrets
 .env
+.env.*
+!.env.example
 
 # IDEs
 .vscode/
@@ -57,10 +77,32 @@ Untitled*
 scratch/
 temp/
 tmp/
+*.bak
+
+# Manuscript and exported assets
+paper*.txt
+paper*.pdf
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.svg
+overleaf-paper.png
+paper-source.txt
+paper.pdf
+
+# Local developer scratch scripts
+reasoning_engine.py
+
+# Local regression/test scratch files
+tests/
 
 # Logs
 *.log
 
+# Project-specific generated files
+run_*.json
+*.snapshot
 
 draw_architecture.py
 
@@ -70,3 +112,8 @@ User Interface/frontend/dist/
 User Interface/frontend/*.tsbuildinfo
 User Interface/frontend/vite.config.js
 User Interface/frontend/vite.config.d.ts
+User Interface/frontend/.vite/
+User Interface/frontend/.cache/
+
+# Local app caches
+.cache/

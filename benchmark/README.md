@@ -9,7 +9,7 @@ python -m benchmark.benchmark --gold data/benchmarks/gold_variants.csv --dry-run
 python -m benchmark.benchmark --gold data/benchmarks/gold_variants.csv
 ```
 
-For the full stage-by-stage benchmark and visual report:
+Both `python -m benchmark.benchmark` and `python -m benchmark.full_runner` execute the canonical stage-by-stage pipeline (real structure retrieval, biophysics, clinical context, and dual-RAG literature):
 
 ```bash
 BENCHMARK_OFFLINE=1 python3 -m benchmark.full_runner \
