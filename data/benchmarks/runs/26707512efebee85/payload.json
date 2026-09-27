@@ -1,0 +1,13 @@
+{
+  "status": "LOW_CONFIDENCE",
+  "confidence_matrix": {
+    "physics_engine": "HEURISTIC",
+    "literature_rag": "NULL_RESULTS",
+    "clinical_context": "UNAVAILABLE",
+    "clinical_context_scope": "UNAVAILABLE",
+    "physics_evidence_scope": "SITE_PROPERTY_HEURISTIC"
+  },
+  "query": "SNCA E46K",
+  "evidence_score_type": "raw_cross_encoder_score",
+  "evidence": []
+}

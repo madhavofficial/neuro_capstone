@@ -17,9 +17,18 @@ physical simulation.
    - Python 3.8 or higher
    - Internet connection (for API access to EBI, UniProt, OpenTargets)
 
-2. INSTALL DEPENDENCIES:
+2. CREATE AND ACTIVATE VIRTUAL ENVIRONMENT:
+   # Windows (PowerShell)
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+
+   # Linux / macOS / Git Bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+
+3. INSTALL DEPENDENCIES:
    Run the following command to install required libraries:
-   
+
    pip install requests numpy biopython
 
    (Note: 'pysam' is NO LONGER REQUIRED. The pipeline now uses the 
@@ -185,5 +194,72 @@ Expected Output:
    - Cause: The mutation might be truly novel (never seen before).
    - System Behavior: The pipeline relies on the "Precision Layer" (OpenTargets)
      and will eventually defer to the Physics Engine (Step 3).
+mahika,manasa,kirthan and bhargav
+=============================================================================
+DATABASE & SUPABASE SETUP
+=============================================================================
 
+The project uses a single Supabase project for PostgreSQL database storage
+and Supabase Storage.
+
+POSTGRESQL TABLES:
+   - proteins
+   - variants
+   - clinical_cache
+   - biophysics_metrics
+   - pipeline_runs
+
+The tables use primary keys, foreign-key relationships, uniqueness/check
+constraints where required, and Row Level Security (RLS) is enabled.
+
+SUPABASE STORAGE BUCKETS:
+   - pdb-files       # PDB structure files
+   - raw-corpora     # Raw corpus/payload files
+   - faiss-indexes   # FAISS index files
+
+DATABASE MIGRATION:
+   The initial PostgreSQL schema is version-controlled at:
+
+      supabase/migrations/001_initial_schema.sql
+
+The migration contains the five table definitions and RLS enablement.
+Storage buckets were created separately through the Supabase dashboard.
+
+IMPORTANT:
+   - The database tables are currently empty.
+   - Supabase has been provisioned, but the Python pipeline is not yet
+     integrated with Supabase.
+   - RLS policies have not been added yet; RLS is enabled on all five tables.
+
+=============================================================================
+LOCAL PROJECT TESTING
+=============================================================================
+
+Environment:
+   - Python 3.13
+   - requests 2.34.2
+   - numpy 2.5.2
+   - biopython 1.88
+
+Structure retrieval test:
+   python fetch_structure.py TTR
+
+Result:
+   - UniProt ID P02766 was resolved successfully.
+   - AlphaFold structure retrieval succeeded.
+   - TTR PDB file was downloaded successfully.
+
+Full pipeline test:
+   python pipeline.py SNCA --variant A53T --analysis-out-dir data/analysis
+
+Result:
+   - Structure retrieval succeeded.
+   - Clinical/context retrieval succeeded.
+   - The pipeline stopped at the literature stage because the current
+     environment is missing the 'bs4' dependency.
+   - A DSSP/mkdssp warning was also reported.
+
+The full pipeline test should therefore not currently be considered
+successful until the missing dependencies/environment requirements are
+resolved.
 =============================================================================

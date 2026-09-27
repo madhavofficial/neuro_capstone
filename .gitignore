@@ -8,6 +8,14 @@ __pycache__/
 dist/
 build/
 *.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+pytest.xml
 
 # Virtual Environment
 .venv/
@@ -15,21 +23,39 @@ venv/
 ENV/
 env/
 
-# Data files (PDB structures, JSON outputs)
-data/structure/*.pdb
-data/structures/*.pdb
-data/analysis/*.json
-data/context/*.json
-
-# Keep directory structure but ignore contents
-!data/structure/.gitkeep
-!data/structures/.gitkeep
-!data/analysis/.gitkeep
-!data/context/.gitkeep
-
-# Jupyter Notebook
+# Jupyter Notebooks
 .ipynb_checkpoints/
-*.ipynb
+*/.ipynb_checkpoints/*
+
+# Data and Artifacts
+# Ignore generated data by default, but keep benchmark artifacts intentionally tracked.
+data/*
+!data/**/.gitkeep
+!data/benchmarks/
+!data/benchmarks/*.csv
+!data/benchmarks/*.json
+!data/benchmarks/*.jsonl
+!data/benchmarks/*.md
+
+data/benchmarks/runs/
+data/benchmarks/runs/**
+
+# Large/binary/generated data
+*.bin
+*.npy
+*.pdb
+*.sqlite3
+*.db
+*.pickle
+*.pkl
+
+# Browser automation/session artifacts
+.playwright-mcp/
+
+# Local environment secrets
+.env
+.env.*
+!.env.example
 
 # IDEs
 .vscode/
@@ -46,14 +72,48 @@ data/context/*.json
 .Trashes
 Thumbs.db
 
+# Scratch and Temporary files
+Untitled*
+scratch/
+temp/
+tmp/
+*.bak
+
+# Manuscript and exported assets
+paper*.txt
+paper*.pdf
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.svg
+overleaf-paper.png
+paper-source.txt
+paper.pdf
+
+# Local developer scratch scripts
+reasoning_engine.py
+
+# Local regression/test scratch files
+tests/
+
 # Logs
 *.log
 
-# Test outputs
-test_*.txt
-temp_*.txt
+# Project-specific generated files
+run_*.json
+*.snapshot
 
-# Batch target files
-neuro_targets.txt
-data/neuro_targets.txt
+draw_architecture.py
 
+# Frontend dependencies and generated files
+User Interface/frontend/node_modules/
+User Interface/frontend/dist/
+User Interface/frontend/*.tsbuildinfo
+User Interface/frontend/vite.config.js
+User Interface/frontend/vite.config.d.ts
+User Interface/frontend/.vite/
+User Interface/frontend/.cache/
+
+# Local app caches
+.cache/

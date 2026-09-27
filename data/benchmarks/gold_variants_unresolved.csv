@@ -1,0 +1,10 @@
+variant_id,gene,variant,label,clinvar_variation_id,review_status,condition,source_url,date_retrieved
+snca-a18t,SNCA,A18T,benign,UNRESOLVED,missing_exact_variant,not specified,https://www.ncbi.nlm.nih.gov/clinvar/?term=SNCA%5Bgene%5D+AND+%28%22A18T%22+OR+%22Ala18Thr%22+OR+%22p.Ala18Thr%22+OR+%22p.A18T%22%29,2026-08-17
+snca-a90v,SNCA,A90V,benign,UNRESOLVED,missing_exact_variant,not specified,https://www.ncbi.nlm.nih.gov/clinvar/?term=SNCA%5Bgene%5D+AND+%28%22A90V%22+OR+%22Ala90Val%22+OR+%22p.Ala90Val%22+OR+%22p.A90V%22%29,2026-08-17
+snca-e35k,SNCA,E35K,benign,UNRESOLVED,missing_exact_variant,not specified,https://www.ncbi.nlm.nih.gov/clinvar/?term=SNCA%5Bgene%5D+AND+%28%22E35K%22+OR+%22Glu35Lys%22+OR+%22p.Glu35Lys%22+OR+%22p.E35K%22%29,2026-08-17
+snca-t72m,SNCA,T72M,benign,UNRESOLVED,missing_exact_variant,not specified,https://www.ncbi.nlm.nih.gov/clinvar/?term=SNCA%5Bgene%5D+AND+%28%22T72M%22+OR+%22Thr72Met%22+OR+%22p.Thr72Met%22+OR+%22p.T72M%22%29,2026-08-17
+snca-r69c,SNCA,R69C,vus,UNRESOLVED,missing_exact_variant,not specified,https://www.ncbi.nlm.nih.gov/clinvar/?term=SNCA%5Bgene%5D+AND+%28%22R69C%22+OR+%22Arg69Cys%22+OR+%22p.Arg69Cys%22+OR+%22p.R69C%22%29,2026-08-17
+snca-g93a,SNCA,G93A,vus,UNRESOLVED,missing_exact_variant,not specified,https://www.ncbi.nlm.nih.gov/clinvar/?term=SNCA%5Bgene%5D+AND+%28%22G93A%22+OR+%22Gly93Ala%22+OR+%22p.Gly93Ala%22+OR+%22p.G93A%22%29,2026-08-17
+snca-v118a,SNCA,V118A,vus,UNRESOLVED,missing_exact_variant,not specified,https://www.ncbi.nlm.nih.gov/clinvar/?term=SNCA%5Bgene%5D+AND+%28%22V118A%22+OR+%22Val118Ala%22+OR+%22p.Val118Ala%22+OR+%22p.V118A%22%29,2026-08-17
+ttr-t59a,TTR,T59A,benign,UNRESOLVED,missing_exact_variant,not specified,https://www.ncbi.nlm.nih.gov/clinvar/?term=TTR%5Bgene%5D+AND+%28%22T59A%22+OR+%22Thr59Ala%22+OR+%22p.Thr59Ala%22+OR+%22p.T59A%22%29,2026-08-17
+ttr-v52g,TTR,V52G,vus,UNRESOLVED,missing_exact_variant,not specified,https://www.ncbi.nlm.nih.gov/clinvar/?term=TTR%5Bgene%5D+AND+%28%22V52G%22+OR+%22Val52Gly%22+OR+%22p.Val52Gly%22+OR+%22p.V52G%22%29,2026-08-17

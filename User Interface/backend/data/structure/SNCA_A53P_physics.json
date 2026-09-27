@@ -1,0 +1,77 @@
+{
+    "variant": "A53P",
+    "comparison_view": {
+        "residue": {
+            "wt": "ALA",
+            "mut": "PRO",
+            "delta": null
+        },
+        "volume": {
+            "wt": 88.6,
+            "mut": 112.7,
+            "delta": 24.1
+        },
+        "hydrophobicity": {
+            "wt": 1.8,
+            "mut": -1.6,
+            "delta": -3.4
+        },
+        "charge": {
+            "wt": 0.0,
+            "mut": 0.0,
+            "delta": 0.0
+        },
+        "sasa": {
+            "wt": 51.54,
+            "mut": null,
+            "delta": null
+        },
+        "plddt_confidence": {
+            "wt": 89.62,
+            "mut": null,
+            "delta": null
+        },
+        "secondary_structure": {
+            "wt": "Alpha Helix",
+            "mut": null,
+            "delta": null
+        },
+        "exposure": {
+            "wt": "Exposed",
+            "mut": null,
+            "delta": null
+        }
+    },
+    "wild_type": {
+        "residue": "ALA",
+        "volume": 88.6,
+        "hydrophobicity": 1.8,
+        "charge": 0.0
+    },
+    "mutant_properties": {
+        "residue": "PRO",
+        "volume": 112.7,
+        "hydrophobicity": -1.6,
+        "charge": 0.0
+    },
+    "deltas": {
+        "delta_volume": 24.1,
+        "delta_hydrophobicity": -3.4,
+        "delta_charge": 0
+    },
+    "structural_context_wt": {
+        "sasa": 51.54,
+        "exposure": "Exposed",
+        "secondary_structure": "Alpha Helix",
+        "plddt_confidence": 89.62
+    },
+    "stability_audit": {
+        "salt_bridges_lost": [],
+        "salt_bridges_gained": [],
+        "disulfides_lost": [],
+        "disulfides_gained": [],
+        "h_bonds_lost_est": 0,
+        "h_bonds_gained_est": 0,
+        "backbone_strain": "Proline Helix Breaker"
+    }
+}

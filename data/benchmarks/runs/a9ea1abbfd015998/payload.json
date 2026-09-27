@@ -1,0 +1,186 @@
+{
+  "status": "LOW_CONFIDENCE",
+  "confidence_matrix": {
+    "physics_engine": "ERROR",
+    "literature_rag": "NULL_RESULTS",
+    "clinical_context": "HIGH",
+    "clinical_context_scope": "EXACT_VARIANT",
+    "physics_evidence_scope": "UNAVAILABLE"
+  },
+  "query": "SNCA A53T",
+  "evidence_score_type": "raw_cross_encoder_score",
+  "evidence": [],
+  "clinical_context": {
+    "gene": "SNCA",
+    "uniprot_id": "P37840",
+    "variant": "A53T",
+    "alphamissense_sniper": {
+      "score": 0.7863,
+      "verdict": "Pathogenic"
+    },
+    "clinvar": {
+      "accession": "VCV000014007.12",
+      "variation_id": "14007",
+      "clinical_significance": "Pathogenic",
+      "review_status": "criteria provided, multiple submitters, no conflicts",
+      "conditions": [
+        "Autosomal dominant Parkinson disease 1",
+        "Lewy body dementia",
+        "Autosomal dominant Parkinson disease 1",
+        "Autosomal dominant Parkinson disease 4",
+        "Lewy body dementia",
+        "not provided",
+        "Autosomal dominant Parkinson disease 4"
+      ],
+      "search_term_used": "SNCA[gene] AND (A53T OR p.Ala53Thr)",
+      "source": "NCBI_ClinVar_Exact",
+      "variant_match": true,
+      "scope": "exact_variant"
+    },
+    "lovd": null,
+    "clingenreg": {
+      "source": "ClinGen_Allele_Registry",
+      "allele_id": "http://reg.genome.network/allele/PA094718",
+      "hgvs_used": "NP_000336.1:p.Ala53Thr",
+      "standardized": true,
+      "community_standard_title": null,
+      "external_records": {
+        "ClinVarAlleles": [
+          {
+            "@id": "http://www.ncbi.nlm.nih.gov/clinvar/?term=29046[alleleid]",
+            "alleleId": 29046,
+            "preferredName": "NM_000345.4(SNCA):c.157G>A (p.Ala53Thr)"
+          }
+        ],
+        "ClinVarVariations": [
+          {
+            "@id": "http://www.ncbi.nlm.nih.gov/clinvar/variation/14007",
+            "RCV": [
+              "RCV000015044",
+              "RCV000526380"
+            ],
+            "variationId": 14007
+          }
+        ]
+      },
+      "raw_data": {
+        "@context": "http://reg.genome.network/schema/allele.jsonld",
+        "@id": "http://reg.genome.network/allele/PA094718",
+        "aminoAcidAlleles": [
+          {
+            "coordinates": [
+              {
+                "allele": "T",
+                "end": 53,
+                "referenceAllele": "A",
+                "start": 52
+              }
+            ],
+            "gene": "http://reg.genome.network/gene/GN011138",
+            "geneNCBI_id": 6622,
+            "geneSymbol": "SNCA",
+            "hgvs": [
+              "NP_000336.1:p.Ala53Thr"
+            ],
+            "matchingRegisteredTranscripts": [
+              {
+                "@id": "http://reg.genome.network/allele/CA257068",
+                "hgvs": "NM_000345.4:c.157G>A"
+              }
+            ],
+            "referenceSequence": "http://reg.genome.network/refseq/RS146890"
+          }
+        ],
+        "externalRecords": {
+          "ClinVarAlleles": [
+            {
+              "@id": "http://www.ncbi.nlm.nih.gov/clinvar/?term=29046[alleleid]",
+              "alleleId": 29046,
+              "preferredName": "NM_000345.4(SNCA):c.157G>A (p.Ala53Thr)"
+            }
+          ],
+          "ClinVarVariations": [
+            {
+              "@id": "http://www.ncbi.nlm.nih.gov/clinvar/variation/14007",
+              "RCV": [
+                "RCV000015044",
+                "RCV000526380"
+              ],
+              "variationId": 14007
+            }
+          ]
+        },
+        "type": "amino-acid"
+      }
+    },
+    "dbsnp": {
+      "source": "NCBI_dbSNP_via_Eutilities",
+      "rsid": "rs104893877",
+      "chromosome": "4",
+      "position": 89828149,
+      "snp_id": "104893877"
+    },
+    "variant_specific_context": {
+      "variant_ids_tried": [
+        "SNCA A53T",
+        "SNCA:A53T",
+        "P37840:p.Ala53Thr",
+        "SNCA:p.Ala53Thr",
+        "chr4:g.89828149G>A"
+      ],
+      "litvar_publications": 4905,
+      "ensembl_variant_phenotypes": 0,
+      "uniprot_variant_annotations": 1,
+      "sources_with_hits": [
+        "LitVar",
+        "UniProt"
+      ]
+    },
+    "gene_level_context": {
+      "recall_layer_ensembl": {
+        "total_associations": 0,
+        "top_diseases": []
+      },
+      "precision_layer_opentargets": {
+        "total_validated": 25,
+        "top_diseases": [
+          {
+            "disease": "Hereditary late-onset Parkinson disease",
+            "overall_score": 0.7878
+          },
+          {
+            "disease": "Young adult-onset Parkinsonism",
+            "overall_score": 0.7729
+          },
+          {
+            "disease": "Lewy body dementia",
+            "overall_score": 0.7416
+          },
+          {
+            "disease": "Parkinson disease",
+            "overall_score": 0.7107
+          },
+          {
+            "disease": "AL amyloidosis",
+            "overall_score": 0.462
+          }
+        ]
+      }
+    },
+    "evidence_summary": {
+      "gene_ensembl_associations": 0,
+      "gene_opentargets_validated": 25,
+      "variant_literature_count": 4905,
+      "variant_uniprot_annotations": 1,
+      "variant_ensembl_phenotypes": 0,
+      "variant_in_clinvar": true,
+      "gene_has_clinvar_pathogenic": false,
+      "variant_in_alphamissense": true,
+      "variant_in_lovd": false,
+      "variant_in_clingenreg": true,
+      "variant_in_dbsnp": true,
+      "total_clinical_databases": 3
+    }
+  },
+  "clinical_label": "Pathogenic"
+}

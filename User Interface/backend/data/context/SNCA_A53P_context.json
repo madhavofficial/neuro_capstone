@@ -1,0 +1,150 @@
+{
+    "gene": "SNCA",
+    "uniprot_id": "P37840",
+    "variant": "A53P",
+    "alphamissense_sniper": {
+        "score": 0.7863,
+        "verdict": "Pathogenic"
+    },
+    "clinvar": {
+        "accession": "ClinVar_Gene_Coverage",
+        "clinical_significance": "Gene has pathogenic variants in ClinVar",
+        "review_status": "Direct_ClinVar_Search",
+        "conditions": [
+            "Pathogenic Variants Found"
+        ],
+        "search_term_used": "SNCA[gene] AND pathogenic",
+        "source": "NCBI_Direct_Simplified",
+        "variant_count": 10,
+        "variant_match": false,
+        "scope": "gene_level"
+    },
+    "lovd": null,
+    "clingenreg": {
+        "source": "ClinGen_Allele_Registry",
+        "allele_id": "http://reg.genome.network/allele/PA2579880284",
+        "hgvs_used": "NP_000336.1:p.Ala53Pro",
+        "standardized": true,
+        "community_standard_title": null,
+        "external_records": {},
+        "raw_data": {
+            "@context": "http://reg.genome.network/schema/allele.jsonld",
+            "@id": "http://reg.genome.network/allele/PA2579880284",
+            "aminoAcidAlleles": [
+                {
+                    "coordinates": [
+                        {
+                            "allele": "P",
+                            "end": 53,
+                            "referenceAllele": "A",
+                            "start": 52
+                        }
+                    ],
+                    "gene": "http://reg.genome.network/gene/GN011138",
+                    "geneNCBI_id": 6622,
+                    "geneSymbol": "SNCA",
+                    "hgvs": [
+                        "NP_000336.1:p.Ala53Pro"
+                    ],
+                    "matchingRegisteredTranscripts": [
+                        {
+                            "@id": "http://reg.genome.network/allele/CA357714833",
+                            "hgvs": "NM_000345.4:c.157G>C"
+                        }
+                    ],
+                    "referenceSequence": "http://reg.genome.network/refseq/RS146890"
+                }
+            ],
+            "type": "amino-acid"
+        }
+    },
+    "dbsnp": {
+        "source": "NCBI_dbSNP_via_Eutilities",
+        "rsid": "rs104893877",
+        "chromosome": "4",
+        "position": 89828149,
+        "snp_id": "104893877"
+    },
+    "variant_specific_context": {
+        "variant_ids_tried": [
+            "SNCA A53P",
+            "SNCA:A53P",
+            "P37840:p.Ala53Pro",
+            "SNCA:p.Ala53Pro",
+            "chr4:g.89828149G>C"
+        ],
+        "litvar_publications": 19,
+        "ensembl_variant_phenotypes": 0,
+        "uniprot_variant_annotations": 1,
+        "sources_with_hits": [
+            "LitVar",
+            "UniProt"
+        ]
+    },
+    "gene_level_context": {
+        "recall_layer_ensembl": {
+            "total_associations": 300,
+            "top_diseases": [
+                {
+                    "disease": "Parkinson Disease, Dominant",
+                    "count": 91
+                },
+                {
+                    "disease": "Lewy body dementia",
+                    "count": 65
+                },
+                {
+                    "disease": "ClinVar: phenotype not specified",
+                    "count": 54
+                },
+                {
+                    "disease": "Parkinson's disease",
+                    "count": 22
+                },
+                {
+                    "disease": "Parkinson disease",
+                    "count": 12
+                }
+            ]
+        },
+        "precision_layer_opentargets": {
+            "total_validated": 25,
+            "top_diseases": [
+                {
+                    "disease": "Hereditary late-onset Parkinson disease",
+                    "overall_score": 0.7878
+                },
+                {
+                    "disease": "Young adult-onset Parkinsonism",
+                    "overall_score": 0.7729
+                },
+                {
+                    "disease": "Lewy body dementia",
+                    "overall_score": 0.7416
+                },
+                {
+                    "disease": "Parkinson disease",
+                    "overall_score": 0.7107
+                },
+                {
+                    "disease": "AL amyloidosis",
+                    "overall_score": 0.462
+                }
+            ]
+        }
+    },
+    "evidence_summary": {
+        "gene_ensembl_associations": 300,
+        "gene_opentargets_validated": 25,
+        "variant_literature_count": 19,
+        "variant_uniprot_annotations": 1,
+        "variant_ensembl_phenotypes": 0,
+        "variant_in_clinvar": false,
+        "gene_has_clinvar_pathogenic": true,
+        "variant_in_alphamissense": true,
+        "variant_in_lovd": false,
+        "variant_in_clingenreg": true,
+        "variant_in_dbsnp": true,
+        "total_clinical_databases": 3
+    }
+}
