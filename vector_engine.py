@@ -6,7 +6,8 @@ import faiss
 import torch
 
 from sentence_transformers import SentenceTransformer, CrossEncoder
-
+from model_config import BI_ENCODER_MODEL as bi_encoder_model
+from model_config import CROSS_ENCODER_MODEL as cross_encoder_model
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -18,9 +19,6 @@ class EmptyCorpusError(RuntimeError):
     and there is nothing to embed or search.
     """
     pass
-
-MODEL_NAME = "pritamdeka/S-PubMedBert-MS-MARCO"
-RERANK_MODEL = "cross-encoder/ms-marco-TinyBERT-L-2-v2"
 
 _BI_ENCODER = None
 _CROSS_ENCODER = None
@@ -55,8 +53,8 @@ def _select_device():
 def load_models():
     device = _select_device()
     logger.info(f"Loading Models on device: {device}")
-    bi_encoder = SentenceTransformer(MODEL_NAME, device=device)
-    cross_encoder = CrossEncoder(RERANK_MODEL, device=device)
+    bi_encoder = SentenceTransformer(bi_encoder_model, device=device)
+    cross_encoder = CrossEncoder(cross_encoder_model, device=device)
     return bi_encoder, cross_encoder
 
 def get_models():

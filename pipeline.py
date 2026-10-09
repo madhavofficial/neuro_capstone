@@ -9,6 +9,7 @@ import sys
 import time
 from dataclasses import dataclass
 from typing import Iterable, Optional, Tuple
+from model_config import BI_ENCODER_MODEL as bi_encoder_model
 
 
 @dataclass(frozen=True)
@@ -276,7 +277,7 @@ def process_literature_json(gene: str, variant: str, *, literature_dir: str = "d
     tokenizer = None
     try:
         if _TOKENIZER_CACHE is None:
-            _TOKENIZER_CACHE = AutoTokenizer.from_pretrained("pritamdeka/S-PubMedBert-MS-MARCO", use_fast=True)
+            _TOKENIZER_CACHE = AutoTokenizer.from_pretrained(bi_encoder_model, use_fast=True)
         tokenizer = _TOKENIZER_CACHE
         if not tokenizer.is_fast:
             tokenizer = None
