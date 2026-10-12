@@ -1,0 +1,77 @@
+{
+    "variant": "T139M",
+    "comparison_view": {
+        "residue": {
+            "wt": "THR",
+            "mut": "MET",
+            "delta": null
+        },
+        "volume": {
+            "wt": 116.1,
+            "mut": 162.9,
+            "delta": 46.8
+        },
+        "hydrophobicity": {
+            "wt": -0.7,
+            "mut": 1.9,
+            "delta": 2.6
+        },
+        "charge": {
+            "wt": 0.0,
+            "mut": 0.0,
+            "delta": 0.0
+        },
+        "sasa": {
+            "wt": 77.23,
+            "mut": null,
+            "delta": null
+        },
+        "plddt_confidence": {
+            "wt": 98.62,
+            "mut": null,
+            "delta": null
+        },
+        "secondary_structure": {
+            "wt": "Beta Sheet",
+            "mut": null,
+            "delta": null
+        },
+        "exposure": {
+            "wt": "Exposed",
+            "mut": null,
+            "delta": null
+        }
+    },
+    "wild_type": {
+        "residue": "THR",
+        "volume": 116.1,
+        "hydrophobicity": -0.7,
+        "charge": 0.0
+    },
+    "mutant_properties": {
+        "residue": "MET",
+        "volume": 162.9,
+        "hydrophobicity": 1.9,
+        "charge": 0.0
+    },
+    "deltas": {
+        "delta_volume": 46.8,
+        "delta_hydrophobicity": 2.6,
+        "delta_charge": 0
+    },
+    "structural_context_wt": {
+        "sasa": 77.23,
+        "exposure": "Exposed",
+        "secondary_structure": "Beta Sheet",
+        "plddt_confidence": 98.62
+    },
+    "stability_audit": {
+        "salt_bridges_lost": [],
+        "salt_bridges_gained": [],
+        "disulfides_lost": [],
+        "disulfides_gained": [],
+        "h_bonds_lost_est": 0,
+        "h_bonds_gained_est": 0,
+        "backbone_strain": "None"
+    }
+}

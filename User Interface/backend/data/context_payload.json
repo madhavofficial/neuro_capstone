@@ -1,0 +1,49 @@
+{
+  "status": "SUCCESS",
+  "confidence_matrix": {
+    "physics_engine": "HEURISTIC",
+    "literature_rag": "SUCCESS",
+    "clinical_context": "UNAVAILABLE",
+    "clinical_context_scope": "UNAVAILABLE",
+    "physics_evidence_scope": "SITE_PROPERTY_HEURISTIC"
+  },
+  "query": "SNCA Mutation A53T (ALA→THR at position 53), occurring within an alpha-helix. This substitution may affect surface structural alteration, reduced surface hydrophobicity, alpha-helix disruption, and helical stability. Relevant literature includes studies on: intrinsically disordered protein, conformational ensemble.",
+  "evidence_score_type": "raw_cross_encoder_score",
+  "evidence": [
+    {
+      "text": "Alpha-Synuclein (αSyn) plays a central role in Parkinson's disease (PD), and the p.A53T mutation causes an early-onset familial form of PD with severe manifestations. While its effects on neurons are well studied, its consequences on astrocytes and astrocytic contribution to PD pathology are understudied. Here, we differentiated patient-derived p.A53T-αSyn induced pluripotent stem cells (iPSC) to ventral midbrain astrocytes and characterized them via comprehensive molecular, functional, and proteomic analyses. Gene-corrected and healthy iPSC-derived astrocytes served as controls. To assess the effects of p.A53T-αSyn astrocytes on dopamine neurons, we established neuron-astrocyte cocultures of iPSC-derived control and mutant cells at all combinations. Our analyses uncovered cell-intrinsic pathologies in p.A53T-αSyn astrocytes, such as calcium dyshomeostasis, and accumulation of protein aggregates including those of phosphorylated αSyn. Proteomic and mechanistic studies demonstrated perturbed protein catabolic processes, with associated disturbances in lysosomal function and mTOR signaling. These deficits reduced the endocytic clearance capacity of p.A53T-αSyn astrocytes and their ability to process exogenous αSyn cargo. p.A53T-αSyn dopamine neurons cocultured with p.A53T-αSyn astrocytes displayed Lewy-like pathologies, mirroring the histopathological hallmarks identified in postmortem PD brains and exacerbated neurodegeneration, in anatomical and functional aspects. Control astrocytes mitigated these pathologies, highlighting their neuroprotective role. Additionally, p.A53T-αSyn astrocytes induced PD-relevant pathology ιn control neurons. Our findings, validated using an isogenic pair, demonstrate a critical impact of p.A53T-αSyn in disrupting astrocytic protein quality control mechanisms and establish astrocytes as active contributors to PD neuropathology. Our two-dimensional coculture model reflects key aspects of PD pathology, offering a relevant platform for mechanistic and drug discovery studies.",
+      "pmid": "41248289",
+      "title": "Dysregulated proteostasis in p.A53T-α-Synuclein astrocytes aggravates Lewy-like neuropathology in a Parkinson's disease iPSC model.",
+      "score": 1.0849236249923706,
+      "score_type": "raw_cross_encoder_score"
+    },
+    {
+      "text": "Animal and cellular models harboring SNCA gene mutations have been instrumental in synucleinopathy, but faithful human brain models remain limited. Here, we report the development of a human cerebral organoid (CO) model of synucleinopathy carrying the Ala53Thr mutation in SNCA ( SNCA A53T ). Using a human embryonic stem cell (hESC) line overexpressing SNCA A53T (A53T hESC line), we generated COs (A53T COs) that recapitulate hallmark features of synucleinopathy. These A53T COs exhibited elevated α-synuclein (α-Syn) expression, the increased phosphorylation of α-Syn, and Lewy body-like aggregations. Notably, we also observed the increased expression of phosphorylated tau and neurofibrillary tangle-like silver deposits, although amyloid β expression and accumulation remained unchanged. To evaluate the utility of this model in drug screening, we treated A53T COs with synuclean D (SynD), an inhibitor of α-Syn aggregation, which significantly reduced both α-Syn and tau phosphorylation without affecting total α-Syn levels. Together, our findings establish a robust hESC-derived synucleinopathy CO model harboring the SNCA A53T mutation, demonstrating its potential as a valuable tool for therapeutic drug screening.",
+      "pmid": "41002401",
+      "title": "Modeling Synucleinopathy Using hESC-Derived Cerebral Organoids.",
+      "score": 1.0108009576797485,
+      "score_type": "raw_cross_encoder_score"
+    },
+    {
+      "text": "The study explores the interaction between topoisomerase IIβ (topo IIβ) and α-synuclein aggregation in Parkinson's disease (PD) using an in vitro model overexpressing A53T mutant α-synuclein, revealing key pathological features. The overexpression of A53T mutant α-synuclein was associated with impaired neuronal differentiation, accompanied by delayed neurite outgrowth and reduced levels of MAP2 and NF-L. Transcriptomic study during differentiation revealed substantial gene expression changes, with 57 of 84 PD-associated genes exhibiting differential regulation on days 8 and 12. Dopaminergic markers like TH, BDNF, NR4A2 (Nurr1), PINK1, and SYNGR3 were notably upregulated in differentiated cells, whereas A53T mutant α-synuclein overexpression was associated with significant downregulation of 22 genes associated with PD, including TH, NR4A2, BDNF, and PINK1, suggesting alterations in neuroprotective signaling pathways. Topo IIβ expression diminished during differentiation in the presence of pathogenic α-synuclein and was associated with changes in the proposed topo IIβ-Nurr1 regulatory axis potentially contributing to early neurodevelopmental abnormalities and dopaminergic vulnerability observed in PD.",
+      "pmid": "42113340",
+      "title": "A53T α-Synuclein Expression is Associated with Altered Dopaminergic-Like Differentiation and Reduced DNA Topoisomerase IIβ Levels in an In Vitro Model of Parkinson's Disease.",
+      "score": 0.8667939901351929,
+      "score_type": "raw_cross_encoder_score"
+    },
+    {
+      "text": "Introduction : Pathogenic mutations in leucine-rich repeat protein kinase-2 ( LRRK2 ), particularly G2019S, constitute the most common cause of autosomal dominant PD. Methods : Mouse models encoding human mutant alpha-synuclein ( SNCA A53T ) and LRRK2 G2019S were treated with a brain-penetrant kinase inhibitor (BK40196). Behavior, nigrostriatal and mesolimbic dopamine (DA) pathways were examined. Results : Mice harboring LRRK2 G2019S do not show age-dependent motor symptoms, but mice encoding SNCA A53T display motor deficits, while both strains exhibit anxiety-like behavior and BK40196 improves motor and behavioral defects. BK40196, a multi-kinase inhibitor of Abelson (Abl), Discoidin domain receptor (DDR)-1, c-KIT and FYN, alters microglial morphology and alpha-synuclein levels in SNCA A53T mice and improves DA neurotransmission, primarily via the nigrostriatal system. BK40196 inhibits brain LRRK2 G2019S (IC 50 of 89nM) and does not affect phosphorylated or total peripheral LRRK2 levels (lungs, kidneys, liver, etc.). LRRK2 G2019S mice treated with BK40196 exhibit distinct increases in DA in mesolimbic neurons such as the nucleus accumbens (NAcc), suggesting differential mechanisms of DA neurotransmission in mutant alpha-synuclein and LRRK2 models of PD. Conclusions : LRRK2 G2019S may primarily involve mesolimbic pathways leading to nonmotor symptoms independent of the motor and behavioral manifestations associated with alpha-synuclein via the nigrostriatal system. BK40196 may provide a comprehensive and synergistic therapeutic approach that addresses multiple mechanisms to reduce the pathologies related to LRRK2 G2019S and/or SNCA in PD. The multiple pathologies of PD necessitate a holistic approach that simultaneously targets inflammation and autophagy and LRRK2 inhibition.",
+      "pmid": "42072468",
+      "title": "Synergistic Effects of Multi-Kinase Inhibition on LRRK2 -G2019S and Alpha-Synuclein Pathologies in Models of Parkinson's Disease.",
+      "score": 0.8549896478652954,
+      "score_type": "raw_cross_encoder_score"
+    },
+    {
+      "text": "Mutations causing Parkinson's disease (PD) give diverse pathological phenotypes whose cellular correlates remain to be determined. Those with PRKN mutations have significantly earlier selective vulnerability of dopamine neurons, those with SNCA mutations have increased alpha-synuclein deposition, while those with LRRK2 mutations have additional deposition of tau. Yet all three mutation types are implicated in mitochondrial and/or lysosomal dysfunction. To compare cellular dysfunctions associated with these different pathological phenotypes, an unbiased high-content imaging platform was developed to assess both lysosomal and mitochondrial dysfunction, along with alpha-synuclein and tau protein deposition using induced pluripotent stem cell (iPSC) derived cortical and ventral midbrain neurons. Different PD mutations caused cell type specific dysfunctions, likely to impact on both selective neuronal vulnerability and the pathologies observed in PD. Comparison of dopamine neurons identified that both lysosomal and mitochondrial dysfunction were predominant with PRKN lof mutations, whereas SNCA A53T and LRRK2 R1441G mutations had increased tau deposition. In contrast, cortical neurons with SNCA and LRRK2 mutations both had mitochondrial and autophagy impairments without protein deposition, with LRRK2 cells additionally showing decreased glucocerebrosidase activity and increased alpha-synuclein phosphorylation.",
+      "pmid": "40541941",
+      "title": "Dopamine and cortical neurons with different Parkinsonian mutations show variation in lysosomal and mitochondrial dysfunction.",
+      "score": 0.8034107685089111,
+      "score_type": "raw_cross_encoder_score"
+    }
+  ]
+}

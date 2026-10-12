@@ -1,0 +1,107 @@
+{
+  "status": "LOW_CONFIDENCE",
+  "confidence_matrix": {
+    "physics_engine": "ERROR",
+    "literature_rag": "NULL_RESULTS",
+    "clinical_context": "HIGH",
+    "clinical_context_scope": "EXACT_VARIANT",
+    "physics_evidence_scope": "UNAVAILABLE"
+  },
+  "query": "SNCA E46K",
+  "evidence_score_type": "raw_cross_encoder_score",
+  "evidence": [],
+  "clinical_context": {
+    "gene": "SNCA",
+    "uniprot_id": "P37840",
+    "variant": "E46K",
+    "alphamissense_sniper": {
+      "score": 0.3312,
+      "verdict": "Benign"
+    },
+    "clinvar": {
+      "accession": "VCV000014010.9",
+      "variation_id": "14010",
+      "clinical_significance": "Pathogenic",
+      "review_status": "criteria provided, single submitter",
+      "conditions": [
+        "Autosomal dominant Parkinson disease 1",
+        "Lewy body dementia"
+      ],
+      "search_term_used": "SNCA[gene] AND (E46K OR p.Glu46Lys)",
+      "source": "NCBI_ClinVar_Exact",
+      "variant_match": true,
+      "scope": "exact_variant"
+    },
+    "lovd": null,
+    "clingenreg": null,
+    "dbsnp": {
+      "source": "NCBI_dbSNP_via_Eutilities",
+      "rsid": "rs104893875",
+      "chromosome": "4",
+      "position": 89828170,
+      "snp_id": "104893875"
+    },
+    "variant_specific_context": {
+      "variant_ids_tried": [
+        "SNCA E46K",
+        "SNCA:E46K",
+        "P37840:p.Glu46Lys",
+        "SNCA:p.Glu46Lys",
+        "chr4:g.89828170G>A"
+      ],
+      "litvar_publications": 1542,
+      "ensembl_variant_phenotypes": 0,
+      "uniprot_variant_annotations": 1,
+      "sources_with_hits": [
+        "LitVar",
+        "UniProt"
+      ]
+    },
+    "gene_level_context": {
+      "recall_layer_ensembl": {
+        "total_associations": 0,
+        "top_diseases": []
+      },
+      "precision_layer_opentargets": {
+        "total_validated": 25,
+        "top_diseases": [
+          {
+            "disease": "Hereditary late-onset Parkinson disease",
+            "overall_score": 0.7878
+          },
+          {
+            "disease": "Young adult-onset Parkinsonism",
+            "overall_score": 0.7729
+          },
+          {
+            "disease": "Lewy body dementia",
+            "overall_score": 0.7416
+          },
+          {
+            "disease": "Parkinson disease",
+            "overall_score": 0.7107
+          },
+          {
+            "disease": "AL amyloidosis",
+            "overall_score": 0.462
+          }
+        ]
+      }
+    },
+    "evidence_summary": {
+      "gene_ensembl_associations": 0,
+      "gene_opentargets_validated": 25,
+      "variant_literature_count": 1542,
+      "variant_uniprot_annotations": 1,
+      "variant_ensembl_phenotypes": 0,
+      "variant_in_clinvar": true,
+      "gene_has_clinvar_pathogenic": false,
+      "variant_in_alphamissense": true,
+      "variant_in_lovd": false,
+      "variant_in_clingenreg": false,
+      "variant_in_dbsnp": true,
+      "total_clinical_databases": 2
+    }
+  },
+  "clinical_label": "Pathogenic"
+}

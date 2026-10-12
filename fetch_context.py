@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import requests
 import json
+
 import os
 import argparse
 import sys
@@ -11,7 +14,7 @@ import re
 DATA_DIR = "data/context"
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
-
+    
 # APIs
 ENSEMBL_URL = "https://rest.ensembl.org/phenotype/gene/human/"
 ENSEMBL_VARIATION_URL = "https://rest.ensembl.org/variation/human/"

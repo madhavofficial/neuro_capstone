@@ -1,0 +1,318 @@
+{
+    "gene": "TTR",
+    "uniprot_id": "P02766",
+    "variant": "T139M",
+    "alphamissense_sniper": {
+        "score": 0.4332,
+        "verdict": "Benign"
+    },
+    "clinvar": {
+        "accession": "VCV000013434.89",
+        "variation_id": "13434",
+        "clinical_significance": "Conflicting classifications of pathogenicity",
+        "review_status": "criteria provided, conflicting classifications",
+        "conditions": [
+            "Charcot-Marie-Tooth disease",
+            "Cardiovascular phenotype",
+            "not specified",
+            "not provided",
+            "Cardiomyopathy",
+            "Hyperthyroidism",
+            "Amyloidosis, hereditary systemic 1"
+        ],
+        "search_term_used": "TTR[gene] AND (T139M OR p.Thr139Met)",
+        "source": "NCBI_ClinVar_Exact",
+        "variant_match": true,
+        "scope": "exact_variant"
+    },
+    "lovd": null,
+    "clingenreg": {
+        "source": "ClinGen_Allele_Registry",
+        "allele_id": "http://reg.genome.network/allele/PA123103",
+        "hgvs_used": "NP_000362.1:p.Thr139Met",
+        "standardized": true,
+        "community_standard_title": null,
+        "external_records": {
+            "ClinVarAlleles": [
+                {
+                    "@id": "http://www.ncbi.nlm.nih.gov/clinvar/?term=28473[alleleid]",
+                    "alleleId": 28473,
+                    "preferredName": "NM_000371.4(TTR):c.416C>T (p.Thr139Met)"
+                }
+            ],
+            "ClinVarVariations": [
+                {
+                    "@id": "http://www.ncbi.nlm.nih.gov/clinvar/variation/13434",
+                    "RCV": [
+                        "RCV000014376",
+                        "RCV000036376",
+                        "RCV000714134",
+                        "RCV000618448",
+                        "RCV000990084",
+                        "RCV001170385",
+                        "RCV001173303",
+                        "RCV003993656"
+                    ],
+                    "variationId": 13434
+                }
+            ]
+        },
+        "raw_data": {
+            "@context": "http://reg.genome.network/schema/allele.jsonld",
+            "@id": "http://reg.genome.network/allele/PA123103",
+            "aminoAcidAlleles": [
+                {
+                    "coordinates": [
+                        {
+                            "allele": "M",
+                            "end": 139,
+                            "referenceAllele": "T",
+                            "start": 138
+                        }
+                    ],
+                    "gene": "http://reg.genome.network/gene/GN012405",
+                    "geneNCBI_id": 7276,
+                    "geneSymbol": "TTR",
+                    "hgvs": [
+                        "NP_000362.1:p.Thr139Met"
+                    ],
+                    "matchingRegisteredTranscripts": [
+                        {
+                            "@id": "http://reg.genome.network/allele/CA123101",
+                            "hgvs": "NM_000371.3:c.416C>T"
+                        }
+                    ],
+                    "referenceSequence": "http://reg.genome.network/refseq/RS146915"
+                }
+            ],
+            "externalRecords": {
+                "ClinVarAlleles": [
+                    {
+                        "@id": "http://www.ncbi.nlm.nih.gov/clinvar/?term=28473[alleleid]",
+                        "alleleId": 28473,
+                        "preferredName": "NM_000371.4(TTR):c.416C>T (p.Thr139Met)"
+                    }
+                ],
+                "ClinVarVariations": [
+                    {
+                        "@id": "http://www.ncbi.nlm.nih.gov/clinvar/variation/13434",
+                        "RCV": [
+                            "RCV000014376",
+                            "RCV000036376",
+                            "RCV000714134",
+                            "RCV000618448",
+                            "RCV000990084",
+                            "RCV001170385",
+                            "RCV001173303",
+                            "RCV003993656"
+                        ],
+                        "variationId": 13434
+                    }
+                ]
+            },
+            "type": "amino-acid"
+        }
+    },
+    "dbsnp": {
+        "source": "NCBI_dbSNP_via_MyVariant",
+        "rsid": "rs28933981",
+        "chromosome": "18",
+        "position": 31598647,
+        "reference": "C",
+        "alternative": "T",
+        "dbsnp_data": {
+            "_license": "http://bit.ly/2AqoLOc",
+            "alleles": [
+                {
+                    "allele": "C",
+                    "freq": {
+                        "1000g": 0.999,
+                        "alspac": 0.996,
+                        "dbgap_popfreq": 0.998,
+                        "estonian": 0.999,
+                        "exac": 0.999,
+                        "finrisk": 0.997,
+                        "gnomad": 0.998,
+                        "gnomad_exomes": 0.998,
+                        "gonl": 0.995,
+                        "mgp": 0.998,
+                        "page_study": 0.999,
+                        "pharmgkb": 0.998,
+                        "topmed": 0.998,
+                        "twinsuk": 0.995
+                    }
+                },
+                {
+                    "allele": "T",
+                    "freq": {
+                        "1000g": 0.001,
+                        "alspac": 0.004,
+                        "dbgap_popfreq": 0.002,
+                        "estonian": 0.001,
+                        "exac": 0.001,
+                        "finrisk": 0.003,
+                        "gnomad": 0.002,
+                        "gnomad_exomes": 0.002,
+                        "gonl": 0.005,
+                        "mgp": 0.002,
+                        "page_study": 0.001,
+                        "pharmgkb": 0.002,
+                        "topmed": 0.002,
+                        "twinsuk": 0.005
+                    }
+                }
+            ],
+            "alt": "T",
+            "chrom": "18",
+            "citations": [
+                1356051,
+                1729893,
+                1877623,
+                8102146,
+                9090525,
+                9428731,
+                10772944,
+                11577236,
+                14640030,
+                18295603,
+                18984591,
+                21557933,
+                24033266,
+                25743335,
+                27249223,
+                28296894,
+                31270413,
+                33237279,
+                34151536
+            ],
+            "dbsnp_build": 156,
+            "gene": [
+                {
+                    "geneid": 7276,
+                    "is_pseudo": false,
+                    "name": "transthyretin",
+                    "rnas": [
+                        {
+                            "codon_aligned_transcript_change": {
+                                "deleted_sequence": "ACG",
+                                "inserted_sequence": "ACG",
+                                "position": 440,
+                                "seq_id": "NM_000371.4"
+                            },
+                            "hgvs": "NM_000371.4:c.416=",
+                            "protein": {
+                                "variant": {
+                                    "spdi": {
+                                        "deleted_sequence": "T",
+                                        "inserted_sequence": "T",
+                                        "position": 138,
+                                        "seq_id": "NP_000362.1"
+                                    }
+                                }
+                            },
+                            "protein_product": {
+                                "refseq": "NP_000362.1"
+                            },
+                            "refseq": "NM_000371.4",
+                            "so": [
+                                {
+                                    "accession": "SO:0001580",
+                                    "name": "coding_sequence_variant"
+                                }
+                            ]
+                        }
+                    ],
+                    "strand": "+",
+                    "symbol": "TTR"
+                },
+                {
+                    "geneid": 124904277,
+                    "is_pseudo": false,
+                    "name": "uncharacterized LOC124904277",
+                    "rnas": [
+                        {
+                            "refseq": "XR_007066326.1",
+                            "so": [
+                                {
+                                    "accession": "SO:0001627",
+                                    "name": "intron_variant"
+                                }
+                            ]
+                        }
+                    ],
+                    "strand": "-",
+                    "symbol": "LOC124904277"
+                }
+            ],
+            "hg38": {
+                "end": 31598647,
+                "start": 31598647
+            },
+            "ref": "C",
+            "rsid": "rs28933981",
+            "vartype": "snv"
+        },
+        "query_used": "chr18:31598647"
+    },
+    "variant_specific_context": {
+        "variant_ids_tried": [
+            "TTR T139M",
+            "TTR:T139M",
+            "P02766:p.Thr139Met",
+            "TTR:p.Thr139Met",
+            "chr18:g.31598647C>T"
+        ],
+        "litvar_publications": 60,
+        "ensembl_variant_phenotypes": 0,
+        "uniprot_variant_annotations": 1,
+        "sources_with_hits": [
+            "LitVar",
+            "UniProt"
+        ]
+    },
+    "gene_level_context": {
+        "recall_layer_ensembl": {
+            "total_associations": 0,
+            "top_diseases": []
+        },
+        "precision_layer_opentargets": {
+            "total_validated": 25,
+            "top_diseases": [
+                {
+                    "disease": "amyloidosis, hereditary systemic 1",
+                    "overall_score": 0.8464
+                },
+                {
+                    "disease": "cardiomyopathy",
+                    "overall_score": 0.7331
+                },
+                {
+                    "disease": "familial amyloid neuropathy",
+                    "overall_score": 0.7307
+                },
+                {
+                    "disease": "carpal tunnel syndrome 1",
+                    "overall_score": 0.7165
+                },
+                {
+                    "disease": "amyloidosis",
+                    "overall_score": 0.7135
+                }
+            ]
+        }
+    },
+    "evidence_summary": {
+        "gene_ensembl_associations": 0,
+        "gene_opentargets_validated": 25,
+        "variant_literature_count": 60,
+        "variant_uniprot_annotations": 1,
+        "variant_ensembl_phenotypes": 0,
+        "variant_in_clinvar": true,
+        "gene_has_clinvar_pathogenic": false,
+        "variant_in_alphamissense": true,
+        "variant_in_lovd": false,
+        "variant_in_clingenreg": true,
+        "variant_in_dbsnp": true,
+        "total_clinical_databases": 3
+    }
+}

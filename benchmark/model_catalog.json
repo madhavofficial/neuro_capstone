@@ -1,0 +1,11 @@
+{
+  "models": [
+    {"name": "GPT-OSS 120B", "provider": "groq", "model": "openai/gpt-oss-120b", "enabled": true},
+    {"name": "Llama 3.3 70B", "provider": "openrouter", "model": "meta-llama/llama-3.3-70b-instruct", "enabled": true},
+    {"name": "Qwen3 235B", "provider": "openrouter", "model": "qwen/qwen3-235b-a22b", "enabled": true},
+    {"name": "DeepSeek R1", "provider": "openrouter", "model": "deepseek/deepseek-r1", "enabled": false},
+    {"name": "GLM 5.3", "provider": "openrouter", "model": "z-ai/glm-5.3", "enabled": false},
+    {"name": "Kimi K2.7 Code", "provider": "openrouter", "model": "moonshotai/kimi-k2.7-code", "enabled": false},
+    {"name": "Kimi K3", "provider": "openrouter", "model": "moonshotai/kimi-k3", "enabled": false}
+  ]
+}

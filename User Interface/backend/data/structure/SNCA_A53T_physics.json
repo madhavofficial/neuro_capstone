@@ -32,7 +32,7 @@
             "delta": null
         },
         "secondary_structure": {
-            "wt": "Unknown",
+            "wt": "Alpha Helix",
             "mut": null,
             "delta": null
         },
@@ -62,7 +62,7 @@
     "structural_context_wt": {
         "sasa": 51.54,
         "exposure": "Exposed",
-        "secondary_structure": "Unknown",
+        "secondary_structure": "Alpha Helix",
         "plddt_confidence": 89.62
     },
     "stability_audit": {
