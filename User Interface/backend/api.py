@@ -2,6 +2,7 @@ import sys
 import os
 import json
 import logging
+import re
 from typing import Any, Dict, Optional, List
 
 logger = logging.getLogger(__name__)
@@ -199,6 +200,64 @@ def extract_evidence_from_payload(
         )
 
     return cleaned
+
+
+def flag_unretrieved_pmids(
+    narrative: Optional[str],
+    evidence: List[Dict[str, Any]],
+) -> Optional[str]:
+    """Flag narrative PMIDs absent from returned evidence."""
+    if not isinstance(narrative, str) or not narrative:
+        return narrative
+
+    def normalize_pmid(value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        match = re.search(r"\b(\d{4,9})\b", str(value).strip())
+        return match.group(1) if match else None
+
+    retrieved = {
+        normalized
+        for item in evidence
+        if isinstance(item, dict)
+        for normalized in [
+            normalize_pmid(item.get("pmid", item.get("PMID")))
+        ]
+        if normalized is not None
+    }
+
+    def replace_bracketed(match: Any) -> str:
+        pmid = match.group(1)
+        return match.group(0) if pmid in retrieved else f"[Unverified PMID: {pmid}]"
+
+    narrative = re.sub(
+        r"\[PMID:?\s*(\d+)\]",
+        replace_bracketed,
+        narrative,
+        flags=re.IGNORECASE,
+    )
+
+    def replace_plain(match: Any) -> str:
+        pmid = match.group(1)
+        return match.group(0) if pmid in retrieved else f"Unverified PMID {pmid}"
+
+    return re.sub(
+        r"(?<!Unverified )(?<![\w\[])PMID\s*:?[ \t]*(\d+)(?!\w)",
+        replace_plain,
+        narrative,
+        flags=re.IGNORECASE,
+    )
+
+
+def flag_unretrieved_pmids_in_value(value: Any, evidence: List[Dict[str, Any]]) -> Any:
+    """Recursively flag PMID references in user-visible structured reasoning fields."""
+    if isinstance(value, str):
+        return flag_unretrieved_pmids(value, evidence)
+    if isinstance(value, list):
+        return [flag_unretrieved_pmids_in_value(item, evidence) for item in value]
+    if isinstance(value, dict):
+        return {key: flag_unretrieved_pmids_in_value(item, evidence) for key, item in value.items()}
+    return value
 
 
 def extract_clinical_narrative(
@@ -753,6 +812,13 @@ async def analyze_variant(
 
     if payload_note and not clinical_narrative:
         clinical_narrative = payload_note
+
+    # Flag narrative citations that are not present in the retrieved evidence list.
+    clinical_narrative = flag_unretrieved_pmids(clinical_narrative, evidence)
+    if isinstance(structured_reasoning, dict):
+        structured_reasoning = flag_unretrieved_pmids_in_value(
+            structured_reasoning, evidence
+        )
 
     # ========================================================================
     # 6. RESPONSE
