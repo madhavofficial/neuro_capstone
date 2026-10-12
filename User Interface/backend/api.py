@@ -1,7 +1,11 @@
 import sys
 import os
 import json
+import logging
+import re
 from typing import Any, Dict, Optional, List
+
+logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -117,8 +121,12 @@ class AnalyzeResponse(BaseModel):
     # Top reranked literature evidence
     evidence: List[LiteratureEvidence] = []
 
-    # Human-readable evidence synthesis
+    # Human-readable evidence synthesis / LLM Reasoning
     clinical_narrative: Optional[str] = None
+
+    # Structured multi-card reasoning data from Phase 8 LLM
+    structured_reasoning: Optional[Dict[str, Any]] = None
+    reasoning_model: Optional[str] = None
 
     warnings: Optional[Dict[str, str]] = None
 
@@ -192,6 +200,64 @@ def extract_evidence_from_payload(
         )
 
     return cleaned
+
+
+def flag_unretrieved_pmids(
+    narrative: Optional[str],
+    evidence: List[Dict[str, Any]],
+) -> Optional[str]:
+    """Flag narrative PMIDs absent from returned evidence."""
+    if not isinstance(narrative, str) or not narrative:
+        return narrative
+
+    def normalize_pmid(value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        match = re.search(r"\b(\d{4,9})\b", str(value).strip())
+        return match.group(1) if match else None
+
+    retrieved = {
+        normalized
+        for item in evidence
+        if isinstance(item, dict)
+        for normalized in [
+            normalize_pmid(item.get("pmid", item.get("PMID")))
+        ]
+        if normalized is not None
+    }
+
+    def replace_bracketed(match: Any) -> str:
+        pmid = match.group(1)
+        return match.group(0) if pmid in retrieved else f"[Unverified PMID: {pmid}]"
+
+    narrative = re.sub(
+        r"\[PMID:?\s*(\d+)\]",
+        replace_bracketed,
+        narrative,
+        flags=re.IGNORECASE,
+    )
+
+    def replace_plain(match: Any) -> str:
+        pmid = match.group(1)
+        return match.group(0) if pmid in retrieved else f"Unverified PMID {pmid}"
+
+    return re.sub(
+        r"(?<!Unverified )(?<![\w\[])PMID\s*:?[ \t]*(\d+)(?!\w)",
+        replace_plain,
+        narrative,
+        flags=re.IGNORECASE,
+    )
+
+
+def flag_unretrieved_pmids_in_value(value: Any, evidence: List[Dict[str, Any]]) -> Any:
+    """Recursively flag PMID references in user-visible structured reasoning fields."""
+    if isinstance(value, str):
+        return flag_unretrieved_pmids(value, evidence)
+    if isinstance(value, list):
+        return [flag_unretrieved_pmids_in_value(item, evidence) for item in value]
+    if isinstance(value, dict):
+        return {key: flag_unretrieved_pmids_in_value(item, evidence) for key, item in value.items()}
+    return value
 
 
 def extract_clinical_narrative(
@@ -705,59 +771,70 @@ async def analyze_variant(
         )
 
     # ========================================================================
-    # 5. CLINICAL NARRATIVE
+    # 5. CLINICAL NARRATIVE & LLM REASONING (Phase 8)
     # ========================================================================
 
-    clinical_narrative = (
-        extract_clinical_narrative(
-            context_data
+    clinical_narrative = None
+    structured_reasoning = None
+    reasoning_model = None
+
+    try:
+        from reasoning_engine import generate_reasoning
+        reasoning_res = await run_in_threadpool(
+            generate_reasoning,
+            gene=gene,
+            variant=variant,
+            physics_data=physics_data,
+            context_data=context_data,
+            evidence=evidence,
+            status=pipeline_status,
         )
-    )
+        if reasoning_res:
+            clinical_narrative = reasoning_res.get("unstructured_verdict") or clinical_narrative
+            structured_reasoning = reasoning_res.get("structured_data")
+            reasoning_model = reasoning_res.get("model_used")
+    except Exception as re_exc:
+        logger.warning(f"Phase 8 reasoning engine failed: {re_exc}")
 
     if not clinical_narrative:
+        clinical_narrative = extract_clinical_narrative(context_data)
 
-        clinical_narrative = (
-            build_evidence_synthesis(
-                gene=gene,
-                variant=variant,
-                status_value=pipeline_status,
-                confidence_matrix=confidence_matrix,
-                context_data=context_data,
-                physics_data=physics_data,
-                evidence=evidence,
-            )
+    if not clinical_narrative:
+        clinical_narrative = build_evidence_synthesis(
+            gene=gene,
+            variant=variant,
+            status_value=pipeline_status,
+            confidence_matrix=confidence_matrix,
+            context_data=context_data,
+            physics_data=physics_data,
+            evidence=evidence,
         )
 
-    # If assemble_payload produced a specific VUS note,
-    # preserve it as an additional warning/context signal,
-    # but do not replace the synthesis.
     if payload_note and not clinical_narrative:
-
         clinical_narrative = payload_note
+
+    # Flag narrative citations that are not present in the retrieved evidence list.
+    clinical_narrative = flag_unretrieved_pmids(clinical_narrative, evidence)
+    if isinstance(structured_reasoning, dict):
+        structured_reasoning = flag_unretrieved_pmids_in_value(
+            structured_reasoning, evidence
+        )
 
     # ========================================================================
     # 6. RESPONSE
     # ========================================================================
 
     return AnalyzeResponse(
-
         gene=gene,
-
         variant=variant,
-
         status=pipeline_status,
-
         confidence_matrix=confidence_matrix,
-
         context_data=context_data,
-
         physics_data=physics_data,
-
         pdb_content=pdb_content,
-
         evidence=evidence,
-
         clinical_narrative=clinical_narrative,
-
+        structured_reasoning=structured_reasoning,
+        reasoning_model=reasoning_model,
         warnings=warnings if warnings else None,
     )
