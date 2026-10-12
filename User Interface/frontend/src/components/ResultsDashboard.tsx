@@ -117,6 +117,7 @@ export default function ResultsDashboard({ data }: ResultsDashboardProps) {
           model={data.reasoning_model}
           gene={data.gene}
           variant={data.variant}
+          evidence={data.evidence}
         />
       )}
 
@@ -271,29 +272,42 @@ export default function ResultsDashboard({ data }: ResultsDashboardProps) {
    CLINICAL REASONING & EVIDENCE DOSSIER (Phase 8 Multi-Modal Output)
    ======================================================================== */
 
-function formatNarrativeWithCitations(text: string) {
-  // Parse [PMID: 12345678] or [PMID 12345678] into clickable badge chips
+function getRetrievedPmids(evidence?: AnalyzeResponse['evidence']): Set<string> {
+  return new Set(
+    (evidence || [])
+      .map((item) => {
+        const match = String(item.pmid ?? item.PMID ?? '').match(/\b(\d{4,9})\b/);
+        return match?.[1] ?? '';
+      })
+      .filter((pmid) => pmid.length > 0),
+  );
+}
+
+function formatNarrativeWithCitations(text: string, retrievedPmids: Set<string>) {
+  // Only link PMIDs that occur in the evidence returned by the API.
   const parts = text.split(/(\[PMID:?\s*\d+\])/g);
 
   return parts.map((part, index) => {
     const match = part.match(/\[PMID:?\s*(\d+)\]/);
-    if (match) {
-      const pmid = match[1];
+    if (!match) return <span key={index}>{part}</span>;
+
+    const pmid = match[1];
+    if (!retrievedPmids.has(pmid)) {
       return (
-        <a
-          key={index}
-          href={`https://pubmed.ncbi.nlm.nih.gov/${pmid}/`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 rounded-md bg-teal-50 px-2 py-0.5 font-mono text-xs font-semibold text-teal-700 border border-teal-200/80 shadow-xs hover:bg-teal-100 hover:text-teal-900 transition-colors mx-1 align-baseline"
-          title={`View PMID ${pmid} on PubMed`}
-        >
-          <span>PMID {pmid}</span>
-          <ExternalLink className="h-2.5 w-2.5 opacity-70" />
-        </a>
+        <span key={index} className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 font-mono text-xs font-semibold text-amber-800 mx-1 align-baseline"
+          title="This PMID was not present in the retrieved evidence list and has not been verified by this pipeline.">
+          Unverified PMID {pmid}
+        </span>
       );
     }
-    return <span key={index}>{part}</span>;
+
+    return (
+      <a key={index} href={`https://pubmed.ncbi.nlm.nih.gov/${pmid}/`} target="_blank" rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 rounded-md bg-teal-50 px-2 py-0.5 font-mono text-xs font-semibold text-teal-700 border border-teal-200/80 shadow-xs hover:bg-teal-100 hover:text-teal-900 transition-colors mx-1 align-baseline"
+        title={`View retrieved PMID ${pmid} on PubMed`}>
+        <span>PMID {pmid}</span><ExternalLink className="h-2.5 w-2.5 opacity-70" />
+      </a>
+    );
   });
 }
 
@@ -303,6 +317,7 @@ function ClinicalNarrativeCard({
   model,
   gene,
   variant,
+  evidence,
 }: {
   narrative: string;
   structured?: {
@@ -322,11 +337,13 @@ function ClinicalNarrativeCard({
   model?: string | null;
   gene: string;
   variant: string;
+  evidence?: AnalyzeResponse['evidence'];
 }) {
   const bottomLine = structured?.executive_bottom_line;
   const mechanism = structured?.molecular_mechanism;
   const phenotypes = structured?.clinical_phenotypes;
   const highlights = structured?.experimental_highlights;
+  const retrievedPmids = getRetrievedPmids(evidence);
 
   return (
     <section className="overflow-hidden rounded-[2rem] border border-teal-100/80 bg-white shadow-soft">
@@ -477,16 +494,28 @@ function ClinicalNarrativeCard({
                       <div key={idx} className="rounded-xl bg-white p-2.5 border border-slate-200/70 shadow-2xs">
                         <div className="flex items-center justify-between">
                           <p className="text-xs font-bold text-ink truncate">{high.system}</p>
-                          {high.pmid && high.pmid !== 'N/A' && (
-                            <a
-                              href={`https://pubmed.ncbi.nlm.nih.gov/${high.pmid}/`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[10px] font-mono font-semibold text-sky-600 hover:underline flex items-center gap-0.5"
-                            >
-                              PMID {high.pmid} <ExternalLink className="h-2 w-2" />
-                            </a>
-                          )}
+                          {high.pmid && high.pmid !== 'N/A' && (() => {
+                            const pmidMatch = String(high.pmid).match(/\b(\d{4,9})\b/);
+                            const normalizedPmid = pmidMatch?.[1];
+
+                            return normalizedPmid && retrievedPmids.has(normalizedPmid) ? (
+                              <a
+                                href={`https://pubmed.ncbi.nlm.nih.gov/${normalizedPmid}/`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] font-mono font-semibold text-sky-600 hover:underline flex items-center gap-0.5"
+                              >
+                                PMID {normalizedPmid} <ExternalLink className="h-2 w-2" />
+                              </a>
+                            ) : (
+                              <span
+                                className="text-[10px] font-mono font-semibold text-amber-700"
+                                title="This PMID was not present in the retrieved evidence list."
+                              >
+                                Unverified PMID {String(high.pmid)}
+                              </span>
+                            );
+                          })()}
                         </div>
                         <p className="mt-1 text-[11px] leading-4 text-slate-500 line-clamp-2">
                           {high.finding}
@@ -501,7 +530,7 @@ function ClinicalNarrativeCard({
                       Cited Literature
                     </span>
                     <span className="text-xs font-semibold text-slate-700 font-mono">
-                      {structured.cited_pmids.length} Retrieved Citations
+                      {structured.cited_pmids.filter((pmid) => retrievedPmids.has(String(pmid))).length} Retrieved Citations
                     </span>
                   </div>
                 )}
@@ -523,7 +552,7 @@ function ClinicalNarrativeCard({
             </div>
             <div className="space-y-4 text-sm leading-7 text-slate-700">
               {narrative.split('\n\n').map((paragraph, pIdx) => (
-                <p key={pIdx}>{formatNarrativeWithCitations(paragraph)}</p>
+                <p key={pIdx}>{formatNarrativeWithCitations(paragraph, retrievedPmids)}</p>
               ))}
             </div>
           </div>
@@ -557,8 +586,28 @@ function AIVerdictHeroCard({ data }: { data: AnalyzeResponse }) {
   const alphaScore = typeof alphaMissense?.score === 'number' ? alphaMissense.score : Number(alphaMissense?.score);
   const statusStr = (data.status || '').toUpperCase();
   const customBadge = structured?.verdict_badge;
+  const ragStatus = (data.confidence_matrix?.literature_rag || '').toUpperCase();
+  const topEvidence = data.evidence && data.evidence.length > 0 ? data.evidence[0] : null;
+  const hasPathogenicCall =
+    statusStr.includes('PATHOGENIC') ||
+    Boolean(customBadge && customBadge.toUpperCase().includes('PATHOGENIC')) ||
+    clinvarSig.includes('pathogenic');
 
-  if (customBadge) {
+  // A pathogenic-looking call without any retrieved papers is a hypothesis,
+  // regardless of whether the retrieval layer reported an explicit error.
+  const hypothesisLiteratureGap =
+    ['STRUCTURAL_DISCOVERY_VUS', 'PREDICTED_PATHOGENIC_VUS'].includes(statusStr) ||
+    (!topEvidence && (
+      ['NULL_RESULTS', 'TIMEOUT_ERROR'].includes(ragStatus) ||
+      hasPathogenicCall
+    ));
+
+  if (hypothesisLiteratureGap) {
+    verdictType = 'VUS';
+    verdictTitle = 'VARIANT OF UNCERTAIN SIGNIFICANCE (VUS)';
+    verdictDescription =
+      'Hypothesis only: no literature evidence was retrieved. Structural predictions are not a confirmed clinical classification.';
+  } else if (customBadge) {
     if (customBadge.toUpperCase().includes('PATHOGENIC')) {
       verdictType = 'PATHOGENIC';
       verdictTitle = customBadge;
@@ -583,7 +632,6 @@ function AIVerdictHeroCard({ data }: { data: AnalyzeResponse }) {
 
   // 2. Modality Quick Indicators
   const deltaV = physics?.deltas?.delta_volume;
-  const topEvidence = data.evidence && data.evidence.length > 0 ? data.evidence[0] : null;
 
   // Style themes
   const theme = {
@@ -624,7 +672,7 @@ function AIVerdictHeroCard({ data }: { data: AnalyzeResponse }) {
   return (
     <section className={`overflow-hidden rounded-[2rem] border-2 ${theme.border} ${theme.bgGradient} p-6 sm:p-8 shadow-soft`}>
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-        
+
         {/* LEFT: VERDICT BADGE & TITLE */}
         <div className="flex items-start gap-4">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm border border-slate-200/80">
@@ -640,6 +688,12 @@ function AIVerdictHeroCard({ data }: { data: AnalyzeResponse }) {
                 <Sparkles className="h-2.5 w-2.5 text-teal-300" />
                 Cross-Audited Synthesis
               </span>
+              {hypothesisLiteratureGap && (
+                <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-amber-800"
+                  title="The pipeline reports a prediction without retrieved literature; this is a hypothesis, not a literature-supported clinical conclusion.">
+                  Hypothesis · Literature gap
+                </span>
+              )}
             </div>
 
             <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -656,7 +710,7 @@ function AIVerdictHeroCard({ data }: { data: AnalyzeResponse }) {
             </div>
 
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 font-medium">
-              {structured?.executive_bottom_line || verdictDescription}
+              {hypothesisLiteratureGap ? verdictDescription : (structured?.executive_bottom_line || verdictDescription)}
             </p>
           </div>
         </div>
@@ -677,7 +731,7 @@ function AIVerdictHeroCard({ data }: { data: AnalyzeResponse }) {
             <div className="flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 border border-slate-100">
               <span className="font-bold text-slate-700">Literature RAG:</span>
               <span className="text-slate-600 font-mono text-[11px]">
-                {topEvidence ? 'Top Reranked' : 'Curated'}
+                {topEvidence  ? 'Top Reranked'  : ['NULL_RESULTS', 'TIMEOUT_ERROR'].includes(ragStatus)    ? 'No Literature Retrieved'    : 'Curated'}
               </span>
             </div>
 
