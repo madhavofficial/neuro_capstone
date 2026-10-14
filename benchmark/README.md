@@ -35,3 +35,27 @@ until the verified set reaches the planned 40--60 variants and label balance.
 The model catalog includes GPT-OSS 120B on Groq, Llama 3.3 70B and Qwen3 235B
 on OpenRouter, with DeepSeek R1 available as an opt-in entry. Verify model IDs
 and provider availability at run time because hosted model catalogs change.
+
+## S669 stability check
+
+`s669_runner` scores the S669 direct set by virtual substitution on each
+wild-type PDB, collapses the existing site metrics into one score, and writes
+Pearson and Spearman against experimental ΔΔG:
+
+```bash
+python3 -m benchmark.s669_runner
+```
+
+The variant table is `data/benchmarks/s669_variants.csv`. Downloaded PDBs are
+cached under `data/benchmarks/s669_structures/` and are not checked in. The
+report is `data/benchmarks/s669_report.md`.
+
+ThermoMPNN scores the same table from the wild-type PDB. Clone the upstream
+repo once, then run:
+
+```bash
+git clone --depth 1 https://github.com/Kuhlman-Lab/ThermoMPNN.git third_party/ThermoMPNN
+python3 -m benchmark.thermompnn_s669
+```
+
+The report is `data/benchmarks/thermompnn_s669_report.md`.

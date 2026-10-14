@@ -40,6 +40,9 @@ data/*
 data/benchmarks/runs/
 data/benchmarks/runs/**
 
+# Upstream ThermoMPNN checkout (weights and code). See benchmark/thermompnn_s669.py.
+third_party/
+
 # Large/binary/generated data
 *.bin
 *.npy
