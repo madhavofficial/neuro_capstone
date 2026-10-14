@@ -1,3 +1,9 @@
+"""Retrieve one wild-type model for the structural heuristics.
+
+A variant tag does not build a mutant structure. The substitution is applied
+later, in silico, by ``analyze_structure.py``.
+"""
+
 import requests
 import os
 import argparse

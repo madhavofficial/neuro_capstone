@@ -1,3 +1,11 @@
+"""Structural heuristics for a virtual substitution on one wild-type model.
+
+Residue-table deltas and geometric cutoffs are not a physics engine and are
+not a folding ΔΔG. ``calculate_physics_metrics`` remains so ``pipeline.py``
+can import it, and the written files stay ``*_physics.json`` for that caller.
+New code should call ``calculate_structural_heuristics``.
+"""
+
 from __future__ import annotations
 
 import Bio.PDB
@@ -876,17 +884,25 @@ def analyze_variant_pair(wt_pdb_path: str, mut_pdb_path: str, variant_code: str,
     }
 
 
-# Backwards-compatible entrypoint for pipeline.py
-def calculate_physics_metrics(pdb_path: str, variant_code: str, *, chain_id: str | None = None) -> dict | None:
-    """Pipeline-compatible wrapper.
+def calculate_structural_heuristics(pdb_path: str, variant_code: str, *, chain_id: str | None = None) -> dict | None:
+    """Virtual substitution on one wild-type model.
 
-    Returns a JSON-serializable dict for a single PDB (no WT-vs-MUT deltas unless you use analyze_variant_pair).
+    Returns volume, hydropathy, charge, SASA, DSSP, hydrogen bonds, and salt
+    bridges. This does not build a mutant structure and does not estimate ΔΔG.
     """
-    # Keep pipeline output clean; CLI printing happens in __main__.
     return analyze_protein(pdb_path, variant_code, chain_id=chain_id, verbose=False)
 
+
+def calculate_physics_metrics(pdb_path: str, variant_code: str, *, chain_id: str | None = None) -> dict | None:
+    """Old name for ``calculate_structural_heuristics``.
+
+    ``pipeline.py`` still imports this name. The calculation is the structural
+    heuristic above, not a physics engine.
+    """
+    return calculate_structural_heuristics(pdb_path, variant_code, chain_id=chain_id)
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Analyze intrinsic residue deltas and (optionally) WT-vs-MUT structural deltas.")
+    parser = argparse.ArgumentParser(description="Structural heuristics for a virtual substitution on one wild-type model.")
     parser.add_argument("pdb", nargs="?", help="Path to PDB file (single-structure mode)")
     parser.add_argument("variant", nargs="?", help="Mutation code (e.g. V50M)")
     parser.add_argument("--wt-pdb", help="WT PDB path (compare mode)", default=None)
