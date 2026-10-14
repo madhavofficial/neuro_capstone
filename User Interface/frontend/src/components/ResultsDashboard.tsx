@@ -285,14 +285,14 @@ function getRetrievedPmids(evidence?: AnalyzeResponse['evidence']): Set<string> 
 
 function formatNarrativeWithCitations(text: string, retrievedPmids: Set<string>) {
   // Only link PMIDs that occur in the evidence returned by the API.
-  const parts = text.split(/(\[PMID:?\s*\d+\])/g);
+  const parts = text.split(/(\[(?:Unverified\s+)?PMID:?\s*\d+\])/g);
 
   return parts.map((part, index) => {
-    const match = part.match(/\[PMID:?\s*(\d+)\]/);
+    const match = part.match(/\[(?:Unverified\s+)?PMID:?\s*(\d+)\]/);
     if (!match) return <span key={index}>{part}</span>;
 
     const pmid = match[1];
-    if (!retrievedPmids.has(pmid)) {
+    if (/^\[Unverified\s+PMID/i.test(part) || !retrievedPmids.has(pmid)) {
       return (
         <span key={index} className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 font-mono text-xs font-semibold text-amber-800 mx-1 align-baseline"
           title="This PMID was not present in the retrieved evidence list and has not been verified by this pipeline.">
@@ -530,7 +530,7 @@ function ClinicalNarrativeCard({
                       Cited Literature
                     </span>
                     <span className="text-xs font-semibold text-slate-700 font-mono">
-                      {structured.cited_pmids.filter((pmid) => retrievedPmids.has(String(pmid))).length} Retrieved Citations
+                      {structured.cited_pmids.filter((pmid) => retrievedPmids.has(String(pmid).match(/\b(\d{4,9})\b/)?.[1] ?? '')).length} Retrieved Citations
                     </span>
                   </div>
                 )}
@@ -595,18 +595,34 @@ function AIVerdictHeroCard({ data }: { data: AnalyzeResponse }) {
 
   // A pathogenic-looking call without any retrieved papers is a hypothesis,
   // regardless of whether the retrieval layer reported an explicit error.
+  const structureOnlyHypothesis = [
+    'STRUCTURAL_DISCOVERY_VUS',
+    'PREDICTED_PATHOGENIC_VUS',
+  ].includes(statusStr);
+
   const hypothesisLiteratureGap =
-    ['STRUCTURAL_DISCOVERY_VUS', 'PREDICTED_PATHOGENIC_VUS'].includes(statusStr) ||
+    structureOnlyHypothesis ||
     (!topEvidence && (
       ['NULL_RESULTS', 'TIMEOUT_ERROR'].includes(ragStatus) ||
       hasPathogenicCall
     ));
 
-  if (hypothesisLiteratureGap) {
+  const hasClinvarClassification =
+    clinvarSig.includes('pathogenic') || clinvarSig.includes('benign');
+
+  if (structureOnlyHypothesis && !hasClinvarClassification) {
     verdictType = 'VUS';
     verdictTitle = 'VARIANT OF UNCERTAIN SIGNIFICANCE (VUS)';
     verdictDescription =
       'Hypothesis only: no literature evidence was retrieved. Structural predictions are not a confirmed clinical classification.';
+  } else if (hypothesisLiteratureGap && hasClinvarClassification) {
+    if (clinvarSig.includes('pathogenic')) {
+      verdictType = 'PATHOGENIC';
+      verdictTitle = clinvar?.clinical_significance || 'PATHOGENIC';
+    } else {
+      verdictType = 'BENIGN';
+      verdictTitle = clinvar?.clinical_significance || 'BENIGN';
+    }
   } else if (customBadge) {
     if (customBadge.toUpperCase().includes('PATHOGENIC')) {
       verdictType = 'PATHOGENIC';
