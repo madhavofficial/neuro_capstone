@@ -58,35 +58,18 @@ CM_CLINICAL_HIGH   = "HIGH"
 CM_CLINICAL_PARTIAL= "PARTIAL"
 CM_CLINICAL_UNAVAIL= "UNAVAILABLE"
 
-# ── Physics severity thresholds ───────────────────────────────────────────────
-# Calibrated against the real physics JSON schema produced by analyze_structure.
-SEVERE_DELTA_VOLUME_BURIED    = 30.0
-SEVERE_DELTA_VOLUME_EXPOSED   = 60.0
-SEVERE_DELTA_HYDRO_SURFACE_GAIN =  3.0
-SEVERE_DELTA_HYDRO_BURIED_LOSS  = -2.5
-SEVERE_BURIED_CHARGE_SHIFT      = True
-
-SEVERE_BACKBONE_STRAIN_LABELS = {
-    "glycine flexibility lost",
-    "severe",
-    "high",
-    "critical",
-}
-
-SEVERE_VIOLATION_MIN_AXES = 1
-
 # ── LLM system-prompt directive injected when status = STRUCTURAL_DISCOVERY_VUS ──
 STRUCTURAL_DISCOVERY_VUS_DIRECTIVE = (
     "SYSTEM DIRECTIVE — STRUCTURAL_DISCOVERY_VUS: "
-    "The variant below has no peer-reviewed clinical literature but carries a "
-    "computational structural heuristic derived from an AlphaFold model and residue "
-    "property deltas (ΔV, ΔSASA, backbone strain, hydrophobic shift). This is not a "
-    "validated physical simulation or clinical classification. "
-    "Treat the absence of clinical literature as a 'discovery gap' — an opportunity "
-    "for novel scientific inquiry — NOT as evidence of benignity or a computational "
-    "failure. Provide a 'Predictive Pathogenicity' verdict grounded in the structural "
-    "math, explicitly acknowledging the literature gap and recommending experimental "
-    "validation (e.g., ThT aggregation assay, CD spectroscopy, cellular toxicity model)."
+    "The variant below has no peer-reviewed clinical literature. "
+    "A stability claim is allowed only from a ThermoMPNN monomer folding ΔΔG, "
+    "with positive meaning destabilizing. Residue-table differences such as ΔV, "
+    "Δ hydrophobicity, and Δ charge describe the amino-acid change. They are not "
+    "a measured effect and are not a clinical classification. "
+    "Treat the absence of clinical literature as a discovery gap, not as evidence "
+    "of benignity. State the ThermoMPNN value when it is present, acknowledge the "
+    "literature gap, and recommend experimental validation "
+    "(ThT aggregation assay, CD spectroscopy, or a cellular toxicity model)."
 )
 
 
@@ -266,77 +249,27 @@ def derive_global_status(
 def evaluate_physics_severity(
     physics_vector: Dict[str, Any],
 ) -> Tuple[bool, List[str], int]:
+    """Severe only for a ThermoMPNN monomer ΔΔG of at least +1 kcal/mol.
+
+    Positive is destabilizing, the S669 sign. Volume, hydrophobicity, charge,
+    and backbone-strain labels are residue-table or wild-type descriptions.
+    They are not violations: the summed table score does not track experimental
+    folding ΔΔG.
     """
-    Evaluate whether the physics vector crosses a 'Severe' violation threshold.
-
-    Evaluated axes (each contributes at most one violation):
-      1. Volume change  (context-aware: buried vs exposed)
-      2. Hydrophobicity change (surface gain or buried core loss)
-      3. Backbone strain label
-      4. Buried charge shift
-
-    Returns:
-        (is_severe, violations, violation_count)
-    """
-    violations: List[str] = []
-
-    deltas    = physics_vector.get("deltas", {})
-    ctx       = physics_vector.get("structural_context_wt", {})
-    stability = physics_vector.get("stability_audit", {})
-
-    dV       = _safe_float(deltas.get("delta_volume"))
-    dH       = _safe_float(deltas.get("delta_hydrophobicity"))
-    dC       = _safe_float(deltas.get("delta_charge"))
-    exposure = ctx.get("exposure", "Unknown")
-    sasa     = _safe_float(ctx.get("sasa"))
-    backbone = str(stability.get("backbone_strain", "None")).lower()
-
-    is_buried = (exposure == "Buried") or (sasa < 15.0)
-
-    # Axis 1 — Volume
-    threshold_vol = SEVERE_DELTA_VOLUME_BURIED if is_buried else SEVERE_DELTA_VOLUME_EXPOSED
-    if abs(dV) > threshold_vol:
-        direction = "expansion" if dV > 0 else "cavity"
-        label = "±" if dV < 0 else ">"
-        violations.append(
-            f"Extreme volume {direction} (ΔV={dV:+.1f} Å³, "
-            f"threshold={label}{threshold_vol:.0f} Å³ for "
-            f"{'buried' if is_buried else 'exposed'} site)"
-        )
-
-    # Axis 2 — Hydrophobicity
-    if not is_buried and dH > SEVERE_DELTA_HYDRO_SURFACE_GAIN:
-        violations.append(
-            f"Severe surface hydrophobicity gain (ΔH={dH:+.2f}, "
-            f"threshold >+{SEVERE_DELTA_HYDRO_SURFACE_GAIN}) "
-            "→ strong aggregation / amyloid propensity signal"
-        )
-    elif is_buried and dH < SEVERE_DELTA_HYDRO_BURIED_LOSS:
-        violations.append(
-            f"Severe hydrophobic core disruption (ΔH={dH:+.2f}, "
-            f"threshold <{SEVERE_DELTA_HYDRO_BURIED_LOSS}) "
-            "→ core packing collapse risk"
-        )
-
-    # Axis 3 — Backbone strain
-    for label in SEVERE_BACKBONE_STRAIN_LABELS:
-        if label in backbone and backbone != "none":
-            violations.append(
-                f"Severe backbone strain detected: "
-                f"'{stability.get('backbone_strain')}' "
-                "(loss of residue-specific φ/ψ conformational freedom)"
-            )
-            break
-
-    # Axis 4 — Buried charge shift
-    if SEVERE_BURIED_CHARGE_SHIFT and is_buried and dC != 0:
-        violations.append(
-            f"Buried charge shift (ΔCharge={dC:+.1f}) "
-            "→ electrostatic destabilisation of hydrophobic core"
-        )
-
-    is_severe = len(violations) >= SEVERE_VIOLATION_MIN_AXES
-    return is_severe, violations, len(violations)
+    raw = physics_vector.get("monomer_ddg")
+    if raw is None:
+        return False, [], 0
+    try:
+        ddg = float(raw)
+    except (TypeError, ValueError):
+        return False, [], 0
+    if ddg < 1.0:
+        return False, [], 0
+    violation = (
+        f"ThermoMPNN monomer folding ΔΔG={ddg:+.2f} kcal/mol "
+        "(positive is destabilizing; threshold >= +1.00)"
+    )
+    return True, [violation], 1
 
 
 # ──────────────────────────────────────────────────────────────────────────────
