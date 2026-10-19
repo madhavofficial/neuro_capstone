@@ -104,6 +104,34 @@ def load_thermompnn(repo: Path):
     return model
 
 
+def predict_monomer_ddg(pdb_path: str | Path, variant: str, chain_id: str | None = None) -> float | None:
+    """ThermoMPNN folding ΔΔG for one substitution.
+
+    Positive means destabilizing, matching the S669 column. The raw model
+    output has the opposite sign. Returns None when the weights or the
+    residue are unavailable, so the pipeline still runs.
+    """
+    try:
+        from analyze_structure import get_chain, load_structure, parse_variant_code
+
+        wildtype, position, mutant, _wt3, _mut3 = parse_variant_code(variant)
+        path = Path(pdb_path)
+        if chain_id is None:
+            chain_id = get_chain(load_structure(str(path))[0], None).id
+        model = load_thermompnn(DEFAULT_REPO)
+        scored = score_structure(
+            model,
+            path,
+            chain_id,
+            [{"wt": wildtype, "position": position, "mut": mutant}],
+        )
+        if not scored or scored[0].get("status") != "scored" or scored[0].get("score") in ("", None):
+            return None
+        return round(-float(scored[0]["score"]), 4)
+    except Exception:
+        return None
+
+
 def score_structure(model, pdb_path: Path, chain: str, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     from datasets import Mutation
     from protein_mpnn_utils import alt_parse_PDB

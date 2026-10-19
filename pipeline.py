@@ -396,6 +396,12 @@ def run_pipeline(
         if not physics_data:
             raise RuntimeError(f"Analysis step failed for {gene} {variant}")
 
+        from benchmark.thermompnn_s669 import predict_monomer_ddg
+
+        monomer_ddg = predict_monomer_ddg(pdb_path, variant, chain_id)
+        if monomer_ddg is not None:
+            physics_data["monomer_ddg"] = monomer_ddg
+
         physics_json_path = save_physics_json(pdb_path, variant, physics_data, analysis_out_dir)
     elif variant:
         # A rerun may intentionally skip structure/physics computation while

@@ -1,8 +1,9 @@
 """Export the blinded structural feature vector for one variant.
 
 The vector is the wild-type site measurement plus the amino-acid table change.
-It does not build a mutant structure. Guessed gained contacts are omitted
-because the mutant side chain is never placed. ClinVar is not a feature.
+Every variant also gets ``interface_contacts_lost`` and ``delta_aggregation``.
+A one-chain structure has no interface count. Guessed gained contacts are
+omitted because the mutant side chain is never placed. ClinVar is not a feature.
 """
 
 from __future__ import annotations
@@ -29,6 +30,9 @@ STRUCTURAL_FEATURE_KEYS = (
     "salt_bridges_lost",
     "disulfides_lost",
     "h_bonds_lost_est",
+    "interface_contacts_lost",
+    "delta_aggregation",
+    "monomer_ddg",
 )
 
 # Contacts inferred from a side chain that was never built.
@@ -69,6 +73,9 @@ def structural_features(analysis: dict[str, Any]) -> dict[str, Any]:
         "salt_bridges_lost": list(audit.get("salt_bridges_lost") or []),
         "disulfides_lost": list(audit.get("disulfides_lost") or []),
         "h_bonds_lost_est": int(audit.get("h_bonds_lost_est") or 0),
+        "interface_contacts_lost": int(analysis.get("interface_contacts_lost") or 0),
+        "delta_aggregation": analysis.get("delta_aggregation", 0.0),
+        "monomer_ddg": analysis.get("monomer_ddg"),
     }
     missing = [key for key in STRUCTURAL_FEATURE_KEYS if key not in features]
     if missing:

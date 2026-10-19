@@ -374,6 +374,15 @@ def build_vus_note(
     else:
         plddt_note = ""
 
+    raw_ddg = physics_vector.get("monomer_ddg")
+    if raw_ddg is None:
+        ddg_note = ""
+    else:
+        ddg_note = (
+            f" ThermoMPNN predicts a monomer folding ΔΔG of {float(raw_ddg):+.2f} kcal/mol"
+            " (positive is destabilizing)."
+        )
+
     bullet_str = ("\n  • " + "\n  • ".join(violations)) if violations else ""
 
     if status == "STRUCTURAL_DISCOVERY_VUS":
@@ -403,7 +412,7 @@ def build_vus_note(
         f"{intro}"
         f"The computational structural analysis identifies {len(violations)} severe "
         f"biophysical violation(s) at a {sec} site:{bullet_str}. "
-        f"{classification}{plddt_note} "
+        f"{classification}{plddt_note}{ddg_note} "
         f"Independent experimental validation (e.g., ThT aggregation assay, "
         f"CD spectroscopy, or cellular toxicity study) is strongly recommended "
         f"before clinical interpretation."

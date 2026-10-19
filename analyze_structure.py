@@ -168,6 +168,41 @@ VOLUME = {
     'CYX': 108.5, 'CYM': 108.5,  # cysteine variants
 }
 
+# AGGRESCAN a3v. Sánchez de Groot et al., BMC Structural Biology 2005, 5:18,
+# as used by Conchillo-Solé et al., BMC Bioinformatics 2007, 8:65.
+AGGREGATION_A3V = {
+    "I": 1.822,
+    "F": 1.754,
+    "V": 1.594,
+    "L": 1.380,
+    "Y": 1.159,
+    "W": 1.037,
+    "M": 0.910,
+    "C": 0.604,
+    "A": -0.036,
+    "T": -0.159,
+    "S": -0.294,
+    "P": -0.334,
+    "G": -0.535,
+    "K": -0.931,
+    "H": -1.033,
+    "Q": -1.231,
+    "R": -1.240,
+    "N": -1.302,
+    "E": -1.412,
+    "D": -1.836,
+}
+# A side chain this much smaller than wild type can no longer fill a contact.
+PACKING_VOLUME_LOSS = 20.0
+PACKING_CONTACT_DISTANCE = 4.5
+_BACKBONE_ATOMS = {"N", "CA", "C", "O", "OXT"}
+_POSITIVE_RESIDUES = {"ARG", "LYS", "HIS", "HSD", "HSE", "HIP"}
+_NEGATIVE_RESIDUES = {"ASP", "GLU"}
+_POLAR_RESIDUES = {
+    "SER", "THR", "TYR", "ASN", "GLN", "HIS", "TRP", "LYS", "ARG", "ASP", "GLU",
+}
+_CYS_RESIDUES = {"CYS", "CYX"}
+
 def one_to_three(one_letter):
     return AA_MAP_1_TO_3.get(one_letter.upper())
 
@@ -676,6 +711,178 @@ def get_interactions(structure, model_id, chain_id, res_id, wt_resname, mut_resn
 
     return interactions
 
+
+def aggregation_window_size(length: int) -> int:
+    """AGGRESCAN window: 5, 7, 9, or 11 residues by sequence length."""
+    if length <= 75:
+        return 5
+    if length <= 175:
+        return 7
+    if length <= 300:
+        return 9
+    return 11
+
+
+def a4v_profile(sequence: str) -> list[float]:
+    """Window-averaged aggregation propensity for one sequence.
+
+    Virtual termini follow AGGRESCAN: the N-terminal cap is the mean of Lys
+    and Arg, and the C-terminal cap is the mean of Asp and Glu. Edge residues
+    that cannot sit at a window centre copy the nearest centred value.
+    """
+    values = [AGGREGATION_A3V[aa] for aa in sequence]
+    n = len(values)
+    if n == 0:
+        return []
+    window = min(aggregation_window_size(n), n + 2)
+    if window % 2 == 0:
+        window -= 1
+    window = max(window, 1)
+    half = window // 2
+    n_cap = (AGGREGATION_A3V["K"] + AGGREGATION_A3V["R"]) / 2.0
+    c_cap = (AGGREGATION_A3V["D"] + AGGREGATION_A3V["E"]) / 2.0
+    extended = [n_cap, *values, c_cap]
+    profile: list[float | None] = [None] * n
+    for start in range(0, len(extended) - window + 1):
+        center = start + half
+        if 1 <= center <= n:
+            chunk = extended[start : start + window]
+            profile[center - 1] = sum(chunk) / window
+    defined = [value for value in profile if value is not None]
+    if not defined:
+        return [sum(extended) / len(extended)] * n
+    first, last = defined[0], defined[-1]
+    return [value if value is not None else (first if index < n / 2 else last) for index, value in enumerate(profile)]
+
+
+def delta_aggregation(sequence: str, index: int, new_aa: str) -> float | None:
+    """Change in AGGRESCAN a4v at one site after a single substitution.
+
+    For an additive scale this equals the residue change divided by the window
+    length when the site is a window centre. Flanking residues still set the
+    window length and the edge-copy rule.
+    """
+    if index < 0 or index >= len(sequence):
+        return None
+    new_aa = new_aa.upper()
+    if sequence[index] not in AGGREGATION_A3V or new_aa not in AGGREGATION_A3V:
+        return None
+    wild = a4v_profile(sequence)[index]
+    mutated = sequence[:index] + new_aa + sequence[index + 1 :]
+    return round(a4v_profile(mutated)[index] - wild, 4)
+
+
+def _chain_sequence(chain) -> list[tuple[int, str]]:
+    records = []
+    for residue in chain:
+        if residue.id[0] != " ":
+            continue
+        one = next((letter for letter, name in AA_MAP_1_TO_3.items() if name == normalize_resname(residue.get_resname())), None)
+        if one:
+            records.append((int(residue.id[1]), one))
+    return records
+
+
+def _partner_id(residue) -> tuple[str, int]:
+    return (residue.get_parent().id, int(residue.id[1]))
+
+
+def _has_sidechain_hbond(target, neighbor) -> bool:
+    target_donors, target_acceptors = _get_hbond_donors_acceptors(target)
+    neighbor_donors, neighbor_acceptors = _get_hbond_donors_acceptors(neighbor)
+    for donor, heavy in target_donors:
+        if donor.get_name().strip() in _BACKBONE_ATOMS:
+            continue
+        for acceptor, _heavy in neighbor_acceptors:
+            if donor - acceptor < 3.5 and _check_hbond_geometry(donor, acceptor, heavy):
+                return True
+    for acceptor, _heavy in target_acceptors:
+        if acceptor.get_name().strip() in _BACKBONE_ATOMS:
+            continue
+        for donor, heavy in neighbor_donors:
+            if donor - acceptor < 3.5 and _check_hbond_geometry(donor, acceptor, heavy):
+                return True
+    return False
+
+
+def _sidechain_contact(target, neighbor) -> bool:
+    for atom in target:
+        if atom.get_name().strip() in _BACKBONE_ATOMS:
+            continue
+        for other in neighbor:
+            if other.get_name().strip() in _BACKBONE_ATOMS:
+                continue
+            if atom - other < PACKING_CONTACT_DISTANCE:
+                return True
+    return False
+
+
+def interface_contacts_lost(structure, chain_id: str, resseq: int, wt_resname: str, mut_resname: str, *, model_id: int = 0) -> int:
+    """Cross-chain contacts on the wild-type model that this substitution removes.
+
+    A one-chain file returns 0. Counted contacts are an existing salt bridge,
+    disulfide, or side-chain hydrogen bond the new residue type cannot make,
+    or a side-chain packing contact when the new residue is at least 20 Å³ smaller.
+    Guessed contacts from an unbuilt side chain are not counted.
+    """
+    model = structure[model_id]
+    if sum(1 for _chain in model) < 2:
+        return 0
+    try:
+        chain = model[chain_id]
+    except KeyError:
+        return 0
+    target = find_residue_by_resseq(chain, resseq)
+    if target is None:
+        return 0
+
+    lost: set[tuple[str, int]] = set()
+    volume_loss = float(VOLUME.get(wt_resname, 0)) - float(VOLUME.get(mut_resname, 0))
+    for other_chain in model:
+        if other_chain.id == chain_id:
+            continue
+        for neighbor in other_chain:
+            if neighbor.id[0] != " ":
+                continue
+            neighbor_name = normalize_resname(neighbor.get_resname())
+            partner = _partner_id(neighbor)
+
+            if wt_resname in (_POSITIVE_RESIDUES | _NEGATIVE_RESIDUES):
+                opposite = (wt_resname in _POSITIVE_RESIDUES and neighbor_name in _NEGATIVE_RESIDUES) or (
+                    wt_resname in _NEGATIVE_RESIDUES and neighbor_name in _POSITIVE_RESIDUES
+                )
+                mut_neutral = mut_resname not in (_POSITIVE_RESIDUES | _NEGATIVE_RESIDUES)
+                mut_flips = (wt_resname in _POSITIVE_RESIDUES and mut_resname in _NEGATIVE_RESIDUES) or (
+                    wt_resname in _NEGATIVE_RESIDUES and mut_resname in _POSITIVE_RESIDUES
+                )
+                if opposite and (mut_neutral or mut_flips):
+                    distance = _min_atom_distance(
+                        target,
+                        CHARGED_ATOMS.get(wt_resname, []),
+                        neighbor,
+                        CHARGED_ATOMS.get(neighbor_name, []),
+                    )
+                    if distance < 4.0:
+                        lost.add(partner)
+
+            if (
+                wt_resname in _CYS_RESIDUES
+                and mut_resname not in _CYS_RESIDUES
+                and neighbor_name in _CYS_RESIDUES
+                and "SG" in target
+                and "SG" in neighbor
+                and (target["SG"] - neighbor["SG"]) < 2.5
+            ):
+                lost.add(partner)
+
+            if wt_resname in _POLAR_RESIDUES and mut_resname not in _POLAR_RESIDUES and _has_sidechain_hbond(target, neighbor):
+                lost.add(partner)
+
+            if volume_loss >= PACKING_VOLUME_LOSS and _sidechain_contact(target, neighbor):
+                lost.add(partner)
+    return len(lost)
+
+
 # ==========================================
 #  MAIN ANALYSIS LOGIC (Features 1-10)
 # ==========================================
@@ -723,6 +930,16 @@ def analyze_protein(pdb_path, variant_code, *, chain_id: str | None = None, verb
     
     # 7-9. Interactions (The "Lost" Checks)
     interaction_data = get_interactions(structure, 0, chain.id, res_id, wt_3, mut_3)
+    interface_lost = interface_contacts_lost(structure, chain.id, res_id, wt_3, mut_3)
+    sequence_records = _chain_sequence(chain)
+    sequence_index = next((i for i, (resseq, _aa) in enumerate(sequence_records) if resseq == res_id), None)
+    aggregation_delta = None
+    if sequence_index is not None:
+        aggregation_delta = delta_aggregation(
+            "".join(aa for _resseq, aa in sequence_records),
+            sequence_index,
+            _mut_1,
+        )
     
     # 10. Backbone Strain (Gly/Pro)
     strain_warning = "None"
@@ -793,7 +1010,9 @@ def analyze_protein(pdb_path, variant_code, *, chain_id: str | None = None, verb
             "h_bonds_lost_est": interaction_data['h_bonds_lost_est'],
             "h_bonds_gained_est": interaction_data['h_bonds_gained_est'],
             "backbone_strain": strain_warning
-        }
+        },
+        "interface_contacts_lost": interface_lost,
+        "delta_aggregation": aggregation_delta,
     }
     
     return result

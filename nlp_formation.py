@@ -101,6 +101,8 @@ def extract_signals(physics):
 
     # Qualitative mechanism tags injected by orchestration (e.g., from analyze_structure)
     mechanism_tags = physics.get("mechanism_tags", [])
+    raw_ddg = physics.get("monomer_ddg")
+    monomer_ddg = None if raw_ddg is None else _safe_float(raw_ddg)
 
     return {
         "variant": variant,
@@ -116,6 +118,7 @@ def extract_signals(physics):
         "plddt": plddt,
         "h_bonds_lost": int(h_bonds_lost),
         "mechanism_tags": mechanism_tags,
+        "monomer_ddg": monomer_ddg,
     }
 
 def interpret_and_prioritize(signals):
@@ -175,6 +178,10 @@ def interpret_and_prioritize(signals):
     # --- 5. Stability Audit (H-Bonds) ---
     if signals["h_bonds_lost"] > 0:
         mechanisms.append((9, f"potential localized destabilization via loss of {signals['h_bonds_lost']} estimated hydrogen bond(s)"))
+
+    monomer_ddg = signals.get("monomer_ddg")
+    if monomer_ddg is not None and monomer_ddg >= 1.0:
+        mechanisms.append((8, f"predicted monomer destabilization (ThermoMPNN ΔΔG={monomer_ddg:+.2f} kcal/mol)"))
 
     # Prioritize and filter to reduce noise (keep top 3 most important features based on score)
     mechanisms.sort(key=lambda x: x[0], reverse=True)
@@ -263,6 +270,11 @@ def _build_mechanistic_keywords(signals):
         keywords.append(("conformational flexibility", "disorder"))
     elif plddt < 70:
         keywords.append(("structurally dynamic region", "disorder"))
+
+    # ThermoMPNN monomer ΔΔG, positive = destabilizing. Below 1 kcal/mol stays silent.
+    monomer_ddg = signals.get("monomer_ddg")
+    if monomer_ddg is not None and monomer_ddg >= 1.0:
+        keywords.append(("monomer destabilization", "stability"))
 
     # Qualitative tags injected by orchestration
     for tag in signals.get("mechanism_tags", []):

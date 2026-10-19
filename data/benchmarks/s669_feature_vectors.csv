@@ -1,0 +1,670 @@
+pdb,chain,variant,wt,position,mut,ddg,status,exposure,sasa,secondary_structure,plddt_confidence,delta_volume,delta_hydrophobicity,delta_charge,backbone_strain,backbone_strain_flag,salt_bridges_lost,disulfides_lost,h_bonds_lost_est,heuristic_score
+1A0F,A,S11A,S,11,A,-1.8,scored,Buried,0.0,Turn,8.91,-0.4,2.6,0,None,0,0,0,0,-0.285556
+1A7V,A,A104H,A,104,H,-2.69,scored,Exposed,49.46,Alpha Helix,20.33,64.6,-5.0,0.1,None,0,0,0,0,0.457556
+1A7V,A,A66H,A,66,H,-1.98,scored,Buried,0.0,Loop,23.77,64.6,-5.0,0.1,None,0,0,0,0,1.143889
+1A7V,A,A91H,A,91,H,-1.7,scored,Partially Exposed,26.57,Alpha Helix,22.7,64.6,-5.0,0.1,None,0,0,0,0,1.143889
+1A7V,A,D3H,D,3,H,-1.36,scored,Exposed,67.17,Loop,73.89,42.1,0.3,1.1,None,0,0,0,0,-0.026500
+1A7V,A,D58H,D,58,H,-2.05,scored,Exposed,88.61,Helix-3,39.5,42.1,0.3,1.1,None,0,0,0,0,-0.053000
+1A7V,A,E73H,E,73,H,-3.01,scored,Exposed,95.55,Alpha Helix,38.75,14.8,0.3,1.1,None,0,0,0,0,-0.144000
+1A7V,A,K13H,K,13,H,-0.6,scored,Exposed,81.36,Alpha Helix,37.22,-15.4,0.7,-0.9,None,0,0,0,0,-0.159778
+1A7V,A,K20H,K,20,H,-2.88,scored,Exposed,63.84,Alpha Helix,25.11,-15.4,0.7,-0.9,None,0,0,0,0,-0.159778
+1A7V,A,K31H,K,31,H,-1.36,scored,Exposed,147.48,Loop,45.87,-15.4,0.7,-0.9,None,0,0,0,0,-0.079889
+1A7V,A,K39H,K,39,H,-1.86,scored,Exposed,127.64,Alpha Helix,27.19,-15.4,0.7,-0.9,None,0,0,0,0,-0.159778
+1A7V,A,K49H,K,49,H,-2.02,scored,Partially Exposed,35.38,Alpha Helix,25.73,-15.4,0.7,-0.9,None,0,0,0,0,-0.399444
+1A7V,A,K84H,K,84,H,-2.88,scored,Exposed,60.27,Alpha Helix,17.26,-15.4,0.7,-0.9,None,0,0,0,0,-0.159778
+1A7V,A,K97H,K,97,H,-1.97,scored,Exposed,113.88,Loop,35.19,-15.4,0.7,-0.9,None,0,0,0,0,-0.079889
+1BA3,A,H461D,H,461,D,-1.745,scored,Partially Exposed,35.38,Bend,33.27,-42.1,-0.3,-1.1,None,0,0,0,0,0.417083
+1BA3,A,H489D,H,489,D,0.287,scored,Exposed,158.41,Turn,52.24,-42.1,-0.3,-1.1,None,0,0,0,0,0.166833
+1BA3,A,H489K,H,489,K,-0.287,scored,Exposed,158.41,Turn,52.24,15.4,-0.7,0.9,None,0,0,0,0,0.131222
+1BA3,A,H489M,H,489,M,-0.263,scored,Exposed,158.41,Turn,52.24,9.7,5.1,-0.1,None,0,0,0,0,-0.107167
+1BFM,A,M35W,M,35,W,-0.7,scored,Partially Exposed,10.44,Alpha Helix,0.0,64.9,-2.8,0,None,0,0,0,0,0.851944
+1BFM,A,M35Y,M,35,Y,-0.4,scored,Partially Exposed,10.44,Alpha Helix,0.0,30.7,-3.2,0,None,0,0,0,0,0.611389
+1BNL,A,D76A,D,76,A,-0.821,scored,Partially Exposed,31.62,Loop,14.25,-22.5,5.3,1,None,0,3,0,0,2.549306
+1D5G,A,H71Y,H,71,Y,-0.04,scored,Buried,6.04,Alpha Helix,0.0,40.4,1.9,-0.1,None,0,0,0,0,0.151111
+1D5G,A,I20F,I,20,F,0.91,scored,Buried,5.1,Beta Sheet,0.0,23.2,-1.7,0,None,0,0,0,0,0.764444
+1DIV,A,D23A,D,23,A,-0.46,scored,Exposed,103.25,Turn,134.64,-22.5,5.3,1,None,0,0,0,0,-0.180278
+1DIV,A,D23N,D,23,N,-0.58,scored,Exposed,103.25,Turn,134.64,3.0,0.0,1,None,0,0,0,0,-0.095000
+1DIV,A,D8N,D,8,N,-0.3,scored,Exposed,108.11,Beta Sheet,132.34,3.0,0.0,1,None,0,0,0,0,-0.190000
+1DIV,A,E100A,E,100,A,-0.98,scored,Exposed,110.59,Alpha Helix,36.71,-49.8,5.3,1,None,0,0,0,0,-0.269556
+1DIV,A,E100G,E,100,G,-1.52,scored,Exposed,110.59,Alpha Helix,36.71,-78.3,3.1,1,None,0,0,0,0,-0.076778
+1DIV,A,E17Q,E,17,Q,-0.21,scored,Exposed,80.03,Beta Sheet,128.97,5.4,0.0,1,None,0,0,0,0,-0.182000
+1DIV,A,E38Q,E,38,Q,-0.56,scored,Exposed,78.0,Beta Sheet,101.49,5.4,0.0,1,None,0,0,0,0,-0.182000
+1DIV,A,E48Q,E,48,Q,0.03,scored,Exposed,64.61,Alpha Helix,88.47,5.4,0.0,1,None,0,0,0,0,-0.182000
+1DIV,A,E54Q,E,54,Q,0.33,scored,Exposed,58.17,Alpha Helix,59.02,5.4,0.0,1,None,0,0,0,0,-0.182000
+1DIV,A,H106Q,H,106,Q,-1.53,scored,Exposed,66.8,Alpha Helix,19.09,-9.4,-0.3,-0.1,None,0,0,0,0,0.024667
+1DIV,A,H134Q,H,134,Q,-0.34,scored,Exposed,42.82,Beta Sheet,20.63,-9.4,-0.3,-0.1,None,0,0,0,0,0.024667
+1DIV,A,H144Q,H,144,Q,-0.56,scored,Exposed,47.8,Beta Sheet,23.54,-9.4,-0.3,-0.1,None,0,0,0,0,0.024667
+1DIV,A,I115A,I,115,A,-3.52,scored,Buried,4.29,Beta Bridge,24.64,-78.1,-2.7,0,None,0,0,0,0,1.901667
+1DIV,A,I121A,I,121,A,-2.88,scored,Partially Exposed,14.49,Beta Sheet,15.24,-78.1,-2.7,0,None,0,0,0,0,0.950833
+1DIV,A,I4A,I,4,A,-2.22,scored,Buried,4.83,Beta Sheet,102.51,-78.1,-2.7,0,None,0,0,0,0,1.901667
+1DIV,A,I4V,I,4,V,-0.59,scored,Buried,4.83,Beta Sheet,102.51,-26.7,-0.3,0,None,0,0,0,0,0.511667
+1DIV,A,I79A,I,79,A,-3.49,scored,Buried,9.66,Beta Sheet,20.13,-78.1,-2.7,0,None,0,0,0,0,1.901667
+1DIV,A,I93A,I,93,A,-3.19,scored,Buried,9.66,Beta Sheet,16.13,-78.1,-2.7,0,None,0,0,0,0,1.901667
+1DIV,A,I98A,I,98,A,-4.28,scored,Buried,0.0,Alpha Helix,14.44,-78.1,-2.7,0,None,0,0,0,0,1.901667
+1DIV,A,K10M,K,10,M,0.05,scored,Exposed,192.84,Bend,109.48,-5.7,5.8,-1,None,0,0,0,0,-0.219389
+1DIV,A,K14M,K,14,M,0.01,scored,Exposed,96.98,Helix-3,106.54,-5.7,5.8,-1,None,0,0,0,0,-0.438778
+1DIV,A,K15M,K,15,M,-0.31,scored,Exposed,110.97,Helix-3,100.69,-5.7,5.8,-1,None,0,0,0,0,-0.438778
+1DIV,A,K7M,K,7,M,0.35,scored,Exposed,91.46,Bend,89.41,-5.7,5.8,-1,None,0,0,0,0,-0.219389
+1DIV,A,K96A,K,96,A,0.61,scored,Exposed,118.65,Alpha Helix,32.54,-80.0,5.7,-1,None,0,0,0,0,-0.186667
+1DIV,A,K96G,K,96,G,-0.2,scored,Exposed,118.65,Alpha Helix,32.54,-108.5,3.5,-1,None,0,0,0,0,0.006111
+1DIV,A,L102A,L,102,A,-2.37,scored,Buried,0.0,Alpha Helix,18.6,-78.1,-2.0,0,None,0,0,0,0,1.746111
+1DIV,A,L108A,L,108,A,-2.33,scored,Partially Exposed,20.53,Loop,26.52,-78.1,-2.0,0,None,0,0,0,0,0.436528
+1DIV,A,L110A,L,110,A,-3.21,scored,Partially Exposed,21.85,Loop,28.43,-78.1,-2.0,0,None,0,0,0,0,0.436528
+1DIV,A,L117A,L,117,A,-0.82,scored,Partially Exposed,39.8,Loop,15.66,-78.1,-2.0,0,None,0,0,0,0,0.436528
+1DIV,A,L133A,L,133,A,-2.94,scored,Partially Exposed,19.56,Beta Sheet,15.46,-78.1,-2.0,0,None,0,0,0,0,0.873056
+1DIV,A,L141A,L,141,A,-3.56,scored,Buried,1.21,Beta Sheet,14.43,-78.1,-2.0,0,None,0,0,0,0,1.746111
+1DIV,A,L30A,L,30,A,-2.76,scored,Partially Exposed,10.75,Helix-5,80.47,-78.1,-2.0,0,None,0,0,0,0,0.873056
+1DIV,A,L30V,L,30,V,-3.62,scored,Partially Exposed,10.75,Helix-5,80.47,-26.7,0.4,0,None,0,0,0,0,0.178056
+1DIV,A,L6A,L,6,A,-3.1,scored,Exposed,60.77,Loop,103.49,-78.1,-2.0,0,None,0,0,0,0,0.174611
+1DIV,A,L6I,L,6,I,-0.13,scored,Exposed,60.77,Loop,103.49,0.0,0.7,0,None,0,0,0,0,-0.015556
+1DIV,A,L6V,L,6,V,-0.41,scored,Exposed,60.77,Loop,103.49,-26.7,0.4,0,None,0,0,0,0,0.035611
+1DIV,A,L72A,L,72,A,-3.77,scored,Buried,0.0,Alpha Helix,16.62,-78.1,-2.0,0,None,0,0,0,0,1.746111
+1DIV,A,M1A,M,1,A,-1.46,scored,Exposed,75.54,Loop,103.83,-74.3,-0.1,0,None,0,0,0,0,0.126056
+1DIV,A,M1G,M,1,G,-2.36,scored,Exposed,75.54,Loop,103.83,-102.8,-2.3,0,None,0,0,0,0,0.222444
+1DIV,A,V129A,V,129,A,-1.81,scored,Buried,1.21,Beta Sheet,13.58,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1DIV,A,V131A,V,131,A,-1.93,scored,Buried,0.0,Beta Sheet,11.04,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1DIV,A,V137A,V,137,A,-2.41,scored,Buried,4.83,Beta Sheet,20.98,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1DIV,A,V143A,V,143,A,-3.25,scored,Buried,0.0,Beta Sheet,14.88,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1DIV,A,V145A,V,145,A,-1.92,scored,Buried,6.84,Beta Sheet,15.68,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1DIV,A,V21A,V,21,A,-2.33,scored,Buried,7.25,Loop,135.0,-51.4,-2.4,0,None,0,0,0,0,0.695000
+1DIV,A,V21I,V,21,I,-0.4,scored,Buried,7.25,Loop,135.0,26.7,0.3,0,None,0,0,0,0,0.189167
+1DIV,A,V21L,V,21,L,-1.23,scored,Buried,7.25,Loop,135.0,26.7,-0.4,0,None,0,0,0,0,0.266944
+1DIV,A,V3A,V,3,A,-2.55,scored,Buried,0.0,Beta Sheet,105.69,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1DIV,A,V3I,V,3,I,-0.31,scored,Buried,0.0,Beta Sheet,105.69,26.7,0.3,0,None,0,0,0,0,0.378333
+1DIV,A,V3L,V,3,L,-2.21,scored,Buried,0.0,Beta Sheet,105.69,26.7,-0.4,0,None,0,0,0,0,0.533889
+1DXX,A,K18N,K,18,N,-3.7,scored,Exposed,69.77,Alpha Helix,28.82,-54.5,0.4,-1,None,0,0,0,0,-0.036111
+1EKG,A,L198C,L,198,C,-1.0,scored,Partially Exposed,15.27,Loop,24.77,-58.2,-1.3,0,None,0,0,0,0,0.314722
+1EKG,A,L200C,L,200,C,-2.0,scored,Buried,2.42,Loop,20.4,-58.2,-1.3,0,None,0,0,0,0,0.629444
+1EKG,A,L203C,L,203,C,1.0,scored,Buried,2.42,Bend,16.99,-58.2,-1.3,0,None,0,0,0,0,0.629444
+1EKG,A,S181F,S,181,F,-2.6,scored,Buried,0.0,Beta Bridge,16.33,100.9,3.6,0,None,0,0,0,0,0.881667
+1F8I,A,F345A,F,345,A,-0.455,scored,Buried,2.42,Beta Sheet,19.68,-101.3,-1.0,0,None,0,0,0,0,1.910556
+1FH5,H,S18N,S,18,N,0.6,scored,Partially Exposed,33.23,Beta Sheet,43.02,25.1,-2.7,0,None,0,0,0,0,0.509167
+1FRD,A,H42R,H,42,R,4.0,scored,Exposed,59.32,Bend,25.41,20.2,-1.3,0.9,None,0,0,0,0,0.152556
+1FT8,A,I264V,I,264,V,-0.64,scored,Buried,6.04,Loop,79.3,-26.7,-0.3,0,None,0,0,0,0,0.255833
+1FT8,A,L212V,L,212,V,-1.38,scored,Partially Exposed,14.38,Alpha Helix,76.86,-26.7,0.4,0,None,0,0,0,0,0.178056
+1FT8,A,L238I,L,238,I,-0.35,scored,Partially Exposed,29.1,Bend,80.67,0.0,0.7,0,None,0,0,0,0,-0.038889
+1FT8,A,L267I,L,267,I,-0.11,scored,Buried,0.0,Loop,74.7,0.0,0.7,0,None,0,0,0,0,-0.077778
+1FT8,A,L293I,L,293,I,-0.8,scored,Buried,1.07,Loop,71.06,0.0,0.7,0,None,0,0,0,0,-0.077778
+1FT8,A,L293V,L,293,V,-1.41,scored,Buried,1.07,Loop,71.06,-26.7,0.4,0,None,0,0,0,0,0.178056
+1FT8,A,L315A,L,315,A,-1.65,scored,Buried,9.12,Loop,73.88,-78.1,-2.0,0,None,0,0,0,0,0.873056
+1FT8,A,L317I,L,317,I,-0.85,scored,Buried,1.07,Loop,70.0,0.0,0.7,0,None,0,0,0,0,-0.077778
+1FT8,A,L348I,L,348,I,-0.53,scored,Buried,1.07,Loop,80.95,0.0,0.7,0,None,0,0,0,0,-0.077778
+1FT8,A,L349I,L,349,I,0.05,scored,Exposed,87.48,Loop,83.07,0.0,0.7,0,None,0,0,0,0,-0.015556
+1FT8,A,M216L,M,216,L,0.27,scored,Buried,3.7,Alpha Helix,74.95,3.8,1.9,0,None,0,0,0,0,-0.358889
+1FT8,A,S339A,S,339,A,0.32,scored,Exposed,63.72,Alpha Helix,75.61,-0.4,2.6,0,None,0,0,0,0,-0.114222
+1FT8,A,V287A,V,287,A,-0.16,scored,Partially Exposed,30.04,Alpha Helix,72.5,-51.4,-2.4,0,None,0,0,0,0,0.695000
+1FXA,A,E94D,E,94,D,-1.1,scored,Partially Exposed,19.29,Helix-3,27.44,-27.3,0.0,0,None,0,0,0,0,0.227500
+1FXA,A,E94K,E,94,K,-0.4,scored,Partially Exposed,19.29,Helix-3,27.44,30.2,-0.4,2,None,0,0,0,0,0.296111
+1FXA,A,E94Q,E,94,Q,0.6,scored,Partially Exposed,19.29,Helix-3,27.44,5.4,0.0,1,None,0,0,0,0,-0.455000
+1FXA,A,E95K,E,95,K,1.0,scored,Exposed,84.68,Helix-3,55.33,30.2,-0.4,2,None,0,0,0,0,0.118444
+1FXA,A,F65A,F,65,A,-1.0,scored,Partially Exposed,15.7,Bend,28.1,-101.3,-1.0,0,None,0,0,0,0,0.477639
+1FXA,A,F65I,F,65,I,-0.9,scored,Partially Exposed,15.7,Bend,28.1,-23.2,1.7,0,None,0,0,0,0,0.002222
+1FXA,A,F65W,F,65,W,-0.6,scored,Partially Exposed,15.7,Bend,28.1,37.9,-3.7,0,None,0,0,0,0,0.363472
+1FXA,A,F65Y,F,65,Y,-0.5,scored,Partially Exposed,15.7,Bend,28.1,3.7,-4.1,0,None,0,0,0,0,0.243194
+1FXA,A,R42A,R,42,A,-2.4,scored,Exposed,47.53,Bend,17.37,-84.8,6.3,-1,None,0,2,0,0,1.901333
+1FXA,A,R42H,R,42,H,-1.4,scored,Exposed,47.53,Bend,17.37,-20.2,1.3,-0.9,None,0,0,0,0,-0.085222
+1FXA,A,T48A,T,48,A,0.1,scored,Partially Exposed,17.71,Turn,13.45,-27.5,2.5,0,None,0,0,0,0,-0.024306
+1G3P,A,A147K,A,147,K,-0.287,scored,Buried,1.21,Beta Sheet,11.01,80.0,-5.7,1,None,0,0,0,0,3.600000
+1G3P,A,D160A,D,160,A,-0.263,scored,Exposed,85.62,Turn,32.74,-22.5,5.3,1,None,0,0,0,0,-0.180278
+1G3P,A,D160C,D,160,C,-0.096,scored,Exposed,85.62,Turn,32.74,-2.6,6.0,1,None,0,0,0,0,-0.229000
+1G3P,A,D160E,D,160,E,-0.359,scored,Exposed,85.62,Turn,32.74,27.3,0.0,0,None,0,0,0,0,0.045500
+1G3P,A,D160F,D,160,F,-0.359,scored,Exposed,85.62,Turn,32.74,78.8,6.3,1,None,0,0,0,0,-0.108667
+1G3P,A,D160G,D,160,G,-0.669,scored,Exposed,85.62,Turn,32.74,-51.0,3.1,1,None,0,0,0,0,-0.083889
+1G3P,A,D160H,D,160,H,0.048,scored,Exposed,85.62,Turn,32.74,42.1,0.3,1.1,None,0,0,0,0,-0.026500
+1G3P,A,D160I,D,160,I,-0.932,scored,Exposed,85.62,Turn,32.74,55.6,8.0,1,None,0,0,0,0,-0.185111
+1G3P,A,D160K,D,160,K,-0.335,scored,Exposed,85.62,Turn,32.74,57.5,-0.4,2,None,0,0,0,0,0.104722
+1G3P,A,D160L,D,160,L,-0.55,scored,Exposed,85.62,Turn,32.74,55.6,7.3,1,None,0,0,0,0,-0.169556
+1G3P,A,D160M,D,160,M,-0.502,scored,Exposed,85.62,Turn,32.74,51.8,5.4,1,None,0,0,0,0,-0.133667
+1G3P,A,D160N,D,160,N,0.072,scored,Exposed,85.62,Turn,32.74,3.0,0.0,1,None,0,0,0,0,-0.095000
+1G3P,A,D160P,D,160,P,-0.645,scored,Exposed,85.62,Turn,32.74,1.6,1.9,1,None,0,0,0,0,-0.139556
+1G3P,A,D160Q,D,160,Q,-0.478,scored,Exposed,85.62,Turn,32.74,32.7,0.0,1,None,0,0,0,0,-0.045500
+1G3P,A,D160R,D,160,R,-0.669,scored,Exposed,85.62,Turn,32.74,62.3,-1.0,2,None,0,0,0,0,0.126056
+1G3P,A,D160S,D,160,S,-0.287,scored,Exposed,85.62,Turn,32.74,-22.1,2.7,1,None,0,0,0,0,-0.123167
+1G3P,A,D160T,D,160,T,-0.741,scored,Exposed,85.62,Turn,32.74,5.0,2.8,1,None,0,0,0,0,-0.153889
+1G3P,A,D160V,D,160,V,-1.123,scored,Exposed,85.62,Turn,32.74,28.9,7.7,1,None,0,0,0,0,-0.222944
+1G3P,A,D160W,D,160,W,-0.1669999999999999,scored,Exposed,85.62,Turn,32.74,116.7,2.6,1,None,0,0,0,0,0.036722
+1G3P,A,D160Y,D,160,Y,-0.072,scored,Exposed,85.62,Turn,32.74,82.5,2.2,1,None,0,0,0,0,-0.011389
+1G3P,A,F136V,F,136,V,-3.705,scored,Buried,0.0,Beta Sheet,8.73,-49.9,1.4,0,None,0,0,0,0,0.520556
+1G3P,A,N138G,N,138,G,0.765,scored,Buried,6.43,Turn,12.43,-54.0,3.1,0,None,0,0,0,0,0.105556
+1G3P,A,N139K,N,139,K,-0.43,scored,Buried,0.0,Beta Sheet,8.39,54.5,-0.4,1,None,0,0,0,0,1.997222
+1G3P,A,N139V,N,139,V,-2.032,scored,Buried,0.0,Beta Sheet,8.39,25.9,7.7,0,None,0,0,0,0,-1.279444
+1G3P,A,Q137N,Q,137,N,-1.793,scored,Buried,0.0,Turn,8.1,-29.7,0.0,0,None,0,0,0,0,0.247500
+1G3P,A,Q145N,Q,145,N,0.263,scored,Exposed,137.36,Turn,23.02,-29.7,0.0,0,None,0,0,0,0,0.049500
+1G3P,A,R144V,R,144,V,0.765,scored,Exposed,51.04,Beta Sheet,23.39,-33.4,8.7,-1,None,0,0,0,0,-0.475333
+1GLU,A,C500A,C,500,A,-1.22,scored,Buried,0.0,Alpha Helix,11.71,-19.9,-0.7,0,None,0,0,0,0,0.487222
+1GUA,B,A118G,A,118,G,-1.963,scored,Buried,0.0,Helix-3,11.46,-28.5,-2.2,0,None,0,0,0,0,0.963889
+1GUA,B,A118L,A,118,L,-1.951,scored,Buried,0.0,Helix-3,11.46,78.1,2.0,0,None,0,0,0,0,0.857222
+1GUA,B,A85G,A,85,G,-2.149,scored,Buried,0.0,Alpha Helix,10.9,-28.5,-2.2,0,None,0,0,0,0,0.963889
+1GUA,B,A97G,A,97,G,-0.863,scored,Buried,3.62,Beta Sheet,12.89,-28.5,-2.2,0,None,0,0,0,0,0.963889
+1GUA,B,C81A,C,81,A,0.283,scored,Buried,1.29,Alpha Helix,15.75,-19.9,-0.7,0,None,0,0,0,0,0.487222
+1GUA,B,C81I,C,81,I,-0.912,scored,Buried,1.29,Alpha Helix,15.75,58.2,2.0,0,None,0,0,0,0,0.525556
+1GUA,B,C95A,C,95,A,-0.08,scored,Exposed,41.99,Helix-3,20.82,-19.9,-0.7,0,None,0,0,0,0,0.097444
+1GUA,B,C96A,C,96,A,-1.759,scored,Buried,0.0,Beta Sheet,15.55,-19.9,-0.7,0,None,0,0,0,0,0.487222
+1GUA,B,C96L,C,96,L,-0.043,scored,Buried,0.0,Beta Sheet,15.55,58.2,1.3,0,None,0,0,0,0,0.681111
+1GUA,B,C96M,C,96,M,-0.337,scored,Buried,0.0,Beta Sheet,15.55,54.4,-0.6,0,None,0,0,0,0,1.040000
+1GUA,B,D117A,D,117,A,-0.706,scored,Exposed,50.12,Beta Bridge,11.05,-22.5,5.3,1,None,0,0,0,0,-0.360556
+1GUA,B,D129A,D,129,A,-0.855,scored,Partially Exposed,21.31,Beta Sheet,17.28,-22.5,5.3,1,None,0,1,0,0,0.098611
+1GUA,B,D80A,D,80,A,-0.493,scored,Exposed,53.98,Alpha Helix,12.71,-22.5,5.3,1,None,0,0,0,0,-0.360556
+1GUA,B,E104A,E,104,A,0.021,scored,Exposed,166.56,Turn,43.26,-49.8,5.3,1,None,0,0,0,0,-0.134778
+1GUA,B,E124A,E,124,A,-0.101,scored,Partially Exposed,29.34,Loop,16.25,-49.8,5.3,1,None,0,1,0,0,0.663056
+1GUA,B,E125A,E,125,A,-0.591,scored,Partially Exposed,11.26,Beta Sheet,11.2,-49.8,5.3,1,None,0,1,0,0,0.326111
+1GUA,B,I58A,I,58,A,-3.274,scored,Buried,1.21,Beta Sheet,12.07,-78.1,-2.7,0,None,0,0,0,0,1.901667
+1GUA,B,I58F,I,58,F,-1.2990000000000002,scored,Buried,1.21,Beta Sheet,12.07,23.2,-1.7,0,None,0,0,0,0,0.764444
+1GUA,B,I58L,I,58,L,-0.7709999999999999,scored,Buried,1.21,Beta Sheet,12.07,0.0,-0.7,0,None,0,0,0,0,0.155556
+1GUA,B,K109A,K,109,A,-0.327,scored,Exposed,87.51,Beta Sheet,24.61,-80.0,5.7,-1,None,0,1,0,0,0.813333
+1GUA,B,L112A,L,112,A,-2.593,scored,Partially Exposed,19.32,Beta Sheet,12.84,-78.1,-2.0,0,None,0,0,0,0,0.873056
+1GUA,B,L121A,L,121,A,-2.5340000000000003,scored,Partially Exposed,10.87,Helix-3,11.09,-78.1,-2.0,0,None,0,0,0,0,0.873056
+1GUA,B,L126A,L,126,A,-3.405,scored,Buried,1.21,Beta Sheet,10.08,-78.1,-2.0,0,None,0,0,0,0,1.746111
+1GUA,B,L62A,L,62,A,-3.46,scored,Buried,0.0,Beta Sheet,9.75,-78.1,-2.0,0,None,0,0,0,0,1.746111
+1GUA,B,L78A,L,78,A,-3.803,scored,Buried,0.0,Alpha Helix,13.87,-78.1,-2.0,0,None,0,0,0,0,1.746111
+1GUA,B,L82A,L,82,A,-3.529,scored,Buried,0.0,Alpha Helix,12.11,-78.1,-2.0,0,None,0,0,0,0,1.746111
+1GUA,B,L82I,L,82,I,-1.6,scored,Buried,0.0,Alpha Helix,12.11,0.0,0.7,0,None,0,0,0,0,-0.155556
+1GUA,B,L82V,L,82,V,-1.7,scored,Buried,0.0,Alpha Helix,12.11,-26.7,0.4,0,None,0,0,0,0,0.356111
+1GUA,B,L86A,L,86,A,-3.2260000000000004,scored,Buried,3.62,Alpha Helix,12.97,-78.1,-2.0,0,None,0,0,0,0,1.746111
+1GUA,B,L91A,L,91,A,-1.575,scored,Partially Exposed,12.47,Loop,17.26,-78.1,-2.0,0,None,0,0,0,0,0.436528
+1GUA,B,M76A,M,76,A,-0.961,scored,Partially Exposed,26.43,Loop,13.41,-74.3,-0.1,0,None,0,0,0,0,0.315139
+1GUA,B,N56M,N,56,M,0.271,scored,Exposed,118.63,Loop,24.86,48.8,5.4,0,None,0,0,0,0,-0.038667
+1GUA,B,N64A,N,64,A,-1.14,scored,Exposed,50.09,Turn,11.37,-25.5,5.3,0,None,0,0,0,0,-0.075278
+1GUA,B,P63A,P,63,A,-1.7080000000000002,scored,Buried,3.62,Turn,11.94,-24.1,3.4,0,None,0,0,0,0,-0.176944
+1GUA,B,P93A,P,93,A,-0.0819999999999999,scored,Partially Exposed,22.94,Helix-3,19.94,-24.1,3.4,0,None,0,0,0,0,-0.176944
+1GUA,B,Q66A,Q,66,A,-0.504,scored,Buried,0.0,Beta Sheet,9.4,-55.2,5.3,0,None,0,0,0,0,-0.257778
+1GUA,B,R100A,R,100,A,-0.693,scored,Exposed,66.53,Beta Sheet,19.17,-84.8,6.3,-1,None,0,1,0,0,0.802667
+1GUA,B,R59A,R,59,A,0.178,scored,Partially Exposed,38.73,Beta Sheet,9.88,-84.8,6.3,-1,None,0,1,0,0,0.506667
+1GUA,B,R89L,R,89,L,1.078,scored,Buried,7.5,Turn,9.23,-6.7,8.3,-1,None,0,1,0,0,-0.366389
+1GUA,B,S77A,S,77,A,-1.5730000000000002,scored,Partially Exposed,22.13,Beta Bridge,13.59,-0.4,2.6,0,None,0,0,0,0,-0.285556
+1GUA,B,S77T,S,77,T,0.581,scored,Partially Exposed,22.13,Beta Bridge,13.59,27.1,0.1,0,None,0,0,0,0,0.214722
+1GUA,B,T68A,T,68,A,-0.109,scored,Buried,0.0,Beta Sheet,9.07,-27.5,2.5,0,None,0,0,0,0,-0.097222
+1GUA,B,V128A,V,128,A,-3.3680000000000003,scored,Buried,0.0,Beta Sheet,10.65,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1GUA,B,V60A,V,60,A,-2.251,scored,Buried,0.0,Beta Sheet,9.86,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1GUA,B,V69A,V,69,A,-1.116,scored,Buried,0.0,Beta Sheet,10.81,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1GUA,B,V70A,V,70,A,-1.77,scored,Buried,1.21,Beta Sheet,13.25,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1GUA,B,V72A,V,72,A,-1.052,scored,Partially Exposed,10.71,Loop,19.32,-51.4,-2.4,0,None,0,0,0,0,0.347500
+1GUA,B,V72I,V,72,I,-0.8640000000000001,scored,Partially Exposed,10.71,Loop,19.32,26.7,0.3,0,None,0,0,0,0,0.094583
+1GUA,B,V98A,V,98,A,-1.981,scored,Buried,0.0,Beta Sheet,12.39,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1GWY,A,A8D,A,8,D,-1.6,scored,Buried,4.6,Beta Sheet,11.81,22.5,-5.3,-1,None,0,0,0,0,2.552778
+1H0X,A,P18A,P,18,A,-1.936,scored,Exposed,76.08,Loop,51.98,-24.1,3.4,0,None,0,0,0,0,-0.035389
+1H0X,A,P62A,P,62,A,-2.5810000000000004,scored,Exposed,77.54,Turn,64.27,-24.1,3.4,0,None,0,0,0,0,-0.035389
+1HCQ,A,C67A,C,67,A,-2.09,scored,Buried,0.0,Alpha Helix,30.5,-19.9,-0.7,0,None,0,0,0,0,0.487222
+1HCQ,A,C67S,C,67,S,-1.99,scored,Buried,0.0,Alpha Helix,30.5,-19.5,-3.3,0,None,0,0,0,0,1.058333
+1IOJ,A,G15A,G,15,A,0.4,scored,Buried,1.7,Alpha Helix,0.0,28.5,2.2,0,None,0,0,0,0,-0.013889
+1IR3,A,W1175F,W,1175,F,0.6,scored,Buried,0.0,Helix-3,10.69,-37.9,3.7,0,None,0,0,0,0,-0.190556
+1ITM,A,C24T,C,24,T,-3.3,scored,Buried,3.84,Bend,0.0,7.6,-3.2,0,None,0,0,1,0,1.418889
+1ITM,A,C3T,C,3,T,-5.0,scored,Exposed,45.78,Bend,0.0,7.6,-3.2,0,None,0,0,1,0,1.083778
+1ITM,A,W91S,W,91,S,1.4,scored,Exposed,117.35,Alpha Helix,0.0,-138.8,0.1,0,None,0,0,0,0,0.458222
+1IV7,B,A173C,A,173,C,0.5,scored,Buried,0.0,Beta Sheet,20.46,19.9,0.7,0,None,0,0,0,0,0.176111
+1IV7,B,F189C,F,189,C,-2.5,scored,Partially Exposed,15.09,Beta Sheet,25.57,-81.4,-0.3,0,None,0,0,0,0,0.711667
+1IV7,B,L162C,L,162,C,-1.9,scored,Buried,0.0,Beta Sheet,24.51,-58.2,-1.3,0,None,0,0,0,0,1.258889
+1IV9,A,S76Y,S,76,Y,4.299,scored,Buried,5.63,Beta Sheet,19.51,104.6,-0.5,0,None,0,0,0,0,1.854444
+1J8I,A,K25A,K,25,A,0.1,scored,Exposed,50.48,Beta Sheet,0.0,-80.0,5.7,-1,None,0,0,0,0,-0.186667
+1J8I,A,K66A,K,66,A,0.1,scored,Exposed,90.49,Alpha Helix,0.0,-80.0,5.7,-1,None,0,0,0,0,-0.186667
+1J8I,A,R23A,R,23,A,0.8,scored,Exposed,150.48,Helix-3,0.0,-84.8,6.3,-1,None,0,0,0,0,-0.197333
+1J8I,A,R35A,R,35,A,-0.1,scored,Exposed,164.06,Loop,0.0,-84.8,6.3,-1,None,0,0,0,0,-0.098667
+1J8I,A,R43A,R,43,A,0.7,scored,Exposed,208.85,Turn,0.0,-84.8,6.3,-1,None,0,0,0,0,-0.098667
+1J8I,A,R9A,R,9,A,-0.1,scored,Exposed,201.44,Bend,0.0,-84.8,6.3,-1,None,0,0,0,0,-0.098667
+1JL9,A,A25C,A,25,C,-1.44,scored,Exposed,83.08,Helix-3,30.95,19.9,0.7,0,None,0,0,0,0,0.035222
+1JLV,A,E64D,E,64,D,-1.162,scored,Buried,0.0,Bend,9.32,-27.3,0.0,0,None,0,0,0,0,0.227500
+1JLV,A,E64N,E,64,N,-2.3040000000000003,scored,Buried,0.0,Bend,9.32,-24.3,0.0,1,None,0,0,0,0,-0.297500
+1JLV,A,E64Q,E,64,Q,-2.302,scored,Buried,0.0,Bend,9.32,5.4,0.0,1,None,0,0,0,0,-0.455000
+1L6H,A,F39A,F,39,A,-1.6969999999999998,scored,Buried,4.25,Alpha Helix,0.0,-101.3,-1.0,0,None,0,0,0,0,1.910556
+1L6H,A,Y45A,Y,45,A,-0.55,scored,Partially Exposed,38.1,Alpha Helix,0.0,-105.0,3.1,0,None,0,0,0,0,0.530556
+1L6H,A,Y48A,Y,48,A,-1.482,scored,Exposed,105.01,Alpha Helix,0.0,-105.0,3.1,0,None,0,0,0,0,0.212222
+1LVM,A,E106G,E,106,G,1.4,scored,Exposed,42.86,Turn,34.93,-78.3,3.1,1,None,0,0,0,0,-0.038389
+1LVM,A,K45F,K,45,F,0.43,scored,Buried,0.0,Helix-3,17.01,21.3,6.7,-1,None,0,0,0,0,-2.133889
+1LVM,A,L56V,L,56,V,0.0,scored,Partially Exposed,15.7,Beta Sheet,21.15,-26.7,0.4,0,None,0,0,0,0,0.178056
+1LVM,A,Q58F,Q,58,F,0.6,scored,Partially Exposed,27.1,Beta Sheet,25.35,46.1,6.3,0,None,0,0,0,0,-0.315833
+1LVM,A,S135G,S,135,G,0.0,scored,Exposed,42.98,Turn,57.65,-28.9,0.4,0,None,0,0,0,0,0.039278
+1N18,A,E100G,E,100,G,-2.5,scored,Exposed,85.04,Beta Sheet,39.83,-78.3,3.1,1,None,0,0,0,0,-0.076778
+1N18,A,G85R,G,85,R,-1.4,scored,Buried,0.0,Beta Sheet,29.69,113.3,-4.1,1,None,0,0,0,0,3.799444
+1N18,A,H46R,H,46,R,1.4,scored,Buried,0.0,Beta Sheet,27.73,20.2,-1.3,0.9,None,0,0,0,0,1.525556
+1N18,A,V148I,V,148,I,0.1,scored,Buried,0.0,Beta Sheet,21.68,26.7,0.3,0,None,0,0,0,0,0.378333
+1N88,A,F21A,F,21,A,-1.39,scored,Partially Exposed,14.65,Alpha Helix,0.0,-101.3,-1.0,0,None,0,0,0,0,0.955278
+1N88,A,I39A,I,39,A,-1.39,scored,Buried,0.0,Alpha Helix,0.0,-78.1,-2.7,0,None,0,0,0,0,1.901667
+1N88,A,I80A,I,80,A,-2.79,scored,Partially Exposed,23.29,Beta Sheet,0.0,-78.1,-2.7,0,None,0,0,0,0,0.950833
+1N88,A,I89A,I,89,A,-2.35,scored,Buried,0.85,Loop,0.0,-78.1,-2.7,0,None,0,0,0,0,0.950833
+1N88,A,I8V,I,8,V,-1.52,scored,Buried,0.0,Beta Sheet,0.0,-26.7,-0.3,0,None,0,0,0,0,0.511667
+1N88,A,L13A,L,13,A,-1.52,scored,Exposed,57.33,Loop,0.0,-78.1,-2.0,0,None,0,0,0,0,0.174611
+1N88,A,L57A,L,57,A,-1.11,scored,Exposed,89.02,Beta Sheet,0.0,-78.1,-2.0,0,None,0,0,0,0,0.349222
+1N88,A,V12A,V,12,A,-1.94,scored,Partially Exposed,16.5,Loop,0.0,-51.4,-2.4,0,None,0,0,0,0,0.347500
+1N88,A,V30A,V,30,A,-2.84,scored,Buried,0.0,Beta Sheet,0.0,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1N88,A,V43A,V,43,A,-2.82,scored,Buried,0.0,Alpha Helix,0.0,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1N88,A,V49A,V,49,A,-2.83,scored,Partially Exposed,20.92,Loop,0.0,-51.4,-2.4,0,None,0,0,0,0,0.347500
+1N88,A,V51A,V,51,A,-3.24,scored,Buried,5.76,Beta Sheet,0.0,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1N88,A,V54A,V,54,A,-3.73,scored,Partially Exposed,18.12,Beta Sheet,0.0,-51.4,-2.4,0,None,0,0,0,0,0.695000
+1N88,A,V81A,V,81,A,-2.82,scored,Buried,0.0,Beta Sheet,0.0,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1N88,A,V83A,V,83,A,-3.1,scored,Buried,6.21,Beta Sheet,0.0,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1N88,A,Y18A,Y,18,A,0.06,scored,Exposed,67.1,Alpha Helix,0.0,-105.0,3.1,0,None,0,0,0,0,0.212222
+1N88,A,Y26A,Y,26,A,-4.61,scored,Buried,5.1,Beta Sheet,0.0,-105.0,3.1,0,None,0,0,0,0,1.061111
+1NM1,A,D187N,D,187,N,-0.88,scored,Partially Exposed,24.39,Alpha Helix,22.69,3.0,0.0,1,None,0,1,0,0,0.525000
+1NM1,A,D187Y,D,187,Y,-1.9,scored,Partially Exposed,24.39,Alpha Helix,22.69,82.5,2.2,1,None,0,1,0,0,0.943056
+1O1U,A,E110A,E,110,A,-3.3,scored,Partially Exposed,12.64,Beta Sheet,0.0,-49.8,5.3,1,None,0,1,0,0,0.326111
+1O1U,A,N61A,N,61,A,-1.2,scored,Partially Exposed,14.44,Beta Sheet,0.0,-25.5,5.3,0,None,0,0,0,0,-0.376389
+1O1U,A,Q51A,Q,51,A,-0.3,scored,Buried,7.38,Beta Sheet,0.0,-55.2,5.3,0,None,0,0,0,0,-0.257778
+1O1U,A,Q99A,Q,99,A,0.3,scored,Partially Exposed,24.03,Beta Sheet,0.0,-55.2,5.3,0,None,0,0,0,0,-0.128889
+1O1U,A,T38A,T,38,A,-1.2,scored,Buried,0.0,Beta Sheet,0.0,-27.5,2.5,0,None,0,0,0,0,-0.097222
+1O1U,A,W49Y,W,49,Y,-1.2,scored,Buried,5.57,Beta Sheet,0.0,-34.2,-0.4,0,None,0,0,0,0,0.658889
+1O6X,A,A31G,A,31,G,-1.2,scored,Exposed,62.54,Alpha Helix,0.0,-28.5,-2.2,0,None,0,0,0,0,0.192778
+1O6X,A,A50G,A,50,G,-1.4,scored,Buried,0.0,Beta Sheet,0.0,-28.5,-2.2,0,None,0,0,0,0,0.963889
+1O6X,A,D38A,D,38,A,0.36,scored,Exposed,81.68,Loop,0.0,-22.5,5.3,1,None,0,0,0,0,-0.180278
+1O6X,A,E14A,E,14,A,-0.3,scored,Partially Exposed,39.58,Beta Sheet,0.0,-49.8,5.3,1,None,0,0,0,1,0.326111
+1O6X,A,E20G,E,20,G,-1.42,scored,Exposed,135.02,Alpha Helix,0.0,-78.3,3.1,1,None,0,0,0,0,-0.076778
+1O6X,A,F39L,F,39,L,-1.88,scored,Exposed,44.99,Beta Bridge,0.0,-23.2,1.0,0,None,0,0,0,0,0.032889
+1O6X,A,F65A,F,65,A,-0.98,scored,Exposed,52.72,Alpha Helix,0.0,-101.3,-1.0,0,None,0,0,0,0,0.382111
+1O6X,A,H51A,H,51,A,-0.61,scored,Partially Exposed,28.35,Beta Sheet,0.0,-64.6,5.0,-0.1,None,0,0,0,0,-0.067222
+1O6X,A,I15V,I,15,V,-0.43,scored,Buried,1.7,Beta Sheet,0.0,-26.7,-0.3,0,None,0,0,0,0,0.511667
+1O6X,A,I23V,I,23,V,0.42,scored,Partially Exposed,10.55,Alpha Helix,0.0,-26.7,-0.3,0,None,0,0,0,0,0.255833
+1O6X,A,I71V,I,71,V,-1.31,scored,Partially Exposed,15.41,Loop,0.0,-26.7,-0.3,0,None,0,0,0,0,0.127917
+1O6X,A,I75A,I,75,A,-1.31,scored,Exposed,77.19,Beta Sheet,0.0,-78.1,-2.7,0,None,0,0,0,0,0.380333
+1O6X,A,K41A,K,41,A,-1.98,scored,Exposed,106.54,Bend,0.0,-80.0,5.7,-1,None,0,0,0,0,-0.093333
+1O6X,A,L26V,L,26,V,-0.97,scored,Buried,4.25,Alpha Helix,0.0,-26.7,0.4,0,None,0,0,0,0,0.356111
+1O6X,A,N58A,N,58,A,-0.08,scored,Partially Exposed,22.94,Helix-3,0.0,-25.5,5.3,0,None,0,0,0,0,-0.376389
+1O6X,A,Q60G,Q,60,G,-0.49,scored,Exposed,129.37,Alpha Helix,0.0,-83.7,3.1,0,None,0,0,0,0,0.141222
+1O6X,A,V12A,V,12,A,-1.1,scored,Buried,8.23,Beta Sheet,0.0,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1O6X,A,V52A,V,52,A,-1.08,scored,Buried,0.85,Beta Sheet,0.0,-51.4,-2.4,0,None,0,0,0,0,1.390000
+1O6X,A,V64G,V,64,G,-1.1,scored,Exposed,99.3,Alpha Helix,0.0,-79.9,-4.6,0,None,0,0,0,0,0.470778
+1O6X,A,Y73L,Y,73,L,-2.78,scored,Exposed,48.38,Beta Sheet,0.0,-26.9,5.1,0,None,0,0,0,0,-0.137000
+1OSI,A,I11V,I,11,V,-0.05,scored,Buried,9.66,Turn,18.5,-26.7,-0.3,0,None,0,0,0,0,0.255833
+1OSI,A,S92F,S,92,F,0.39,scored,Partially Exposed,22.38,Alpha Helix,26.93,100.9,3.6,0,None,0,0,0,0,0.440833
+1OSI,A,V126M,V,126,M,-2.25,scored,Buried,0.0,Loop,9.58,22.9,-2.3,0,None,0,0,0,0,0.446389
+1OSI,A,V15I,V,15,I,-0.78,scored,Buried,1.21,Alpha Helix,22.89,26.7,0.3,0,None,0,0,0,0,0.378333
+1PFL,A,A20T,A,20,T,-1.53,scored,Buried,0.0,Beta Sheet,0.0,27.5,-2.5,0,None,0,0,0,0,1.013889
+1PFL,A,G117V,G,117,V,-1.96,scored,Exposed,75.67,Bend,0.0,79.9,4.6,0,Glycine Flexibility Lost,1,0,0,0,1.030944
+1PFL,A,M113T,M,113,T,-3.53,scored,Partially Exposed,16.99,Beta Sheet,0.0,-46.8,-2.6,0,None,0,0,0,0,0.678889
+1PFL,A,Q138L,Q,138,L,1.82,scored,Exposed,176.37,Turn,0.0,22.9,7.3,0,None,0,0,0,0,-0.124056
+1PFL,A,T108M,T,108,M,0.07,scored,Buried,0.0,Loop,0.0,46.8,2.6,0,None,0,0,0,0,0.101111
+1PRE,A,C159S,C,159,S,-2.4,scored,Exposed,66.19,Loop,50.22,-19.5,-3.3,0,None,0,0,1,0,1.105833
+1PRG,A,E460K,E,460,K,-0.17,scored,Partially Exposed,19.42,Loop,57.42,30.2,-0.4,2,None,0,1,0,0,1.148056
+1PRG,A,F360L,F,360,L,-0.4,scored,Buried,4.56,Helix-3,51.63,-23.2,1.0,0,None,0,0,0,0,0.164444
+1PRG,A,P467L,P,467,L,0.11,scored,Exposed,62.66,Alpha Helix,54.89,54.0,5.4,0,None,0,0,0,0,-0.060000
+1PRG,A,Q286P,Q,286,P,-0.3,scored,Buried,4.29,Alpha Helix,55.62,-31.1,1.9,0,Proline Helix Breaker,1,0,0,0,1.096111
+1PRG,A,R288H,R,288,H,0.06,scored,Partially Exposed,12.24,Alpha Helix,52.5,-20.2,1.3,-0.9,None,0,0,0,0,-0.426111
+1PRG,A,R357A,R,357,A,0.19,scored,Exposed,65.76,Bend,69.54,-84.8,6.3,-1,None,0,2,0,0,1.901333
+1PRG,A,V290M,V,290,M,0.03,scored,Partially Exposed,26.16,Alpha Helix,44.24,22.9,-2.3,0,None,0,0,0,0,0.446389
+1R2Y,A,R244E,R,244,E,-4.2,scored,Partially Exposed,28.55,Loop,25.26,-35.0,1.0,-2,None,0,0,0,0,0.090278
+1R6R,A,I88N,I,88,N,-0.13,scored,Buried,7.15,Alpha Helix,0.68,-52.6,-8.0,0,None,0,0,0,0,2.654444
+1R6R,A,L50S,L,50,S,-2.81,scored,Exposed,45.61,Alpha Helix,0.77,-77.7,-4.6,0,None,0,0,0,0,0.463444
+1R6R,A,L54S,L,54,S,-0.24,scored,Exposed,64.16,Alpha Helix,0.59,-77.7,-4.6,0,None,0,0,0,0,0.463444
+1R6R,A,L81N,L,81,N,-6.84,scored,Buried,0.85,Alpha Helix,0.74,-52.6,-7.3,0,None,0,0,0,0,2.498889
+1SPD,A,C111S,C,111,S,0.8,scored,Partially Exposed,36.45,Loop,12.79,-19.5,-3.3,0,None,0,0,0,0,0.264583
+1SPD,A,C6A,C,6,A,0.1,scored,Buried,0.0,Beta Sheet,9.32,-19.9,-0.7,0,None,0,0,0,0,0.487222
+1X0J,A,D160N,D,160,N,-4.1,scored,Buried,8.57,Loop,32.32,3.0,0.0,1,None,0,0,0,0,-0.475000
+1X0J,A,D160Y,D,160,Y,-4.02,scored,Buried,8.57,Loop,32.32,82.5,2.2,1,None,0,0,0,0,-0.056944
+1X0J,A,D161N,D,161,N,-2.21,scored,Exposed,58.15,Alpha Helix,28.21,3.0,0.0,1,None,0,0,0,0,-0.190000
+1X0J,A,D161Y,D,161,Y,-3.38,scored,Exposed,58.15,Alpha Helix,28.21,82.5,2.2,1,None,0,0,0,0,-0.022778
+1X0J,A,E140K,E,140,K,-3.48,scored,Exposed,48.52,Alpha Helix,33.83,30.2,-0.4,2,None,0,0,0,0,0.118444
+1X0J,A,R100L,R,100,L,-5.22,scored,Exposed,52.97,Bend,25.37,-6.7,8.3,-1,None,0,0,0,0,-0.273278
+1X0J,A,Y153H,Y,153,H,-6.49,scored,Buried,0.0,Alpha Helix,23.16,-40.4,-1.9,0.1,None,0,0,0,0,1.195556
+1XWS,A,E124Q,E,124,Q,-2.9,scored,Exposed,72.49,Bend,40.98,5.4,0.0,1,None,0,0,0,0,-0.091000
+1XWS,A,E135K,E,135,K,-4.59,scored,Exposed,129.7,Alpha Helix,45.13,30.2,-0.4,2,None,0,0,0,0,0.118444
+1XWS,A,E142D,E,142,D,-3.22,scored,Exposed,41.92,Alpha Helix,34.73,-27.3,0.0,0,None,0,0,0,0,0.091000
+1XWS,A,Y53H,Y,53,H,-3.3,scored,Partially Exposed,34.3,Beta Sheet,25.21,-40.4,-1.9,0.1,None,0,0,0,0,0.597778
+1XXN,A,N181R,N,181,R,0.358,scored,Partially Exposed,25.21,Beta Sheet,19.76,59.3,-1.0,1,None,0,0,0,0,1.105278
+1XXN,A,N32D,N,32,D,-0.86,scored,Exposed,82.04,Bend,27.98,-3.0,0.0,-1,None,0,0,0,0,0.105000
+1XXN,A,N54E,N,54,E,-0.645,scored,Partially Exposed,14.47,Beta Sheet,20.37,24.3,0.0,-1,None,0,0,0,0,0.702500
+1XXN,A,S22E,S,22,E,0.239,scored,Exposed,56.61,Bend,20.36,49.4,-2.7,-1,None,0,0,0,0,0.242333
+1XXN,A,S27E,S,27,E,-0.645,scored,Partially Exposed,12.06,Beta Sheet,19.93,49.4,-2.7,-1,None,0,0,0,0,1.211667
+1XZO,A,F42W,F,42,W,2.87,scored,Buried,6.04,Loop,31.66,37.9,-3.7,0,None,0,0,0,0,0.726944
+1XZO,A,W101F,W,101,F,-2.89,scored,Buried,0.0,Beta Sheet,24.78,-37.9,3.7,0,None,0,0,0,0,-0.190556
+1XZO,A,W36A,W,36,A,-8.93,scored,Buried,0.0,Beta Sheet,25.9,-139.2,2.7,0,None,0,0,0,0,1.720000
+1XZO,A,W36F,W,36,F,-4.25,scored,Buried,0.0,Beta Sheet,25.9,-37.9,3.7,0,None,0,0,0,0,-0.190556
+2ARF,A,H1069Q,H,1069,Q,-0.7170000000000001,scored,Partially Exposed,39.61,Bend,0.0,-9.4,-0.3,-0.1,None,0,0,0,0,0.030833
+2BJD,A,V84D,V,84,D,-4.493,scored,Buried,3.21,Beta Sheet,17.62,-28.9,-7.7,-1,None,0,0,0,0,3.192778
+2BJD,A,V84P,V,84,P,-4.517,scored,Buried,3.21,Beta Sheet,17.62,-27.3,-5.8,0,None,0,0,0,0,1.743889
+2BJD,A,Y86E,Y,86,E,-2.103,scored,Partially Exposed,26.94,Beta Sheet,18.99,-55.2,-2.2,-1,None,0,0,0,0,1.204444
+2C9Q,A,Y79F,Y,79,F,-0.012,scored,Buried,3.21,Beta Sheet,17.15,-3.7,4.1,0,None,0,0,0,0,-0.849444
+2C9Q,A,Y79W,Y,79,W,-1.233,scored,Buried,3.21,Beta Sheet,17.15,34.2,0.4,0,None,0,0,0,0,0.481111
+2CLR,B,H13F,H,13,F,0.12,scored,Exposed,85.6,Bend,16.08,36.7,6.0,-0.1,None,0,0,0,0,-0.082167
+2CLR,B,H31F,H,31,F,2.605,scored,Buried,3.62,Beta Bridge,18.19,36.7,6.0,-0.1,None,0,0,0,0,-0.821667
+2CLR,B,H51F,H,51,F,-1.912,scored,Exposed,94.29,Beta Sheet,24.38,36.7,6.0,-0.1,None,0,0,0,0,-0.164333
+2CLR,B,H84A,H,84,A,-2.629,scored,Partially Exposed,10.6,Loop,18.18,-64.6,5.0,-0.1,None,0,0,0,0,-0.033611
+2DVV,A,Q443H,Q,443,H,0.89,scored,Partially Exposed,23.45,Alpha Helix,11.56,9.4,0.3,0.1,None,0,0,0,0,0.095000
+2DVV,A,R419W,R,419,W,-0.02,scored,Exposed,54.89,Alpha Helix,11.68,54.4,3.6,-1,None,0,1,0,0,0.821333
+2H3F,A,E12A,E,12,A,1.07,scored,Partially Exposed,32.3,Alpha Helix,33.89,-49.8,5.3,1,None,0,1,0,0,0.326111
+2HBB,A,A22G,A,22,G,-0.32,scored,Exposed,64.3,Loop,10.52,-28.5,-2.2,0,None,0,0,0,0,0.096389
+2HBB,A,A26G,A,26,G,-1.79,scored,Buried,0.0,Helix-5,11.53,-28.5,-2.2,0,None,0,0,0,0,0.963889
+2HBB,A,A36G,A,36,G,-1.55,scored,Buried,2.14,Beta Sheet,10.63,-28.5,-2.2,0,None,0,0,0,0,0.963889
+2HBB,A,A39G,A,39,G,-1.59,scored,Buried,7.5,Loop,17.61,-28.5,-2.2,0,None,0,0,0,0,0.481944
+2HBB,A,A42G,A,42,G,-0.33,scored,Partially Exposed,23.74,Alpha Helix,17.03,-28.5,-2.2,0,None,0,0,0,0,0.481944
+2HBB,A,A46G,A,46,G,-0.55,scored,Partially Exposed,28.75,Alpha Helix,19.54,-28.5,-2.2,0,None,0,0,0,0,0.481944
+2HBB,A,A49G,A,49,G,-0.22,scored,Exposed,72.4,Alpha Helix,30.31,-28.5,-2.2,0,None,0,0,0,0,0.192778
+2HBB,A,D23A,D,23,A,-0.03,scored,Exposed,42.71,Alpha Helix,11.98,-22.5,5.3,1,None,0,0,0,0,-0.360556
+2HBB,A,D23N,D,23,N,-0.79,scored,Exposed,42.71,Alpha Helix,11.98,3.0,0.0,1,None,0,0,0,0,-0.190000
+2HBB,A,D8A,D,8,A,-1.3,scored,Exposed,41.55,Loop,16.41,-22.5,5.3,1,None,0,0,0,0,-0.180278
+2HBB,A,D8N,D,8,N,-0.38,scored,Exposed,41.55,Loop,16.41,3.0,0.0,1,None,0,0,0,0,-0.095000
+2HBB,A,E17A,E,17,A,-1.69,scored,Partially Exposed,10.62,Loop,16.68,-49.8,5.3,1,None,0,1,0,0,0.663056
+2HBB,A,E17Q,E,17,Q,-0.33,scored,Partially Exposed,10.62,Loop,16.68,5.4,0.0,1,None,0,1,0,0,0.772500
+2HBB,A,E38A,E,38,A,-0.41,scored,Partially Exposed,29.7,Beta Sheet,20.09,-49.8,5.3,1,None,0,0,0,0,-0.673889
+2HBB,A,E38Q,E,38,Q,-0.68,scored,Partially Exposed,29.7,Beta Sheet,20.09,5.4,0.0,1,None,0,0,0,0,-0.455000
+2HBB,A,E48Q,E,48,Q,0.07,scored,Exposed,87.62,Alpha Helix,32.93,5.4,0.0,1,None,0,0,0,0,-0.182000
+2HBB,A,F31A,F,31,A,-2.84,scored,Exposed,59.0,Turn,10.61,-101.3,-1.0,0,None,0,0,0,0,0.191056
+2HBB,A,F5L,F,5,L,-1.15,scored,Buried,4.29,Beta Sheet,11.5,-23.2,1.0,0,None,0,0,0,0,0.164444
+2HBB,A,G24A,G,24,A,0.02,scored,Exposed,46.76,Alpha Helix,10.66,28.5,2.2,0,None,0,0,0,0,-0.002778
+2HBB,A,G34A,G,34,A,-1.02,scored,Partially Exposed,36.92,Turn,15.22,28.5,2.2,0,None,0,0,0,0,-0.003472
+2HBB,A,I18A,I,18,A,-2.05,scored,Exposed,53.37,Beta Sheet,16.84,-78.1,-2.7,0,None,0,0,0,0,0.380333
+2HBB,A,I18V,I,18,V,-0.07,scored,Exposed,53.37,Beta Sheet,16.84,-26.7,-0.3,0,None,0,0,0,0,0.102333
+2HBB,A,I37A,I,37,A,-1.28,scored,Partially Exposed,13.28,Beta Sheet,11.49,-78.1,-2.7,0,None,0,0,0,0,0.950833
+2HBB,A,I37V,I,37,V,0.09,scored,Partially Exposed,13.28,Beta Sheet,11.49,-26.7,-0.3,0,None,0,0,0,0,0.255833
+2HBB,A,I4V,I,4,V,-0.59,scored,Buried,1.21,Beta Sheet,13.79,-26.7,-0.3,0,None,0,0,0,0,0.511667
+2HBB,A,K10E,K,10,E,0.13,scored,Exposed,131.89,Turn,28.72,-30.2,0.4,-2,None,0,0,0,0,0.041444
+2HBB,A,K10M,K,10,M,0.47,scored,Exposed,131.89,Turn,28.72,-5.7,5.8,-1,None,0,0,0,0,-0.219389
+2HBB,A,K12A,K,12,A,0.61,scored,Exposed,72.78,Turn,24.85,-80.0,5.7,-1,None,0,0,0,0,-0.093333
+2HBB,A,K12G,K,12,G,0.03,scored,Exposed,72.78,Turn,24.85,-108.5,3.5,-1,None,0,0,0,0,0.003056
+2HBB,A,K12M,K,12,M,1.8,scored,Exposed,72.78,Turn,24.85,-5.7,5.8,-1,None,0,0,0,0,-0.219389
+2HBB,A,K14A,K,14,A,-0.73,scored,Exposed,48.1,Loop,16.83,-80.0,5.7,-1,None,0,0,0,0,-0.093333
+2HBB,A,K14G,K,14,G,-1.3,scored,Exposed,48.1,Loop,16.83,-108.5,3.5,-1,None,0,0,0,0,0.003056
+2HBB,A,K14M,K,14,M,-0.34,scored,Exposed,48.1,Loop,16.83,-5.7,5.8,-1,None,0,0,0,0,-0.219389
+2HBB,A,K15G,K,15,G,-1.74,scored,Exposed,94.99,Turn,17.21,-108.5,3.5,-1,None,0,0,0,0,0.003056
+2HBB,A,K15M,K,15,M,-0.44,scored,Exposed,94.99,Turn,17.21,-5.7,5.8,-1,None,0,0,0,0,-0.219389
+2HBB,A,K7M,K,7,M,0.21,scored,Exposed,58.97,Bend,21.74,-5.7,5.8,-1,None,0,0,0,0,-0.219389
+2HBB,A,L30A,L,30,A,-2.76,scored,Buried,0.0,Helix-5,8.96,-78.1,-2.0,0,None,0,0,0,0,1.746111
+2HBB,A,L35A,L,35,A,-1.21,scored,Partially Exposed,18.11,Bend,12.46,-78.1,-2.0,0,None,0,0,0,0,0.436528
+2HBB,A,L44A,L,44,A,-1.73,scored,Partially Exposed,28.85,Alpha Helix,20.4,-78.1,-2.0,0,None,0,0,0,0,0.873056
+2HBB,A,L47A,L,47,A,-0.84,scored,Partially Exposed,15.59,Alpha Helix,21.81,-78.1,-2.0,0,None,0,0,0,0,0.873056
+2HBB,A,L6A,L,6,A,-3.1,scored,Exposed,40.24,Bend,13.76,-78.1,-2.0,0,None,0,0,0,0,0.174611
+2HBB,A,M1A,M,1,A,-1.46,scored,Partially Exposed,19.37,Loop,22.05,-74.3,-0.1,0,None,0,0,0,0,0.315139
+2HBB,A,T40S,T,40,S,-0.8,scored,Partially Exposed,23.74,Loop,17.57,-27.1,-0.1,0,None,0,0,0,0,0.118472
+2HBB,A,V21A,V,21,A,-2.33,scored,Partially Exposed,17.84,Loop,13.89,-51.4,-2.4,0,None,0,0,0,0,0.347500
+2HBB,A,V3A,V,3,A,-2.55,scored,Buried,0.0,Beta Sheet,11.06,-51.4,-2.4,0,None,0,0,0,0,1.390000
+2HBB,A,V9A,V,9,A,-1.81,scored,Buried,4.69,Beta Bridge,16.73,-51.4,-2.4,0,None,0,0,0,0,1.390000
+2JIE,A,C170A,C,170,A,2.997,scored,Partially Exposed,11.58,Helix-5,31.62,-19.9,-0.7,0,None,0,0,0,0,0.243611
+2JIE,A,C170Q,C,170,Q,2.5810000000000004,scored,Partially Exposed,11.58,Helix-5,31.62,35.3,-6.0,0,None,0,0,0,0,0.960833
+2JIE,A,E157D,E,157,D,-2.075,scored,Exposed,185.2,Bend,70.05,-27.3,0.0,0,None,0,0,0,0,0.045500
+2JIE,A,E167A,E,167,A,4.247,scored,Buried,8.57,Loop,32.34,-49.8,5.3,1,None,0,0,0,0,-0.673889
+2JIE,A,E225A,E,225,A,-4.36,scored,Buried,4.29,Loop,47.52,-49.8,5.3,1,None,0,1,0,0,0.326111
+2JIE,A,E225H,E,225,H,-1.515,scored,Buried,4.29,Loop,47.52,14.8,0.3,1.1,None,0,1,0,0,0.640000
+2JIE,A,E409A,E,409,A,0.825,scored,Buried,4.29,Loop,33.47,-49.8,5.3,1,None,0,0,0,0,-0.673889
+2JIE,A,E409D,E,409,D,-0.909,scored,Buried,4.29,Loop,33.47,-27.3,0.0,0,None,0,0,0,0,0.227500
+2JIE,A,E426S,E,426,S,0.87,scored,Exposed,95.41,Turn,39.71,-49.4,2.7,1,None,0,0,0,0,-0.077667
+2JIE,A,F418A,F,418,A,-0.165,scored,Buried,3.51,Loop,34.25,-101.3,-1.0,0,None,0,0,0,0,0.955278
+2JIE,A,H104R,H,104,R,1.536,scored,Exposed,91.62,Alpha Helix,55.18,20.2,-1.3,0.9,None,0,0,0,0,0.305111
+2JIE,A,I247E,I,247,E,1.241,scored,Buried,2.42,Helix-5,44.36,-28.3,-8.0,-1,None,0,0,0,0,3.249444
+2JIE,A,I247N,I,247,N,0.974,scored,Buried,2.42,Helix-5,44.36,-52.6,-8.0,0,None,0,0,0,0,2.654444
+2JIE,A,L174A,L,174,A,-0.79,scored,Partially Exposed,19.32,Helix-5,30.59,-78.1,-2.0,0,None,0,0,0,0,0.873056
+2JIE,A,L174R,L,174,R,0.336,scored,Partially Exposed,19.32,Helix-5,30.59,6.7,-8.3,1,None,0,0,0,0,1.478056
+2JIE,A,M224A,M,224,A,-4.098,scored,Buried,4.77,Loop,44.45,-74.3,-0.1,0,None,0,0,0,0,0.630278
+2JIE,A,M326A,M,326,A,-1.298,scored,Partially Exposed,15.41,Turn,48.0,-74.3,-0.1,0,None,0,0,0,0,0.315139
+2JIE,A,N166A,N,166,A,-3.397,scored,Buried,0.0,Beta Sheet,33.69,-25.5,5.3,0,None,0,0,0,0,-0.752778
+2JIE,A,N166C,N,166,C,-2.964,scored,Buried,0.0,Beta Sheet,33.69,-5.6,6.0,0,None,0,0,0,0,-1.240000
+2JIE,A,N223A,N,223,A,-0.6709999999999999,scored,Partially Exposed,12.49,Beta Sheet,35.27,-25.5,5.3,0,None,0,0,0,0,-0.376389
+2JIE,A,N223G,N,223,G,3.462,scored,Partially Exposed,12.49,Beta Sheet,35.27,-54.0,3.1,0,None,0,0,0,0,0.105556
+2JIE,A,N223H,N,223,H,2.583,scored,Partially Exposed,12.49,Beta Sheet,35.27,39.1,0.3,0.1,None,0,0,0,0,0.342500
+2JIE,A,N223R,N,223,R,3.976,scored,Partially Exposed,12.49,Beta Sheet,35.27,59.3,-1.0,1,None,0,0,0,0,1.105278
+2JIE,A,N223Y,N,223,Y,5.73,scored,Partially Exposed,12.49,Beta Sheet,35.27,79.5,2.2,0,None,0,0,0,0,0.418056
+2JIE,A,N296A,N,296,A,-2.25,scored,Buried,3.21,Beta Sheet,38.81,-25.5,5.3,0,None,0,0,0,0,-0.752778
+2JIE,A,N296C,N,296,C,-0.017,scored,Buried,3.21,Beta Sheet,38.81,-5.6,6.0,0,None,0,0,0,0,-1.240000
+2JIE,A,N407A,N,407,A,0.464,scored,Buried,4.33,Loop,34.01,-25.5,5.3,0,None,0,0,0,0,-0.376389
+2JIE,A,N407C,N,407,C,0.143,scored,Buried,4.33,Loop,34.01,-5.6,6.0,0,None,0,0,0,0,-0.620000
+2JIE,A,Q22S,Q,22,S,-0.209,scored,Buried,0.0,Alpha Helix,31.49,-54.8,2.7,0,None,0,0,0,0,0.313333
+2JIE,A,R243A,R,243,A,-0.166,scored,Buried,7.77,Alpha Helix,49.38,-84.8,6.3,-1,None,0,1,0,0,0.013333
+2JIE,A,R243D,R,243,D,0.213,scored,Buried,7.77,Alpha Helix,49.38,-62.3,1.0,-2,None,0,1,0,0,1.816111
+2JIE,A,R243K,R,243,K,-1.463,scored,Buried,7.77,Alpha Helix,49.38,-4.8,0.6,0,None,0,0,0,0,-0.053333
+2JIE,A,S17A,S,17,A,-1.246,scored,Buried,0.0,Beta Sheet,45.18,-0.4,2.6,0,None,0,0,0,0,-0.571111
+2JIE,A,S19A,S,19,A,0.951,scored,Buried,0.0,Loop,32.7,-0.4,2.6,0,None,0,0,0,0,-0.285556
+2JIE,A,S334A,S,334,A,-1.454,scored,Buried,0.0,Alpha Helix,45.28,-0.4,2.6,0,None,0,0,0,0,-0.571111
+2JIE,A,S403A,S,403,A,0.92,scored,Buried,0.0,Loop,51.93,-0.4,2.6,0,None,0,0,0,0,-0.285556
+2JIE,A,T18A,T,18,A,-0.994,scored,Buried,1.21,Loop,37.99,-27.5,2.5,0,None,0,0,0,0,-0.048611
+2JIE,A,T221A,T,221,A,3.189,scored,Buried,0.0,Beta Sheet,36.47,-27.5,2.5,0,None,0,0,0,0,-0.097222
+2JIE,A,T355A,T,355,A,-2.9610000000000003,scored,Buried,0.0,Beta Sheet,38.89,-27.5,2.5,0,None,0,0,0,0,-0.097222
+2JIE,A,W123F,W,123,F,2.19,scored,Buried,3.62,Bend,33.52,-37.9,3.7,0,None,0,0,0,0,-0.095278
+2JIE,A,W123H,W,123,H,1.06,scored,Buried,3.62,Bend,33.52,-74.6,-2.3,0.1,None,0,0,0,0,0.927222
+2JIE,A,W328A,W,328,A,-1.159,scored,Exposed,54.07,Loop,44.75,-139.2,2.7,0,None,0,0,0,0,0.172000
+2JIE,A,W328C,W,328,C,-2.664,scored,Exposed,54.07,Loop,44.75,-119.3,3.4,0,None,0,0,0,0,0.123278
+2JIE,A,W328H,W,328,H,-2.573,scored,Exposed,54.07,Loop,44.75,-74.6,-2.3,0.1,None,0,0,0,0,0.185444
+2JIE,A,W328R,W,328,R,-0.95,scored,Exposed,54.07,Loop,44.75,-54.4,-3.6,1,None,0,0,0,0,0.270667
+2JIE,A,W402C,W,402,C,-0.36,scored,Buried,0.0,Beta Sheet,41.49,-119.3,3.4,0,None,0,0,0,0,1.232778
+2JIE,A,W402R,W,402,R,2.615,scored,Buried,0.0,Beta Sheet,41.49,-54.4,-3.6,1,None,0,0,0,0,2.706667
+2JIE,A,W412Y,W,412,Y,0.599,scored,Exposed,85.58,Helix-3,39.15,-34.2,-0.4,0,None,0,0,0,0,0.131778
+2JIE,A,Y21A,Y,21,A,-3.443,scored,Buried,0.0,Alpha Helix,30.35,-105.0,3.1,0,None,0,0,0,0,1.061111
+2JIE,A,Y297A,Y,297,A,1.072,scored,Buried,0.0,Loop,48.52,-105.0,3.1,0,None,0,0,0,0,0.530556
+2JIE,A,Y297F,Y,297,F,-1.853,scored,Buried,0.0,Loop,48.52,-3.7,4.1,0,None,0,0,0,0,-0.424722
+2JUC,A,C57D,C,57,D,-2.54,scored,Partially Exposed,31.48,Alpha Helix,15.0,2.6,-6.0,-1,None,0,0,0,0,1.188333
+2JUC,A,C57S,C,57,S,-0.71,scored,Partially Exposed,31.48,Alpha Helix,15.0,-19.5,-3.3,0,None,0,0,0,0,0.529167
+2JUC,A,R18A,R,18,A,-1.75,scored,Exposed,132.85,Alpha Helix,15.0,-84.8,6.3,-1,None,0,1,0,0,0.802667
+2KJ3,A,D288A,D,288,A,1.2,scored,Partially Exposed,16.88,Loop,33.38,-22.5,5.3,1,None,0,1,0,0,0.549306
+2KJ3,A,E272A,E,272,A,1.9,scored,Exposed,89.7,Bend,47.9,-49.8,5.3,1,None,0,1,0,0,0.865222
+2KJ3,A,G278A,G,278,A,-0.8,scored,Buried,0.0,Beta Sheet,35.0,28.5,2.2,0,None,0,0,0,0,-0.013889
+2KJ3,A,K229A,K,229,A,1.5,scored,Exposed,185.84,Beta Sheet,40.32,-80.0,5.7,-1,None,0,0,0,0,-0.186667
+2KJ3,A,L241A,L,241,A,1.0,scored,Exposed,106.92,Beta Sheet,41.79,-78.1,-2.0,0,None,0,0,0,0,0.349222
+2KJ3,A,S273A,S,273,A,1.4,scored,Buried,0.0,Loop,26.84,-0.4,2.6,0,None,0,0,0,0,-0.285556
+2KJ3,A,V239A,V,239,A,1.0,scored,Exposed,51.84,Beta Sheet,49.8,-51.4,-2.4,0,None,0,0,0,0,0.278000
+2KJ3,A,V264A,V,264,A,1.0,scored,Buried,4.42,Beta Sheet,29.23,-51.4,-2.4,0,None,0,0,0,0,1.390000
+2KJ3,A,V267A,V,267,A,0.2,scored,Buried,0.0,Beta Sheet,30.88,-51.4,-2.4,0,None,0,0,0,0,1.390000
+2KS4,A,D9A,D,9,A,1.26,scored,Exposed,67.41,Beta Bridge,0.0,-22.5,5.3,1,None,0,0,0,0,-0.360556
+2KS4,A,E2A,E,2,A,-0.23,scored,Exposed,70.11,Loop,0.0,-49.8,5.3,1,None,0,0,0,0,-0.134778
+2LTB,A,L558P,L,558,P,-1.57,scored,Exposed,41.49,Alpha Helix,0.0,-54.0,-5.4,0,Proline Helix Breaker,1,0,0,0,1.420000
+2LTB,A,L569R,L,569,R,-3.11,scored,Partially Exposed,10.55,Alpha Helix,0.0,6.7,-8.3,1,None,0,0,0,0,1.478056
+2LTB,A,M619K,M,619,K,-3.34,scored,Exposed,114.66,Beta Sheet,0.0,5.7,-5.8,1,None,0,0,0,0,0.476778
+2LTB,A,R533Q,R,533,Q,-1.1,scored,Exposed,176.2,Bend,0.0,-29.6,1.0,-1,None,0,0,0,0,-0.072889
+2LTB,A,R555Q,R,555,Q,-0.36,scored,Exposed,94.79,Alpha Helix,0.0,-29.6,1.0,-1,None,0,0,0,0,-0.145778
+2LTB,A,R555W,R,555,W,1.79,scored,Exposed,94.79,Alpha Helix,0.0,54.4,3.6,-1,None,0,0,0,0,-0.178667
+2M5S,A,D302A,D,302,A,-4.0,scored,Exposed,93.88,Bend,0.0,-22.5,5.3,1,None,0,1,0,0,0.819722
+2M5S,A,H305A,H,305,A,-2.0,scored,Exposed,50.45,Beta Sheet,0.0,-64.6,5.0,-0.1,None,0,1,0,0,0.973111
+2MPC,A,A89T,A,89,T,-0.24,scored,Partially Exposed,10.44,Alpha Helix,0.0,27.5,-2.5,0,None,0,0,0,0,0.506944
+2MPC,A,R42A,R,42,A,0.62,scored,Exposed,120.72,Alpha Helix,0.0,-84.8,6.3,-1,None,0,0,0,0,-0.197333
+2MPC,A,R42W,R,42,W,2.08,scored,Exposed,120.72,Alpha Helix,0.0,54.4,3.6,-1,None,0,0,0,0,-0.178667
+2N7Z,A,P88A,P,88,A,-0.6,scored,Partially Exposed,12.11,Loop,0.0,-24.1,3.4,0,None,0,0,0,0,-0.088472
+2NTE,A,I738V,I,738,V,-2.0,scored,Buried,1.21,Beta Sheet,43.69,-26.7,-0.3,0,None,0,0,0,0,0.511667
+2NTE,A,R658C,R,658,C,-2.3,scored,Exposed,52.2,Alpha Helix,55.22,-64.9,7.0,-1,None,0,0,0,0,-0.294778
+2OUO,A,A420D,A,420,D,0.44,scored,Buried,3.62,Alpha Helix,35.1,22.5,-5.3,-1,None,0,0,0,0,2.552778
+2PR5,A,A33Y,A,33,Y,0.5,scored,Partially Exposed,23.73,Turn,17.11,105.0,-3.1,0,None,0,0,0,0,0.609722
+2PR5,A,A81M,A,81,M,-0.4,scored,Buried,0.0,Alpha Helix,15.34,74.3,0.1,0,None,0,0,0,0,1.216111
+2PR5,A,D109E,D,109,E,0.3,scored,Buried,0.0,Beta Sheet,17.17,27.3,0.0,0,None,0,0,0,0,0.455000
+2PR5,A,H22K,H,22,K,0.3,scored,Exposed,84.26,Loop,18.97,15.4,-0.7,0.9,None,0,0,0,0,0.131222
+2PR5,A,H22W,H,22,W,1.2,scored,Exposed,84.26,Loop,18.97,74.6,2.3,-0.1,None,0,1,0,0,1.063222
+2PR5,A,M111F,M,111,F,2.9,scored,Buried,0.0,Beta Sheet,19.05,27.0,0.9,0,None,0,0,0,0,0.250000
+2PR5,A,N107F,N,107,F,0.9,scored,Buried,0.0,Beta Sheet,18.43,75.8,6.3,0,None,0,0,0,0,-0.136667
+2PR5,A,N107Y,N,107,Y,0.8,scored,Buried,0.0,Beta Sheet,18.43,79.5,2.2,0,None,0,0,0,0,0.836111
+2PR5,A,N124F,N,124,F,1.1,scored,Buried,6.56,Beta Sheet,18.66,75.8,6.3,0,None,0,0,0,0,-0.136667
+2PR5,A,N124Y,N,124,Y,2.6,scored,Buried,6.56,Beta Sheet,18.66,79.5,2.2,0,None,0,0,0,0,0.836111
+2PR5,A,T30M,T,30,M,0.5,scored,Buried,0.0,Beta Sheet,15.39,46.8,2.6,0,None,0,0,0,0,0.202222
+2PR5,A,T50M,T,50,M,-0.5,scored,Buried,1.21,Alpha Helix,15.25,46.8,2.6,0,None,0,0,0,0,0.202222
+2PR5,A,T54Y,T,54,Y,0.2,scored,Partially Exposed,18.49,Alpha Helix,21.31,77.5,-0.6,0,None,0,0,0,0,0.712500
+2PR5,A,V120I,V,120,I,1.4,scored,Buried,0.0,Beta Sheet,16.51,26.7,0.3,0,None,0,0,0,0,0.378333
+2PR5,A,V25I,V,25,I,0.4,scored,Buried,0.0,Loop,16.46,26.7,0.3,0,None,0,0,0,0,0.189167
+2PR5,A,V88L,V,88,L,-0.2,scored,Buried,1.21,Beta Sheet,16.87,26.7,-0.4,0,None,0,0,0,0,0.533889
+2PR5,A,V90I,V,90,I,-0.7,scored,Buried,0.0,Beta Sheet,16.72,26.7,0.3,0,None,0,0,0,0,0.378333
+2PTL,A,A22G,A,22,G,-2.43,scored,Buried,0.0,Beta Sheet,0.0,-28.5,-2.2,0,None,0,0,0,0,0.963889
+2PTL,A,A27P,A,27,P,0.1,scored,Exposed,67.43,Bend,0.0,24.1,-3.4,0,None,0,0,0,0,0.115722
+2PTL,A,A27V,A,27,V,-0.83,scored,Exposed,67.43,Bend,0.0,51.4,2.4,0,None,0,0,0,0,0.032333
+2PTL,A,A34G,A,34,G,-2.17,scored,Buried,5.95,Beta Sheet,0.0,-28.5,-2.2,0,None,0,0,0,0,0.963889
+2PTL,A,A34V,A,34,V,1.47,scored,Buried,5.95,Beta Sheet,0.0,51.4,2.4,0,None,0,0,0,0,0.323333
+2PTL,A,A43G,A,43,G,-2.54,scored,Buried,2.91,Alpha Helix,0.0,-28.5,-2.2,0,None,0,0,0,0,0.963889
+2PTL,A,A47G,A,47,G,-3.1,scored,Buried,0.0,Alpha Helix,0.0,-28.5,-2.2,0,None,0,0,0,0,0.963889
+2PTL,A,A49G,A,49,G,-1.32,scored,Exposed,61.43,Alpha Helix,0.0,-28.5,-2.2,0,None,0,0,0,0,0.192778
+2PTL,A,A51G,A,51,G,-3.12,scored,Buried,0.0,Alpha Helix,0.0,-28.5,-2.2,0,None,0,0,0,0,0.963889
+2PTL,A,A66G,A,66,G,-0.49,scored,Exposed,51.42,Beta Bridge,0.0,-28.5,-2.2,0,None,0,0,0,0,0.192778
+2PTL,A,D52A,D,52,A,-1.21,scored,Exposed,80.37,Alpha Helix,0.0,-22.5,5.3,1,None,0,0,0,0,-0.360556
+2PTL,A,D52G,D,52,G,-2.14,scored,Exposed,80.37,Alpha Helix,0.0,-51.0,3.1,1,None,0,0,0,0,-0.167778
+2PTL,A,D64A,D,64,A,-0.2,scored,Exposed,68.31,Loop,0.0,-22.5,5.3,1,None,0,0,0,0,-0.180278
+2PTL,A,E35A,E,35,A,-0.59,scored,Exposed,118.37,Beta Sheet,0.0,-49.8,5.3,1,None,0,0,0,0,-0.269556
+2PTL,A,E46G,E,46,G,-1.19,scored,Exposed,80.72,Alpha Helix,0.0,-78.3,3.1,1,None,0,0,0,0,-0.076778
+2PTL,A,E46I,E,46,I,-1.08,scored,Exposed,80.72,Alpha Helix,0.0,28.3,8.0,1,None,0,0,0,0,-0.461222
+2PTL,A,E60A,E,60,A,-0.23,scored,Exposed,106.49,Loop,0.0,-49.8,5.3,1,None,0,0,0,0,-0.134778
+2PTL,A,F26A,F,26,A,-3.12,scored,Partially Exposed,22.26,Loop,0.0,-101.3,-1.0,0,None,0,0,0,0,0.477639
+2PTL,A,F26L,F,26,L,-0.68,scored,Partially Exposed,22.26,Loop,0.0,-23.2,1.0,0,None,0,0,0,0,0.041111
+2PTL,A,F36A,F,36,A,-4.15,scored,Partially Exposed,19.9,Beta Sheet,0.0,-101.3,-1.0,0,None,0,0,0,0,0.955278
+2PTL,A,F36L,F,36,L,-3.12,scored,Partially Exposed,19.9,Beta Sheet,0.0,-23.2,1.0,0,None,0,0,0,0,0.082222
+2PTL,A,F40G,F,40,G,-3.08,scored,Exposed,82.37,Bend,0.0,-129.8,-3.2,0,None,0,0,0,0,0.287444
+2PTL,A,F40L,F,40,L,-0.38,scored,Exposed,82.37,Bend,0.0,-23.2,1.0,0,None,0,0,0,0,0.016444
+2PTL,A,F76L,F,76,L,-3.34,scored,Buried,0.0,Beta Sheet,0.0,-23.2,1.0,0,None,0,0,0,0,0.164444
+2PTL,A,F76V,F,76,V,-3.73,scored,Buried,0.0,Beta Sheet,0.0,-49.9,1.4,0,None,0,0,0,0,0.520556
+2PTL,A,G29A,G,29,A,-1.52,scored,Exposed,63.49,Bend,0.0,28.5,2.2,0,None,0,0,0,0,-0.001389
+2PTL,A,G29V,G,29,V,-2.53,scored,Exposed,63.49,Bend,0.0,79.9,4.6,0,Glycine Flexibility Lost,1,0,0,0,1.030944
+2PTL,A,G38A,G,38,A,-2.08,scored,Partially Exposed,23.52,Beta Sheet,0.0,28.5,2.2,0,None,0,0,0,0,-0.006944
+2PTL,A,G59A,G,59,A,-2.23,scored,Exposed,51.21,Loop,0.0,28.5,2.2,0,None,0,0,0,0,-0.001389
+2PTL,A,G69A,G,69,A,-2.04,scored,Partially Exposed,25.11,Turn,0.0,28.5,2.2,0,None,0,0,0,0,-0.003472
+2PTL,A,I20A,I,20,A,-4.9,scored,Buried,1.92,Beta Sheet,0.0,-78.1,-2.7,0,None,0,0,0,0,1.901667
+2PTL,A,I20V,I,20,V,-0.56,scored,Buried,1.92,Beta Sheet,0.0,-26.7,-0.3,0,None,0,0,0,0,0.511667
+2PTL,A,I25A,I,25,A,-1.37,scored,Partially Exposed,39.88,Beta Sheet,0.0,-78.1,-2.7,0,None,0,0,0,0,0.950833
+2PTL,A,I25V,I,25,V,-0.47,scored,Partially Exposed,39.88,Beta Sheet,0.0,-26.7,-0.3,0,None,0,0,0,0,0.255833
+2PTL,A,I74A,I,74,A,-4.72,scored,Buried,0.0,Beta Sheet,0.0,-78.1,-2.7,0,None,0,0,0,0,1.901667
+2PTL,A,I74V,I,74,V,-1.69,scored,Buried,0.0,Beta Sheet,0.0,-26.7,-0.3,0,None,0,0,0,0,0.511667
+2PTL,A,K21A,K,21,A,-0.92,scored,Exposed,83.6,Beta Sheet,0.0,-80.0,5.7,-1,None,0,0,0,0,-0.186667
+2PTL,A,K37A,K,37,A,-0.88,scored,Exposed,122.23,Beta Sheet,0.0,-80.0,5.7,-1,None,0,0,0,0,-0.186667
+2PTL,A,K42G,K,42,G,0.16,scored,Exposed,130.31,Alpha Helix,0.0,-108.5,3.5,-1,None,0,0,0,0,0.006111
+2PTL,A,K55A,K,55,A,0.58,scored,Exposed,105.97,Loop,0.0,-80.0,5.7,-1,None,0,0,0,0,-0.093333
+2PTL,A,K56A,K,56,A,0.35,scored,Exposed,181.03,Bend,0.0,-80.0,5.7,-1,None,0,0,0,0,-0.093333
+2PTL,A,K68A,K,68,A,-0.09,scored,Exposed,186.87,Turn,0.0,-80.0,5.7,-1,None,0,0,0,0,-0.093333
+2PTL,A,K75A,K,75,A,-0.45,scored,Exposed,93.8,Beta Sheet,0.0,-80.0,5.7,-1,None,0,0,0,0,-0.186667
+2PTL,A,L24A,L,24,A,-3.12,scored,Buried,1.7,Beta Sheet,0.0,-78.1,-2.0,0,None,0,0,0,0,1.746111
+2PTL,A,L54A,L,54,A,-2.44,scored,Exposed,44.04,Turn,0.0,-78.1,-2.0,0,None,0,0,0,0,0.174611
+2PTL,A,L72A,L,72,A,-3.77,scored,Buried,2.55,Beta Sheet,0.0,-78.1,-2.0,0,None,0,0,0,0,1.746111
+2PTL,A,N23A,N,23,A,-1.87,scored,Partially Exposed,13.49,Beta Sheet,0.0,-25.5,5.3,0,None,0,0,0,0,-0.376389
+2PTL,A,N28A,N,28,A,-1.78,scored,Exposed,123.27,Bend,0.0,-25.5,5.3,0,None,0,0,0,0,-0.075278
+2PTL,A,N58A,N,58,A,-0.34,scored,Partially Exposed,32.65,Bend,0.0,-25.5,5.3,0,None,0,0,0,0,-0.188194
+2PTL,A,N73A,N,73,A,-1.73,scored,Exposed,41.06,Beta Sheet,0.0,-25.5,5.3,0,None,0,0,0,0,-0.150556
+2PTL,A,S30A,S,30,A,-0.3,scored,Exposed,59.78,Loop,0.0,-0.4,2.6,0,None,0,0,0,0,-0.057111
+2PTL,A,S45A,S,45,A,0.41,scored,Exposed,62.12,Alpha Helix,0.0,-0.4,2.6,0,None,0,0,0,0,-0.114222
+2PTL,A,S45G,S,45,G,-0.82,scored,Exposed,62.12,Alpha Helix,0.0,-28.9,0.4,0,None,0,0,0,0,0.078556
+2PTL,A,T19A,T,19,A,-1.63,scored,Exposed,88.0,Beta Sheet,0.0,-27.5,2.5,0,None,0,0,0,0,-0.019444
+2PTL,A,T31A,T,31,A,-1.17,scored,Exposed,87.13,Loop,0.0,-27.5,2.5,0,None,0,0,0,0,-0.009722
+2PTL,A,T33A,T,33,A,-1.11,scored,Exposed,68.66,Beta Sheet,0.0,-27.5,2.5,0,None,0,0,0,0,-0.019444
+2PTL,A,T39A,T,39,A,-1.25,scored,Exposed,75.0,Bend,0.0,-27.5,2.5,0,None,0,0,0,0,-0.009722
+2PTL,A,T44A,T,44,A,-1.09,scored,Partially Exposed,31.66,Alpha Helix,0.0,-27.5,2.5,0,None,0,0,0,0,-0.048611
+2PTL,A,T53G,T,53,G,-0.17,scored,Exposed,116.63,Turn,0.0,-56.0,0.3,0,None,0,0,0,0,0.086667
+2PTL,A,T62A,T,62,A,-0.97,scored,Exposed,94.72,Beta Sheet,0.0,-27.5,2.5,0,None,0,0,0,0,-0.019444
+2PTL,A,T71A,T,71,A,-1.83,scored,Partially Exposed,26.59,Beta Sheet,0.0,-27.5,2.5,0,None,0,0,0,0,-0.048611
+2PTL,A,V18A,V,18,A,-1.22,scored,Exposed,40.15,Beta Sheet,0.0,-51.4,-2.4,0,None,0,0,0,0,0.278000
+2PTL,A,V63A,V,63,A,-0.92,scored,Exposed,54.98,Beta Sheet,0.0,-51.4,-2.4,0,None,0,0,0,0,0.278000
+2PTL,A,V65A,V,65,A,-1.14,scored,Exposed,106.82,Loop,0.0,-51.4,-2.4,0,None,0,0,0,0,0.139000
+2PTL,A,Y48A,Y,48,A,-2.82,scored,Exposed,111.28,Alpha Helix,0.0,-105.0,3.1,0,None,0,0,0,0,0.212222
+2PTL,A,Y50A,Y,50,A,-2.46,scored,Exposed,96.19,Alpha Helix,0.0,-105.0,3.1,0,None,0,0,0,0,0.212222
+2PTL,A,Y70A,Y,70,A,-1.66,scored,Buried,6.8,Turn,0.0,-105.0,3.1,0,None,0,0,0,0,0.530556
+2PTL,A,Y70L,Y,70,L,0.43,scored,Buried,6.8,Turn,0.0,-26.9,5.1,0,None,0,0,0,0,-0.342500
+2RPN,A,E7L,E,7,L,1.05,scored,Exposed,65.56,Bend,0.0,28.3,7.3,1,None,0,0,0,0,-0.215056
+2RPN,A,V21K,V,21,K,0.39,scored,Exposed,87.81,Loop,0.0,28.6,-8.1,1,None,0,0,0,0,0.327667
+2VY0,A,D287A,D,287,A,-5.975,scored,Buried,3.49,Beta Sheet,15.14,-22.5,5.3,1,None,0,1,0,0,-0.802778
+2VY0,A,E53A,E,53,A,-6.597,scored,Partially Exposed,13.95,Loop,18.92,-49.8,5.3,1,None,0,2,0,0,1.663056
+2WQG,A,D15A,D,15,A,0.3,scored,Exposed,80.3,Alpha Helix,0.0,-22.5,5.3,1,None,0,0,0,0,-0.360556
+2WQG,A,D38A,D,38,A,0.1,scored,Partially Exposed,21.83,Alpha Helix,0.0,-22.5,5.3,1,None,0,1,0,0,0.098611
+2WQG,A,D39A,D,39,A,-2.2,scored,Exposed,54.59,Alpha Helix,0.0,-22.5,5.3,1,None,0,1,0,0,0.639444
+2WQG,A,D39N,D,39,N,-2.6,scored,Exposed,54.59,Alpha Helix,0.0,3.0,0.0,1,None,0,1,0,0,0.810000
+2WQG,A,E40Q,E,40,Q,-0.1,scored,Exposed,110.72,Alpha Helix,0.0,5.4,0.0,1,None,0,0,0,0,-0.182000
+2WQG,A,E41G,E,41,G,-0.4,scored,Exposed,92.59,Turn,0.0,-78.3,3.1,1,None,0,0,0,0,-0.038389
+2WQG,A,I36A,I,36,A,-0.9,scored,Exposed,42.34,Alpha Helix,0.0,-78.1,-2.7,0,None,0,0,0,0,0.380333
+2WQG,A,I36V,I,36,V,-0.3,scored,Exposed,42.34,Alpha Helix,0.0,-26.7,-0.3,0,None,0,0,0,0,0.102333
+2WQG,A,K14A,K,14,A,-0.4,scored,Exposed,90.9,Alpha Helix,0.0,-80.0,5.7,-1,None,0,0,0,0,-0.186667
+2WQG,A,K14G,K,14,G,-1.9,scored,Exposed,90.9,Alpha Helix,0.0,-108.5,3.5,-1,None,0,0,0,0,0.006111
+2WQG,A,K19A,K,19,A,-0.3,scored,Exposed,171.97,Alpha Helix,0.0,-80.0,5.7,-1,None,0,0,0,0,-0.186667
+2WQG,A,K28A,K,28,A,-0.6,scored,Exposed,66.01,Alpha Helix,0.0,-80.0,5.7,-1,None,0,0,0,0,-0.186667
+2WQG,A,L13A,L,13,A,-0.5,scored,Buried,0.0,Alpha Helix,0.0,-78.1,-2.0,0,None,0,0,0,0,1.746111
+2WQG,A,L16A,L,16,A,-1.3,scored,Partially Exposed,27.9,Alpha Helix,0.0,-78.1,-2.0,0,None,0,0,0,0,0.873056
+2WQG,A,L8A,L,8,A,-2.0,scored,Exposed,60.63,Bend,0.0,-78.1,-2.0,0,None,0,0,0,0,0.174611
+2WQG,A,Q12A,Q,12,A,-0.6,scored,Exposed,100.13,Alpha Helix,0.0,-55.2,5.3,0,None,0,0,0,0,-0.051556
+2WQG,A,Q12G,Q,12,G,-2.0,scored,Exposed,100.13,Alpha Helix,0.0,-83.7,3.1,0,None,0,0,0,0,0.141222
+2WQG,A,Q33A,Q,33,A,0.1,scored,Exposed,113.15,Alpha Helix,0.0,-55.2,5.3,0,None,0,0,0,0,-0.051556
+2WQG,A,R34A,R,34,A,-0.8,scored,Exposed,55.83,Alpha Helix,0.0,-84.8,6.3,-1,None,0,1,0,0,0.802667
+2WQG,A,S23A,S,23,A,-0.6,scored,Exposed,58.5,Loop,0.0,-0.4,2.6,0,None,0,0,0,0,-0.057111
+2WQG,A,S6A,S,6,A,0.1,scored,Exposed,77.52,Turn,0.0,-0.4,2.6,0,None,0,0,0,0,-0.057111
+2WQG,A,S6G,S,6,G,-0.2,scored,Exposed,77.52,Turn,0.0,-28.9,0.4,0,None,0,0,0,0,0.039278
+2WQG,A,T9S,T,9,S,0.1,scored,Exposed,41.8,Loop,0.0,-27.1,-0.1,0,None,0,0,0,0,0.047389
+2WQG,A,V10A,V,10,A,-0.1,scored,Exposed,70.47,Alpha Helix,0.0,-51.4,-2.4,0,None,0,0,0,0,0.278000
+2WQG,A,V10G,V,10,G,-0.7,scored,Exposed,70.47,Alpha Helix,0.0,-79.9,-4.6,0,None,0,0,0,0,0.470778
+2WQG,A,V11A,V,11,A,0.4,scored,Exposed,91.3,Alpha Helix,0.0,-51.4,-2.4,0,None,0,0,0,0,0.278000
+2WQG,A,V11G,V,11,G,0.1,scored,Exposed,91.3,Alpha Helix,0.0,-79.9,-4.6,0,None,0,0,0,0,0.470778
+2WQG,A,V24A,V,24,A,-0.5,scored,Partially Exposed,37.55,Loop,0.0,-51.4,-2.4,0,None,0,0,0,0,0.347500
+2WQG,A,Y5F,Y,5,F,-2.4,scored,Partially Exposed,17.71,Turn,0.0,-3.7,4.1,0,None,0,0,0,0,-0.212361
+2ZTA,A,E11Q,E,11,Q,-0.74,scored,Exposed,76.15,Alpha Helix,20.68,5.4,0.0,1,None,0,1,0,0,0.818000
+2ZTA,A,E20Q,E,20,Q,0.2,scored,Exposed,43.81,Alpha Helix,29.96,5.4,0.0,1,None,0,1,0,0,0.818000
+2ZTA,A,E22Q,E,22,Q,-1.83,scored,Exposed,41.4,Alpha Helix,36.48,5.4,0.0,1,None,0,2,0,0,1.818000
+2ZTA,A,K15A,K,15,A,-0.41,scored,Exposed,47.87,Alpha Helix,27.61,-80.0,5.7,-1,None,0,0,0,0,-0.186667
+2ZTA,A,K27A,K,27,A,-0.91,scored,Exposed,102.58,Alpha Helix,51.41,-80.0,5.7,-1,None,0,1,0,0,0.813333
+2ZTA,A,K28A,K,28,A,-0.06,scored,Exposed,141.27,Alpha Helix,58.51,-80.0,5.7,-1,None,0,0,0,0,-0.186667
+2ZTA,A,K8A,K,8,A,-0.39,scored,Exposed,58.33,Alpha Helix,26.01,-80.0,5.7,-1,None,0,1,0,0,0.813333
+2ZTA,A,R25A,R,25,A,-1.66,scored,Exposed,65.8,Alpha Helix,44.91,-84.8,6.3,-1,None,0,1,0,0,0.802667
+3BCI,A,E96Q,E,96,Q,1.369,scored,Partially Exposed,22.61,Turn,38.89,5.4,0.0,1,None,0,0,0,0,-0.227500
+3BCI,A,T153V,T,153,V,-1.137,scored,Buried,6.47,Bend,35.08,23.9,4.9,0,None,0,0,0,0,-0.345278
+3BN0,A,I20V,I,20,V,-1.506,scored,Buried,0.0,Beta Sheet,29.87,-26.7,-0.3,0,None,0,0,0,0,0.511667
+3C2I,A,D156E,D,156,E,0.88,scored,Buried,4.42,Loop,48.59,27.3,0.0,0,None,0,0,0,0,0.227500
+3C2I,A,F155S,F,155,S,0.43,scored,Buried,9.64,Loop,50.76,-100.9,-3.6,0,None,0,0,0,0,1.240833
+3C2I,A,L100V,L,100,V,1.11,scored,Partially Exposed,17.28,Bend,62.62,-26.7,0.4,0,None,0,0,0,0,0.089028
+3C2I,A,P152R,P,152,R,1.46,scored,Partially Exposed,27.5,Turn,61.32,60.7,-2.9,1,None,0,0,0,0,0.664028
+3C2I,A,R106Q,R,106,Q,0.12,scored,Buried,6.43,Beta Sheet,54.34,-29.6,1.0,-1,None,0,1,0,0,0.271111
+3C2I,A,R106W,R,106,W,0.04,scored,Buried,6.43,Beta Sheet,54.34,54.4,3.6,-1,None,0,1,0,0,0.106667
+3C2I,A,R111G,R,111,G,-0.43,scored,Buried,5.36,Loop,37.08,-113.3,4.1,-1,None,0,1,0,0,0.988611
+3C2I,A,R133C,R,133,C,0.37,scored,Partially Exposed,24.33,Loop,30.65,-64.9,7.0,-1,None,0,1,0,0,0.631528
+3C2I,A,R133H,R,133,H,0.24,scored,Partially Exposed,24.33,Loop,30.65,-20.2,1.3,-0.9,None,0,0,0,0,-0.213056
+3C2I,A,S134C,S,134,C,1.05,scored,Buried,0.0,Bend,32.75,19.5,3.3,0,None,0,0,0,0,-0.204167
+3C2I,A,T158A,T,158,A,0.47,scored,Partially Exposed,14.49,Loop,43.03,-27.5,2.5,0,None,0,0,0,0,-0.024306
+3C2I,A,T158M,T,158,M,0.25,scored,Partially Exposed,14.49,Loop,43.03,46.8,2.6,0,None,0,0,0,0,0.050556
+3D2A,A,M134E,M,134,E,3.02,scored,Exposed,103.04,Bend,23.29,-24.5,-5.4,-1,None,0,0,0,0,0.260833
+3D2A,A,M137P,M,137,P,3.34,scored,Exposed,57.77,Loop,22.53,-50.2,-3.5,0,None,0,0,0,0,0.161444
+3D2A,A,S163P,S,163,P,2.11,scored,Exposed,53.88,Alpha Helix,17.94,23.7,-0.8,0,Proline Helix Breaker,1,0,0,0,1.114556
+3D3B,A,D118A,D,118,A,-0.65,scored,Exposed,54.14,Turn,20.66,-22.5,5.3,1,None,0,1,0,0,0.819722
+3D3B,A,D118E,D,118,E,-0.6,scored,Exposed,54.14,Turn,20.66,27.3,0.0,0,None,0,0,0,0,0.045500
+3D3B,A,D118K,D,118,K,-1.6,scored,Exposed,54.14,Turn,20.66,57.5,-0.4,2,None,0,1,0,0,1.104722
+3D3B,A,D118N,D,118,N,-1.34,scored,Exposed,54.14,Turn,20.66,3.0,0.0,1,None,0,1,0,0,0.905000
+3D3B,A,D118R,D,118,R,-1.41,scored,Exposed,54.14,Turn,20.66,62.3,-1.0,2,None,0,1,0,0,1.126056
+3DV0,I,A131G,A,131,G,-1.7,scored,Buried,0.0,Loop,40.87,-28.5,-2.2,0,None,0,0,0,0,0.481944
+3DV0,I,A139G,A,139,G,-2.3,scored,Buried,0.0,Alpha Helix,47.36,-28.5,-2.2,0,None,0,0,0,0,0.963889
+3DV0,I,A165G,A,165,G,-0.9,scored,Exposed,46.14,Alpha Helix,72.15,-28.5,-2.2,0,None,0,0,0,0,0.192778
+3DV0,I,A168G,A,168,G,-0.3,scored,Exposed,49.77,Alpha Helix,78.26,-28.5,-2.2,0,None,0,0,0,0,0.192778
+3DV0,I,D145A,D,145,A,-2.1,scored,Partially Exposed,18.65,Loop,64.43,-22.5,5.3,1,None,0,1,0,0,0.549306
+3DV0,I,D145N,D,145,N,-0.9,scored,Partially Exposed,18.65,Loop,64.43,3.0,0.0,1,None,0,1,0,0,0.762500
+3DV0,I,D162N,D,162,N,-2.0,scored,Partially Exposed,17.42,Turn,71.48,3.0,0.0,1,None,0,0,0,0,-0.237500
+3DV0,I,D164A,D,164,A,-2.3,scored,Exposed,43.81,Alpha Helix,65.06,-22.5,5.3,1,None,0,0,0,0,-0.360556
+3DV0,I,D164G,D,164,G,-3.7,scored,Exposed,43.81,Alpha Helix,65.06,-51.0,3.1,1,None,0,0,0,0,-0.167778
+3DV0,I,D164N,D,164,N,-1.9,scored,Exposed,43.81,Alpha Helix,65.06,3.0,0.0,1,None,0,0,0,0,-0.190000
+3DV0,I,E141A,E,141,A,-0.7,scored,Exposed,69.0,Alpha Helix,71.97,-49.8,5.3,1,None,0,0,0,0,-0.269556
+3DV0,I,E141Q,E,141,Q,-0.4,scored,Exposed,69.0,Alpha Helix,71.97,5.4,0.0,1,None,0,0,0,0,-0.182000
+3DV0,I,I130A,I,130,A,-0.7,scored,Exposed,45.89,Loop,42.57,-78.1,-2.7,0,None,0,0,0,0,0.190167
+3DV0,I,I130G,I,130,G,-1.4,scored,Exposed,45.89,Loop,42.57,-106.6,-4.9,0,None,0,0,0,0,0.286556
+3DV0,I,I130V,I,130,V,-0.2,scored,Exposed,45.89,Loop,42.57,-26.7,-0.3,0,None,0,0,0,0,0.051167
+3DV0,I,I146A,I,146,A,-2.7,scored,Partially Exposed,11.96,Helix-3,51.14,-78.1,-2.7,0,None,0,0,0,0,0.950833
+3DV0,I,I146V,I,146,V,-1.2,scored,Partially Exposed,11.96,Helix-3,51.14,-26.7,-0.3,0,None,0,0,0,0,0.255833
+3DV0,I,I163V,I,163,V,-0.5,scored,Buried,0.0,Turn,67.87,-26.7,-0.3,0,None,0,0,0,0,0.255833
+3DV0,I,L159A,L,159,A,-2.0,scored,Exposed,56.76,Loop,48.24,-78.1,-2.0,0,None,0,0,0,0,0.174611
+3DV0,I,L159G,L,159,G,-1.9,scored,Exposed,56.76,Loop,48.24,-106.6,-4.2,0,None,0,0,0,0,0.271000
+3DV0,I,L159V,L,159,V,-0.6,scored,Exposed,56.76,Loop,48.24,-26.7,0.4,0,None,0,0,0,0,0.035611
+3DV0,I,L167A,L,167,A,-1.2,scored,Exposed,78.32,Alpha Helix,70.6,-78.1,-2.0,0,None,0,0,0,0,0.349222
+3DV0,I,L167V,L,167,V,-0.2,scored,Exposed,78.32,Alpha Helix,70.6,-26.7,0.4,0,None,0,0,0,0,0.071222
+3DV0,I,V129A,V,129,A,-0.7,scored,Partially Exposed,25.75,Unknown,58.53,-51.4,-2.4,0,None,0,0,0,0,0.347500
+3DV0,I,V129G,V,129,G,-1.0,scored,Partially Exposed,25.75,Unknown,58.53,-79.9,-4.6,0,None,0,0,0,0,0.588472
+3DV0,I,V135A,V,135,A,-1.5,scored,Buried,7.25,Alpha Helix,45.16,-51.4,-2.4,0,None,0,0,0,0,1.390000
+3DV0,I,V144A,V,144,A,-2.0,scored,Buried,3.62,Loop,64.86,-51.4,-2.4,0,None,0,0,0,0,0.695000
+3DV0,I,V149A,V,149,A,-2.8,scored,Buried,0.0,Loop,65.7,-51.4,-2.4,0,None,0,0,0,0,0.695000
+3DV0,I,V149G,V,149,G,-4.1,scored,Buried,0.0,Loop,65.7,-79.9,-4.6,0,None,0,0,0,0,1.176944
+3DV0,I,V158A,V,158,A,-3.2,scored,Buried,1.21,Loop,47.0,-51.4,-2.4,0,None,0,0,0,0,0.695000
+3DV0,I,Y138F,Y,138,F,-2.0,scored,Exposed,47.2,Alpha Helix,55.66,-3.7,4.1,0,None,0,0,0,0,-0.169889
+3ECU,A,H46R,H,46,R,0.8,scored,Buried,0.0,Beta Sheet,11.79,20.2,-1.3,0.9,None,0,0,0,0,1.525556
+3FIS,A,P61A,P,61,A,-0.5,scored,Buried,3.51,Alpha Helix,13.67,-24.1,3.4,0,None,0,0,0,0,-0.353889
+3G1G,A,D155Y,D,155,Y,0.34,scored,Exposed,125.32,Turn,33.62,82.5,2.2,1,None,0,0,0,0,-0.011389
+3G1G,A,F167Y,F,167,Y,-0.74,scored,Buried,0.0,Alpha Helix,21.97,3.7,-4.1,0,None,0,0,0,0,0.972778
+3G1G,A,I190V,I,190,V,-0.17,scored,Partially Exposed,14.49,Alpha Helix,18.59,-26.7,-0.3,0,None,0,0,0,0,0.255833
+3G1G,A,R185W,R,185,W,1.32,scored,Exposed,67.62,Alpha Helix,23.72,54.4,3.6,-1,None,0,0,0,0,-0.178667
+3K82,A,E334L,E,334,L,-3.35,scored,Partially Exposed,11.79,Beta Sheet,10.99,28.3,7.3,1,None,0,0,0,0,-1.075278
+3K82,A,E334Q,E,334,Q,-1.68,scored,Partially Exposed,11.79,Beta Sheet,10.99,5.4,0.0,1,None,0,0,0,0,-0.455000
+3K82,A,E401R,E,401,R,5.49,scored,Buried,7.77,Alpha Helix,21.16,35.0,-1.0,2,None,0,0,0,0,0.805556
+3L15,B,Y442H,Y,442,H,-3.23,scored,Exposed,40.8,Beta Sheet,53.05,-40.4,-1.9,0.1,None,0,0,0,0,0.239111
+3MON,B,R39G,R,39,G,1.194,scored,Exposed,139.22,Beta Sheet,41.94,-113.3,4.1,-1,None,0,1,0,0,0.995444
+3MON,B,W3C,W,3,C,-2.866,scored,Partially Exposed,31.61,Loop,37.86,-119.3,3.4,0,None,0,0,0,0,0.308194
+3O39,A,F115I,F,115,I,-1.81,scored,Partially Exposed,37.03,Alpha Helix,92.08,-23.2,1.7,0,None,0,0,0,0,0.004444
+3O39,A,F115L,F,115,L,-1.64,scored,Partially Exposed,37.03,Alpha Helix,92.08,-23.2,1.0,0,None,0,0,0,0,0.082222
+3O39,A,H96L,H,96,L,-0.58,scored,Exposed,54.48,Alpha Helix,62.56,13.5,7.0,-0.1,None,0,0,0,0,-0.286111
+3O39,A,L32P,L,32,P,-3.25,scored,Partially Exposed,17.46,Bend,104.78,-54.0,-5.4,0,None,0,0,0,0,0.525000
+3O39,A,Q100L,Q,100,L,-2.0,scored,Exposed,58.56,Alpha Helix,68.42,22.9,7.3,0,None,0,0,0,0,-0.248111
+3O39,A,Q49L,Q,49,L,-0.05,scored,Partially Exposed,16.34,Turn,90.61,22.9,7.3,0,None,0,0,0,0,-0.310139
+3S4M,A,D122Y,D,122,Y,-1.3,scored,Exposed,58.32,Turn,23.48,82.5,2.2,1,None,0,0,0,0,-0.011389
+3S4M,A,G130V,G,130,V,-2.5,scored,Buried,0.0,Turn,11.09,79.9,4.6,0,Glycine Flexibility Lost,1,0,0,0,1.154722
+3S4M,A,I154F,I,154,F,0.096,scored,Buried,0.0,Beta Sheet,9.69,23.2,-1.7,0,None,0,0,0,0,0.764444
+3S4M,A,W155R,W,155,R,-0.693,scored,Partially Exposed,35.02,Beta Sheet,10.44,-54.4,-3.6,1,None,0,0,0,0,1.353333
+3S92,A,H395R,H,395,R,2.03,scored,Exposed,49.65,Bend,21.9,20.2,-1.3,0.9,None,0,0,0,0,0.152556
+4BJX,A,A89V,A,89,V,0.99,scored,Buried,0.0,Turn,9.38,51.4,2.4,0,None,0,0,0,0,0.161667
+4BUQ,A,Y137A,Y,137,A,0.89,scored,Exposed,79.36,Bend,52.9,-105.0,3.1,0,None,0,0,0,0,0.106111
+4BUQ,A,Y48A,Y,48,A,-1.435,scored,Exposed,58.98,Loop,42.42,-105.0,3.1,0,None,0,0,0,0,0.106111
+4HE7,A,A19D,A,19,D,-0.24,scored,Exposed,46.3,Turn,23.54,22.5,-5.3,-1,None,0,0,0,0,0.255278
+4HE7,A,A19G,A,19,G,0.06,scored,Exposed,46.3,Turn,23.54,-28.5,-2.2,0,None,0,0,0,0,0.096389
+4HE7,A,A19K,A,19,K,-0.46,scored,Exposed,46.3,Turn,23.54,80.0,-5.7,1,None,0,0,0,0,0.360000
+4N6V,0,H75W,H,75,W,0.574,scored,Exposed,135.15,Helix-3,48.14,74.6,2.3,-0.1,None,0,1,0,0,1.126444
+4N6V,0,P36G,P,36,G,-1.362,scored,Exposed,105.81,Bend,33.78,-52.6,1.2,0,None,0,0,0,0,0.061000
+4N6V,0,P79S,P,79,S,1.745,scored,Exposed,104.4,Loop,28.48,-23.7,0.8,0,None,0,0,0,0,0.021722
+4WAA,A,K65A,K,65,A,0.1,scored,Exposed,105.29,Loop,32.72,-80.0,5.7,-1,None,0,0,0,0,-0.093333
+4WAA,A,K67A,K,67,A,-2.07,scored,Exposed,106.6,Beta Sheet,20.56,-80.0,5.7,-1,None,0,0,0,0,-0.186667
+4WAA,A,R27A,R,27,A,-0.44,scored,Exposed,54.73,Bend,32.63,-84.8,6.3,-1,None,0,1,0,0,0.901333
+4YEE,A,V134T,V,134,T,-0.71,scored,Buried,2.42,Beta Sheet,18.38,-23.9,-4.9,0,None,0,0,0,0,1.487222
+4YEF,A,T134V,T,134,V,-0.93,scored,Buried,0.0,Beta Sheet,18.61,23.9,4.9,0,None,0,0,0,0,-0.690556
+5JXB,A,D329G,D,329,G,-1.44,scored,Exposed,106.13,Bend,94.29,-51.0,3.1,1,None,0,0,0,0,-0.083889
+5JXB,A,D329P,D,329,P,-1.44,scored,Exposed,106.13,Bend,94.29,1.6,1.9,1,None,0,0,0,0,-0.139556
+5OAQ,A,Y429H,Y,429,H,-2.99,scored,Buried,0.0,Beta Sheet,22.29,-40.4,-1.9,0.1,None,0,0,0,0,1.195556
+5VP3,A,R39K,R,39,K,0.413,scored,Partially Exposed,38.96,Alpha Helix,51.34,-4.8,0.6,0,None,0,0,0,0,-0.026667
+5VP3,A,S128G,S,128,G,-0.378,scored,Buried,0.0,Alpha Helix,30.05,-28.9,0.4,0,None,0,0,0,0,0.392778
+5VP3,A,V183T,V,183,T,0.354,scored,Partially Exposed,10.19,Alpha Helix,34.69,-23.9,-4.9,0,None,0,0,0,0,0.743611
