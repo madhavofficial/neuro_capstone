@@ -122,62 +122,18 @@ def extract_signals(physics):
     }
 
 def interpret_and_prioritize(signals):
+    """Mechanisms that can be stated from a checked model or from the wild-type file.
+
+    Residue-table deltas are not mechanisms. A low pLDDT describes the wild-type
+    model. ThermoMPNN is included only at or above +1 kcal/mol.
     """
-    Evaluates physical signals under structural context to determine biological consequence.
-    Applies Context-Aware Weighting and Signal Prioritization.
-    Returns list of highest priority mechanisms.
-    """
-    mechanisms = [] # stored as (priority_score, string) -> HIGHER score = MORE important
-    
-    # --- 1. Volume Changes (Context-Aware Weighting) ---
-    dV = signals["delta_vol"]
-    exposure = signals["exposure"]
-    sasa = signals["sasa"]
-    
-    if exposure == "Buried" or sasa < 15.0:
-        if dV > 30:
-            mechanisms.append((10, f"potential severe steric strain disrupting core packing (ΔV={dV:+.1f})"))
-        elif dV > 10:
-            mechanisms.append((7, f"potential mild internal steric crowding (ΔV={dV:+.1f})"))
-        elif dV < -30:
-            mechanisms.append((9, f"internal cavity creation suggesting potential destabilization (ΔV={dV:+.1f})"))
-    else:  # Exposed
-        if dV > 25:
-            mechanisms.append((5, f"surface structural alteration affecting interaction interfaces (ΔV={dV:+.1f})"))
-        elif dV < -40:
-            mechanisms.append((3, f"potential minor surface cavity creation (ΔV={dV:+.1f})"))
+    mechanisms = []
 
-    # --- 2. Hydrophobic Core & Surface Changes ---
-    dH = signals["delta_hydro"]
-    if exposure == "Buried" and dH < -1.0:
-        mechanisms.append((11, f"potential disruption of the hydrophobic core (Δhydrophobicity={dH:+.1f})"))
-    elif exposure == "Exposed" and dH > 3.0:   # raised from 1.0 → matches severity gate
-        sasa_note = " highly solvent-accessible" if sasa > 50 else ""
-        mechanisms.append((9, f"aberrant surface hydrophobicity on a{sasa_note} region, potentially increasing aggregation propensity"))
-    elif exposure == "Exposed" and dH < -1.0:
-        mechanisms.append((6, f"introduction of a polar/hydrophilic residue (Δhydrophobicity={dH:+.1f}) potentially altering surface interactions"))
-
-
-    # --- 3. pLDDT (AlphaFold Disorder Guidelines) & Secondary Structure ---
     plddt = signals["plddt"]
     if plddt < 50:
-        mechanisms.append((8, f"occurrence within a highly disordered region (pLDDT={plddt:.1f})"))
+        mechanisms.append((8, f"wild-type model confidence is low at this site (pLDDT={plddt:.1f})"))
     elif plddt < 70:
-        mechanisms.append((6, f"localization within a flexible or low-confidence structurally dynamic region (pLDDT={plddt:.1f})"))
-    elif signals["sec_struct"] == "Loop":
-        mechanisms.append((4, f"potential alteration of a flexible structural loop"))
-
-    # --- 4. Charge Shifts ---
-    dC = signals["delta_charge"]
-    if dC != 0:
-        if exposure == "Exposed":
-            mechanisms.append((6, f"electrostatic surface shift (Δcharge={dC:+.1f}) potentially affecting binding/solubility"))
-        else:
-            mechanisms.append((10, f"buried charge alteration (Δcharge={dC:+.1f}) implying possible unfolding or destabilization"))
-
-    # --- 5. Stability Audit (H-Bonds) ---
-    if signals["h_bonds_lost"] > 0:
-        mechanisms.append((9, f"potential localized destabilization via loss of {signals['h_bonds_lost']} estimated hydrogen bond(s)"))
+        mechanisms.append((6, f"wild-type model confidence is moderate at this site (pLDDT={plddt:.1f})"))
 
     monomer_ddg = signals.get("monomer_ddg")
     if monomer_ddg is not None and monomer_ddg >= 1.0:
@@ -191,78 +147,12 @@ def interpret_and_prioritize(signals):
 
 def _build_mechanistic_keywords(signals):
     """
-    Maps raw delta values to biological keyword phrases for RAG compatibility.
-    Returns a list of (keyword, category) tuples.
-
-    Thresholds are intentionally conservative and aligned with the severity
-    gates in assemble_payload.evaluate_physics_severity so that a benign
-    conservative substitution (e.g. M129V) produces an empty list rather
-    than spurious pathogenic vocabulary.
+    Literature keywords come from the wild-type model confidence and, when
+    present, a ThermoMPNN monomer ΔΔG. Residue-table deltas do not add
+    pathogenic phrases.
     """
     keywords = []
-    dV = signals["delta_vol"]
-    dH = signals["delta_hydro"]
-    dC = signals["delta_charge"]
-    exposure = signals["exposure"]
-    sec_struct = signals["sec_struct"]
     plddt = signals["plddt"]
-    is_buried = (exposure == "Buried") or (signals.get("sasa", 100) < 15.0)
-
-    # --- Volume: context-aware thresholds ---
-    # Buried: >30 Å3 expansion OR <-30 Å3 cavity → structurally significant
-    # Exposed: >60 Å3 expansion OR <-40 Å3 cavity → significant surface distortion
-    if is_buried:
-        if dV > 30:
-            keywords.append(("steric hindrance", "volume"))
-            keywords.append(("pocket expansion", "volume"))
-        elif dV > 10:
-            keywords.append(("steric crowding", "volume"))
-        elif dV < -30:
-            keywords.append(("cavity formation", "volume"))
-            keywords.append(("protein destabilization", "volume"))
-    else:  # exposed
-        if dV > 60:
-            keywords.append(("steric hindrance", "volume"))
-            keywords.append(("pocket expansion", "volume"))
-        elif dV > 25:
-            keywords.append(("surface structural alteration", "volume"))
-        elif dV < -40:   # raised from -20: conservative substitutions like M129V (dV=-22.9) stay silent
-            keywords.append(("cavity formation", "volume"))
-            keywords.append(("protein destabilization", "volume"))
-
-    # --- Hydrophobicity ---
-    # Thresholds aligned with assemble_payload.SEVERE_DELTA_HYDRO_* constants:
-    #   surface gain threshold: >3.0  (not >1.0 — avoids flagging M129V at +2.3)
-    #   buried loss threshold:  <-2.5
-    if is_buried and dH < -2.5:
-        keywords.append(("polar shift", "hydrophobicity"))
-        keywords.append(("hydrophilic substitution", "hydrophobicity"))
-    elif not is_buried and dH < -1.5:
-        keywords.append(("reduced surface hydrophobicity", "hydrophobicity"))
-    if not is_buried and dH > 3.0:   # raised from 1.0 → matches severity gate
-        keywords.append(("aberrant surface hydrophobicity", "hydrophobicity"))
-        keywords.append(("aggregation propensity", "hydrophobicity"))
-        keywords.append(("amyloid formation", "hydrophobicity"))
-
-    # --- Charge ---
-    if dC != 0 and not is_buried:
-        keywords.append(("electrostatic perturbation", "charge"))
-    elif dC != 0 and is_buried:
-        keywords.append(("buried charge disruption", "charge"))
-        keywords.append(("protein unfolding", "charge"))
-
-    # --- Secondary structure context ---
-    # Only appended when at least one delta keyword fired, so structure context
-    # doesn't appear alone for a completely benign substitution.
-    if keywords:
-        sec_lower = sec_struct.lower()
-        if "alpha" in sec_lower or "helix" in sec_lower:
-            keywords.append(("alpha-helix disruption", "structure"))
-            keywords.append(("helical stability", "structure"))
-        elif "beta" in sec_lower or "sheet" in sec_lower:
-            keywords.append(("beta-sheet remodelling", "structure"))
-        elif "loop" in sec_lower:
-            keywords.append(("loop flexibility", "structure"))
 
     # --- pLDDT disorder ---
     if plddt < 50:

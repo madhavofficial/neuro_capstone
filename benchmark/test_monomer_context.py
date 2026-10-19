@@ -1,6 +1,6 @@
 import unittest
 
-from assemble_payload import build_vus_note
+from assemble_payload import build_vus_note, evaluate_physics_severity
 from benchmark.thermompnn_s669 import predict_monomer_ddg
 from nlp_formation import _build_mechanistic_keywords, extract_signals
 
@@ -27,6 +27,23 @@ class MonomerContextTests(unittest.TestCase):
         signals = extract_signals(_physics(monomer_ddg=1.5))
         keywords = [phrase for phrase, _category in _build_mechanistic_keywords(signals)]
         self.assertIn("monomer destabilization", keywords)
+
+    def test_a_large_table_delta_is_not_a_severe_result(self):
+        physics = _physics(deltas={"delta_volume": 80.0, "delta_hydrophobicity": -4.0, "delta_charge": -1.0})
+        severe, violations, count = evaluate_physics_severity(physics)
+        self.assertFalse(severe)
+        self.assertEqual(violations, [])
+        self.assertEqual(count, 0)
+        keywords = [phrase for phrase, _category in _build_mechanistic_keywords(extract_signals(physics))]
+        self.assertNotIn("steric hindrance", keywords)
+        self.assertNotIn("protein destabilization", keywords)
+        self.assertNotIn("amyloid formation", keywords)
+
+    def test_thermompnn_at_least_one_kcal_is_the_severe_result(self):
+        severe, violations, count = evaluate_physics_severity(_physics(monomer_ddg=1.5))
+        self.assertTrue(severe)
+        self.assertEqual(count, 1)
+        self.assertIn("+1.50", violations[0])
 
     def test_a_small_or_missing_score_stays_out_of_the_query(self):
         small = [phrase for phrase, _category in _build_mechanistic_keywords(extract_signals(_physics(monomer_ddg=0.4)))]
