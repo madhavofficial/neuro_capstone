@@ -191,7 +191,13 @@ def _run_stages(target: dict[str, str], ablation: str, run_dir: Path) -> tuple[d
     rag_status = "NULL_RESULTS"
     if use_literature:
         from orchestration import phase_3_vector_engine
-        ranked = phase_3_vector_engine(target["gene"], target["variant"], f"{target['gene']} {target['variant']}")
+        try:
+            ranked = phase_3_vector_engine(target["gene"], target["variant"], f"{target['gene']} {target['variant']}")
+        except Exception as exc:
+            if type(exc).__name__ == "EmptyCorpusError":
+                ranked = []
+            else:
+                raise
         rag_status = "SUCCESS" if ranked else "NULL_RESULTS"
         stage["retrieval"] = "success" if ranked else "empty"
     payload = assemble(query=f"{target['gene']} {target['variant']}", ranked_results=ranked, output_path=str(run_dir / "payload.json"), physics_vector=physics, rag_status=rag_status, clinical_context=context)

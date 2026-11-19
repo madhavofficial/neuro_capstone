@@ -13,9 +13,8 @@ logger = logging.getLogger(__name__)
 
 class EmptyCorpusError(RuntimeError):
     """
-    Raised when the chunked corpus for a target has zero chunks.
-    This typically means the literature fetch failed (e.g. Europe PMC timeout)
-    and there is nothing to embed or search.
+    Raised when the chunked corpus for a target has zero chunks
+    and there are no passages to embed or index.
     """
     pass
 
@@ -249,15 +248,15 @@ def setup_pipeline(gene, variant):
     """
     global _INDEX, _METADATA, _CURRENT_TARGET
 
-    bi_encoder, _ = get_models()
     corpus = load_corpus(gene, variant)
 
     if not corpus:
         raise EmptyCorpusError(
-            f"Chunked corpus for {gene} {variant} contains 0 chunks. "
-            "The literature fetch likely failed (e.g. Europe PMC timeout). "
-            "Re-run pipeline after network connectivity is restored to populate the corpus."
+            f"Chunked corpus for {gene} {variant} contains 0 chunks; "
+            "no literature passages were retrieved."
         )
+
+    bi_encoder, _ = get_models()
 
     embeddings = create_embeddings(bi_encoder, corpus)
     save_embeddings(gene, variant, embeddings, corpus)
