@@ -72,6 +72,14 @@ STRUCTURAL_DISCOVERY_VUS_DIRECTIVE = (
     "(ThT aggregation assay, CD spectroscopy, or a cellular toxicity model)."
 )
 
+# Labels on site_description. The values are copied for the model to read.
+# They are not a folding effect and do not set pathogenic or benign.
+WT_MEASUREMENT_LABEL = "wild-type measurement"
+AMINO_ACID_TABLE_LABEL = "amino-acid table lookup"
+SITE_DESCRIPTION_NOTE = (
+    "These values are not a measured folding effect and not proof of pathogenicity."
+)
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 #  Internal helpers
@@ -85,6 +93,11 @@ def _safe_float(val, default: float = 0.0) -> float:
         return float(val)
     except (ValueError, TypeError):
         return default
+
+
+def _is_number(value: Any) -> bool:
+    """True for int and float. Bool is excluded because it subclasses int."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -272,6 +285,49 @@ def evaluate_physics_severity(
     return True, [violation], 1
 
 
+def build_site_description(physics_vector: Dict[str, Any]) -> Dict[str, Any]:
+    """Label the site numbers the model is allowed to read.
+
+    Wild-type exposure, SASA, secondary structure, and pLDDT come from
+    ``structural_context_wt``. Volume, hydrophobicity, and charge at pH 7.4
+    come from ``deltas``. ``delta_aggregation`` is copied only when the
+    physics dict holds a number. Mutant SASA, mutant pLDDT, salt bridges,
+    hydrogen bonds, and interface contacts are left out: a null mutant
+    structure is not a structural change.
+
+    Each present value is ``{"value", "label"}``. The top-level note states
+    that these values are not a measured folding effect and not proof of
+    pathogenicity. This function does not decide severity.
+    """
+    context = physics_vector.get("structural_context_wt")
+    deltas = physics_vector.get("deltas")
+    if not isinstance(context, dict):
+        context = {}
+    if not isinstance(deltas, dict):
+        deltas = {}
+
+    description: Dict[str, Any] = {"note": SITE_DESCRIPTION_NOTE}
+    for field in ("exposure", "sasa", "secondary_structure", "plddt_confidence"):
+        if field in context and context[field] is not None:
+            description[field] = {
+                "value": context[field],
+                "label": WT_MEASUREMENT_LABEL,
+            }
+    # delta_charge is the amino-acid table difference at pH 7.4.
+    for field in ("delta_volume", "delta_hydrophobicity", "delta_charge"):
+        if field in deltas and deltas[field] is not None:
+            description[field] = {
+                "value": deltas[field],
+                "label": AMINO_ACID_TABLE_LABEL,
+            }
+    if "delta_aggregation" in physics_vector and _is_number(physics_vector["delta_aggregation"]):
+        description["delta_aggregation"] = {
+            "value": physics_vector["delta_aggregation"],
+            "label": AMINO_ACID_TABLE_LABEL,
+        }
+    return description
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 #  Note / directive builders
 # ──────────────────────────────────────────────────────────────────────────────
@@ -446,6 +502,8 @@ def assemble_payload(
     Returns:
         Structured payload dict.  Always contains:
           status, confidence_matrix, query, evidence
+        When physics_vector is a dict, also contains site_description.
+        The key is omitted when there is no physics dict.
         VUS-class results additionally contain:
           note, physics_violations, llm_directive (STRUCTURAL_DISCOVERY_VUS only)
     """
@@ -474,6 +532,11 @@ def assemble_payload(
         "evidence_score_type": "raw_cross_encoder_score",
         "evidence":          evidence,
     }
+
+    # Labeled site numbers for the model. Status still comes from the gate
+    # above; volume and hydrophobicity deltas do not set pathogenic or benign.
+    if isinstance(physics_vector, dict):
+        payload["site_description"] = build_site_description(physics_vector)
 
     # ── Step 5: Attach VUS artefacts ─────────────────────────────────────────
     if status == "STRUCTURAL_DISCOVERY_VUS" and physics_vector:
