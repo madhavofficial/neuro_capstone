@@ -734,6 +734,7 @@ async def analyze_variant(
             query=f"{gene} {variant}",
             confidence_threshold=0.7,
             physics_path=physics_path,
+            clinical_context=context_data,
         )
 
         if isinstance(

@@ -5,6 +5,7 @@ import html
 
 import json
 import os
+import re
 import sys
 import time
 from dataclasses import dataclass
@@ -101,7 +102,114 @@ def _literature_query(gene: str, variant: str) -> str:
     return f'("{gene}" AND "{variant}") AND (pathogenic OR aggregation OR misfolding)'
 
 
-def fetch_literature_json(gene: str, variant: str, *, literature_dir: str = "data/literature", max_papers: int = 100) -> str:
+def extract_dbsnp_citation_pmids(context_data: Optional[dict]) -> list[str]:
+    """Extract normalized bare-digit PMIDs from clinical_context.dbsnp citations."""
+    if not isinstance(context_data, dict):
+        return []
+    dbsnp = context_data.get("dbsnp")
+    if not isinstance(dbsnp, dict):
+        return []
+
+    raw_lists: list[object] = []
+    dbsnp_data = dbsnp.get("dbsnp_data")
+    if isinstance(dbsnp_data, dict) and isinstance(dbsnp_data.get("citations"), list):
+        raw_lists.append(dbsnp_data["citations"])
+    if isinstance(dbsnp.get("citations"), list):
+        raw_lists.append(dbsnp["citations"])
+
+    pmids: list[str] = []
+    seen: set[str] = set()
+    for items in raw_lists:
+        for raw in items:
+            match = re.fullmatch(r"(?:PMID:?\s*)?(\d{4,9})", str(raw or "").strip(), flags=re.IGNORECASE)
+            if not match:
+                continue
+            pmid = match.group(1)
+            if pmid not in seen:
+                seen.add(pmid)
+                pmids.append(pmid)
+    return pmids
+
+
+def fetch_papers_by_pmids(
+    pmids: Iterable[str],
+    *,
+    seen: Optional[set[str]] = None,
+    max_papers: int = 50,
+    batch_size: int = 25,
+) -> list[dict]:
+    """Fetch paper titles and abstracts for explicit PMIDs from Europe PMC.
+
+    Papers without both a title and an abstract are skipped so bare PMIDs
+    never enter the corpus without text for the encoders.
+    """
+    import requests
+
+    already_seen = set(seen or ())
+    pending = [
+        str(pmid).strip()
+        for pmid in pmids
+        if str(pmid).strip() and str(pmid).strip() not in already_seen
+    ][:max_papers]
+    if not pending:
+        return []
+
+    url = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
+    fetched: list[dict] = []
+    for start in range(0, len(pending), batch_size):
+        batch = pending[start : start + batch_size]
+        query = " OR ".join(f"EXT_ID:{pmid}" for pmid in batch)
+        params = {
+            "query": query,
+            "format": "json",
+            "pageSize": len(batch),
+            "resultType": "core",
+        }
+        data = None
+        for attempt in range(2):
+            try:
+                response = requests.get(url, params=params, timeout=30)
+                response.raise_for_status()
+                data = response.json()
+                break
+            except (requests.RequestException, ValueError):
+                if attempt == 0:
+                    time.sleep(1)
+        if not isinstance(data, dict):
+            continue
+        results = data.get("resultList", {}).get("result", [])
+        if not isinstance(results, list):
+            continue
+        for item in results:
+            if not isinstance(item, dict):
+                continue
+            final_id = str(item.get("pmid") or item.get("id") or "").strip()
+            if not final_id or final_id in already_seen:
+                continue
+            title = _clean_literature_text(item.get("title"))
+            abstract = _clean_literature_text(item.get("abstractText"))
+            if not title or not abstract:
+                continue
+            fetched.append(
+                {
+                    "pmid": final_id,
+                    "title": title,
+                    "abstract": abstract,
+                    "source": "dbsnp_citation",
+                }
+            )
+            already_seen.add(final_id)
+    return fetched
+
+
+def fetch_literature_json(
+    gene: str,
+    variant: str,
+    *,
+    literature_dir: str = "data/literature",
+    max_papers: int = 100,
+    extra_pmids: Optional[Iterable[str]] = None,
+) -> str:
     import requests
 
     _require_literature_runtime()
@@ -193,6 +301,12 @@ def fetch_literature_json(gene: str, variant: str, *, literature_dir: str = "dat
         if not next_cursor or next_cursor == cursor:
             break
         cursor = next_cursor
+
+    if extra_pmids:
+        dbsnp_papers = fetch_papers_by_pmids(extra_pmids, seen=seen)
+        for paper in dbsnp_papers:
+            papers.append(paper)
+            seen.add(paper["pmid"])
 
     if not papers and cached_papers:
         print(
@@ -431,11 +545,12 @@ def run_pipeline(
         if not variant:
             raise ValueError("--variant is required to run literature stages")
 
+        dbsnp_pmids = extract_dbsnp_citation_pmids(context_data)
         if run_fetch_literature and run_process_literature:
-            fetch_literature_json(gene, variant, literature_dir=literature_dir)
+            fetch_literature_json(gene, variant, literature_dir=literature_dir, extra_pmids=dbsnp_pmids)
             process_literature_json(gene, variant, literature_dir=literature_dir)
         elif run_fetch_literature:
-            fetch_literature_json(gene, variant, literature_dir=literature_dir)
+            fetch_literature_json(gene, variant, literature_dir=literature_dir, extra_pmids=dbsnp_pmids)
         elif run_process_literature:
             process_literature_json(gene, variant, literature_dir=literature_dir)
 
