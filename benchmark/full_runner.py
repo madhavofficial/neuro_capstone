@@ -293,6 +293,17 @@ def _is_duplicate_variant(row: dict[str, Any]) -> bool:
     return bool(row.get("duplicate_of")) or str(row.get("variant_id", "")) in DUPLICATE_VARIANT_ALIASES
 
 
+def _full_pipeline_stages_ok(stages: dict[str, Any]) -> bool:
+    for stage in FULL_PIPELINE_STAGES:
+        status = stages.get(stage)
+        if stage == "retrieval":
+            if status not in {"success", "empty"}:
+                return False
+        elif status != "success":
+            return False
+    return True
+
+
 def is_scored_gptoss_run(row: dict[str, Any]) -> bool:
     """True when every full-pipeline stage succeeded and GPT-OSS returned an API synthesis."""
     if _is_duplicate_variant(row):
@@ -303,7 +314,7 @@ def is_scored_gptoss_run(row: dict[str, Any]) -> bool:
     if not _is_gpt_oss(row) or meta.get("mode") != "api":
         return False
     stages = row.get("stage_status") if isinstance(row.get("stage_status"), dict) else {}
-    return all(stages.get(stage) == "success" for stage in FULL_PIPELINE_STAGES)
+    return _full_pipeline_stages_ok(stages)
 
 
 def exclusion_reason(row: dict[str, Any]) -> str | None:
@@ -322,7 +333,7 @@ def exclusion_reason(row: dict[str, Any]) -> str | None:
         return "pipeline_failed"
     if row.get("ablation") != "all_evidence":
         return "partial_pipeline"
-    if not all(stages.get(stage) == "success" for stage in FULL_PIPELINE_STAGES):
+    if not _full_pipeline_stages_ok(stages):
         return "stage_not_successful"
     return "gptoss_not_successful"
 

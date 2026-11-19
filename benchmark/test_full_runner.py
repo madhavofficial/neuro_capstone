@@ -247,6 +247,8 @@ class FullRunnerTests(unittest.TestCase):
             row = rows[0]
             self.assertTrue(row["completed"])
             self.assertEqual(row["stage_status"]["retrieval"], "empty")
+            self.assertTrue(is_scored_gptoss_run(row))
+            self.assertIsNone(runner.exclusion_reason(row))
             self.assertEqual(row["top5_evidence_count"], 0)
             self.assertEqual(len(seen_payloads), 1)
             saved_payload = runner.json.loads((root / row["payload_path"]).read_text(encoding="utf-8"))
