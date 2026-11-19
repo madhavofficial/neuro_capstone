@@ -18,6 +18,7 @@ import ClinicalContext from './ClinicalContext';
 import Literature from './Literature';
 import ProteinViewer from './ProteinViewer';
 import SequenceDiff from './SequenceDiff';
+import { resolveVerdictHero } from '../lib/verdictCard';
 import { AnalyzeResponse } from '../types';
 
 interface ResultsDashboardProps {
@@ -575,85 +576,17 @@ function ClinicalNarrativeCard({
    ======================================================================== */
 
 function AIVerdictHeroCard({ data }: { data: AnalyzeResponse }) {
-  const context = data.context_data as Record<string, any> | null | undefined;
-  const physics = data.physics_data as Record<string, any> | null | undefined;
-  const clinvar = context?.clinvar as Record<string, any> | null | undefined;
-  const alphaMissense = context?.alphamissense_sniper as Record<string, any> | null | undefined;
-  const structured = data.structured_reasoning;
-
-  // 1. Determine Verdict Label & Type
-  let verdictType: 'PATHOGENIC' | 'BENIGN' | 'VUS' = 'VUS';
-  let verdictTitle = 'VARIANT OF UNCERTAIN SIGNIFICANCE (VUS)';
-  let verdictDescription =
-    'Epistemic uncertainty is preserved. Cross-audited evidence between AlphaFold structural heuristics, clinical registries, and literature does not show conclusive pathogenic disruption.';
-
-  const clinvarSig = (clinvar?.clinical_significance || '').toLowerCase();
-  const alphaVerdict = (alphaMissense?.verdict || '').toLowerCase();
-  const alphaScore = typeof alphaMissense?.score === 'number' ? alphaMissense.score : Number(alphaMissense?.score);
-  const statusStr = (data.status || '').toUpperCase();
-  const customBadge = structured?.verdict_badge;
-  const ragStatus = (data.confidence_matrix?.literature_rag || '').toUpperCase();
-  const topEvidence = data.evidence && data.evidence.length > 0 ? data.evidence[0] : null;
-  const hasPathogenicCall =
-    statusStr.includes('PATHOGENIC') ||
-    Boolean(customBadge && customBadge.toUpperCase().includes('PATHOGENIC')) ||
-    clinvarSig.includes('pathogenic');
-
-  // A pathogenic-looking call without any retrieved papers is a hypothesis,
-  // regardless of whether the retrieval layer reported an explicit error.
-  const structureOnlyHypothesis = [
-    'STRUCTURAL_DISCOVERY_VUS',
-    'PREDICTED_PATHOGENIC_VUS',
-  ].includes(statusStr);
-
-  const hypothesisLiteratureGap =
-    structureOnlyHypothesis ||
-    (!topEvidence && (
-      ['NULL_RESULTS', 'TIMEOUT_ERROR'].includes(ragStatus) ||
-      hasPathogenicCall
-    ));
-
-  const hasClinvarClassification =
-    clinvarSig.includes('pathogenic') || clinvarSig.includes('benign');
-
-  if (structureOnlyHypothesis && !hasClinvarClassification) {
-    verdictType = 'VUS';
-    verdictTitle = 'VARIANT OF UNCERTAIN SIGNIFICANCE (VUS)';
-    verdictDescription =
-      'Hypothesis only: no literature evidence was retrieved. Structural predictions are not a confirmed clinical classification.';
-  } else if (hypothesisLiteratureGap && hasClinvarClassification) {
-    if (clinvarSig.includes('pathogenic')) {
-      verdictType = 'PATHOGENIC';
-      verdictTitle = clinvar?.clinical_significance || 'PATHOGENIC';
-    } else {
-      verdictType = 'BENIGN';
-      verdictTitle = clinvar?.clinical_significance || 'BENIGN';
-    }
-  } else if (customBadge) {
-    if (customBadge.toUpperCase().includes('PATHOGENIC')) {
-      verdictType = 'PATHOGENIC';
-      verdictTitle = customBadge;
-    } else if (customBadge.toUpperCase().includes('BENIGN')) {
-      verdictType = 'BENIGN';
-      verdictTitle = customBadge;
-    } else {
-      verdictType = 'VUS';
-      verdictTitle = customBadge;
-    }
-  } else if (statusStr.includes('PREDICTED_PATHOGENIC') || clinvarSig.includes('pathogenic')) {
-    verdictType = 'PATHOGENIC';
-    verdictTitle = 'PATHOGENIC / LIKELY PATHOGENIC';
-    verdictDescription =
-      'Multi-modal evidence confirms deleterious impact: significant structural/conformational disruption or established clinical consensus across pathogenic registries.';
-  } else if (clinvarSig.includes('benign') || (alphaVerdict.includes('benign') && alphaScore < 0.50)) {
-    verdictType = 'BENIGN';
-    verdictTitle = 'BENIGN / LIKELY BENIGN';
-    verdictDescription =
-      'Multi-modal evidence demonstrates that this amino acid substitution preserves the native fold stability with no significant steric or charge disruption, supported by clinical databases and literature consensus.';
-  }
-
-  // 2. Modality Quick Indicators
-  const deltaV = physics?.deltas?.delta_volume;
+  const {
+    verdictType,
+    verdictTitle,
+    verdictDescription,
+    hypothesisLiteratureGap,
+    clinvarClinicalRecord,
+    clinvarVariationId,
+    literatureStatusLabel,
+    deltaV,
+    alphaScore,
+  } = resolveVerdictHero(data);
 
   // Style themes
   const theme = {
@@ -731,8 +664,24 @@ function AIVerdictHeroCard({ data }: { data: AnalyzeResponse }) {
               </span>
             </div>
 
+            {clinvarClinicalRecord && (
+              <div className="mt-2.5 inline-flex flex-wrap items-center gap-2 rounded-xl border border-slate-200/90 bg-white/85 px-3 py-1.5 text-xs shadow-2xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  ClinVar clinical record:
+                </span>
+                <span className="font-semibold text-ink">
+                  {clinvarClinicalRecord}
+                </span>
+                {clinvarVariationId && (
+                  <span className="font-mono text-[11px] text-slate-500">
+                    (ID {clinvarVariationId})
+                  </span>
+                )}
+              </div>
+            )}
+
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 font-medium">
-              {hypothesisLiteratureGap ? verdictDescription : (structured?.executive_bottom_line || verdictDescription)}
+              {verdictDescription}
             </p>
           </div>
         </div>
@@ -753,14 +702,20 @@ function AIVerdictHeroCard({ data }: { data: AnalyzeResponse }) {
             <div className="flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 border border-slate-100">
               <span className="font-bold text-slate-700">Literature RAG:</span>
               <span className="text-slate-600 font-mono text-[11px]">
-                {topEvidence  ? 'Top Reranked'  : ['NULL_RESULTS', 'TIMEOUT_ERROR'].includes(ragStatus)    ? 'No Literature Retrieved'    : 'Curated'}
+                {literatureStatusLabel}
               </span>
             </div>
 
             <div className="flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 border border-slate-100">
               <span className="font-bold text-slate-700">ClinVar:</span>
               <span className="text-slate-600 font-mono text-[11px]">
-                {clinvar?.variation_id ? `ID ${clinvar.variation_id}` : 'Resolved'}
+                {clinvarClinicalRecord
+                  ? clinvarVariationId
+                    ? `${clinvarClinicalRecord} (ID ${clinvarVariationId})`
+                    : clinvarClinicalRecord
+                  : clinvarVariationId
+                    ? `ID ${clinvarVariationId}`
+                    : 'Resolved'}
               </span>
             </div>
 
