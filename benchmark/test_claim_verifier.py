@@ -148,6 +148,17 @@ class ClaimVerifierTests(unittest.TestCase):
         self.assertFalse(mixed_freq["clinical_field_valid"])
         self.assertTrue(mixed_freq["unsupported"])
 
+        payload_no_dbsnp = _sample_payload()
+        del payload_no_dbsnp["clinical_context"]["dbsnp"]
+        mixed_freq_missing_dbsnp = verify_claim(
+            {"text": "SNCA A53T has a gnomAD allele frequency of 0.05.", "pmid": "41002401"},
+            payload_no_dbsnp,
+            TARGET,
+        )
+        self.assertTrue(mixed_freq_missing_dbsnp["citation_valid"])
+        self.assertFalse(mixed_freq_missing_dbsnp["clinical_field_valid"])
+        self.assertTrue(mixed_freq_missing_dbsnp["unsupported"])
+
         am_tier_mismatch = verify_claim(
             {"text": "AlphaMissense assigns SNCA A53T a score of 0.7863 with verdict Likely pathogenic.", "pmid": None},
             payload,
