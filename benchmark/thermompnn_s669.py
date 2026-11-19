@@ -11,12 +11,16 @@ from __future__ import annotations
 
 import argparse
 import csv
+from dataclasses import dataclass
+import logging
 import os
 import sys
 from pathlib import Path
 from typing import Any
 
 import torch
+
+logger = logging.getLogger(__name__)
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -65,57 +69,96 @@ def _enable_full_checkpoints() -> None:
     torch.load = load
 
 
+class _AttrDict(dict):
+    """Minimal dict with attribute access so TransferModel runs without omegaconf."""
+
+    def __getattr__(self, key: str) -> Any:
+        try:
+            return self[key]
+        except KeyError as exc:
+            raise AttributeError(key) from exc
+
+    def __setattr__(self, key: str, value: Any) -> None:
+        self[key] = value
+
+
+@dataclass
+class _Mutation:
+    position: int
+    wildtype: str
+    mutation: str
+    ddG: float | None = None
+    pdb: str = ""
+
+
+_MODEL_CACHE: dict[Path, Any] = {}
+
+
 def load_thermompnn(repo: Path):
-    """Load the published ThermoMPNN weights on CPU."""
+    """Load the published ThermoMPNN weights on CPU using pure PyTorch."""
     _enable_full_checkpoints()
     repo = repo.resolve()
+    cached = _MODEL_CACHE.get(repo)
+    if cached is not None:
+        return cached
     if str(repo) not in sys.path:
         sys.path.insert(0, str(repo))
     os.environ.setdefault("WANDB_MODE", "disabled")
 
-    from omegaconf import OmegaConf
-    from train_thermompnn import TransferModelPL
+    from transfer_model import TransferModel
 
-    config = OmegaConf.create(
-        {
-            "platform": {"thermompnn_dir": str(repo), "accel": "cpu", "cache_dir": str(repo / "cache")},
-            "training": {
-                "num_workers": 0,
-                "learn_rate": 0.001,
-                "epochs": 100,
-                "lr_schedule": True,
-            },
-            "model": {
-                "hidden_dims": [64, 32],
-                "subtract_mut": True,
-                "num_final_layers": 2,
-                "freeze_weights": True,
-                "load_pretrained": True,
-                "lightattn": True,
-                "lr_schedule": True,
-            },
-        }
+    config = _AttrDict(
+        platform=_AttrDict(thermompnn_dir=str(repo), accel="cpu", cache_dir=str(repo / "cache")),
+        training=_AttrDict(
+            num_workers=0,
+            learn_rate=0.001,
+            epochs=100,
+            lr_schedule=True,
+        ),
+        model=_AttrDict(
+            hidden_dims=[64, 32],
+            subtract_mut=True,
+            num_final_layers=2,
+            freeze_weights=True,
+            load_pretrained=True,
+            lightattn=True,
+            lr_schedule=True,
+        ),
     )
-    checkpoint = repo / "models" / "thermoMPNN_default.pt"
-    if not checkpoint.is_file():
-        raise FileNotFoundError(f"ThermoMPNN weights not found at {checkpoint}")
-    wrapper = TransferModelPL.load_from_checkpoint(str(checkpoint), cfg=config, map_location="cpu")
-    model = wrapper.model.eval()
+    checkpoint_path = repo / "models" / "thermoMPNN_default.pt"
+    if not checkpoint_path.is_file():
+        raise FileNotFoundError(f"ThermoMPNN weights not found at {checkpoint_path}")
+    checkpoint = torch.load(str(checkpoint_path), map_location="cpu", weights_only=False)
+    raw_state = checkpoint.get("state_dict", checkpoint) if isinstance(checkpoint, dict) else checkpoint
+    state_dict = {
+        (key[len("model."):] if key.startswith("model.") else key): value
+        for key, value in raw_state.items()
+        if key.startswith("model.") or not any(k.startswith("model.") for k in raw_state)
+    }
+    model = TransferModel(config)
+    model.load_state_dict(state_dict, strict=True)
+    model = model.eval()
+    _MODEL_CACHE[repo] = model
     return model
 
 
-def predict_monomer_ddg(pdb_path: str | Path, variant: str, chain_id: str | None = None) -> float | None:
-    """ThermoMPNN folding ΔΔG for one substitution.
+def score_monomer_ddg(pdb_path: str | Path, variant: str, chain_id: str | None = None) -> dict[str, Any]:
+    """Score one substitution with ThermoMPNN and return structured status + error.
 
-    Positive means destabilizing, matching the S669 column. The raw model
-    output has the opposite sign. Returns None when the weights or the
-    residue are unavailable, so the pipeline still runs.
+    Positive ``monomer_ddg`` means destabilizing, matching the S669 column.
+    The raw model output has the opposite sign. Errors (missing dependency,
+    missing weights/PDB, residue mismatch) are returned in ``status`` and
+    ``error`` instead of being silently swallowed.
     """
     try:
         from analyze_structure import get_chain, load_structure, parse_variant_code
 
         wildtype, position, mutant, _wt3, _mut3 = parse_variant_code(variant)
         path = Path(pdb_path)
+        if not path.is_file():
+            error = f"PDB file not found: {path}"
+            logger.warning("ThermoMPNN skipped for %s: %s", variant, error)
+            return {"monomer_ddg": None, "status": "missing_pdb", "error": error}
         if chain_id is None:
             chain_id = get_chain(load_structure(str(path))[0], None).id
         model = load_thermompnn(DEFAULT_REPO)
@@ -125,15 +168,44 @@ def predict_monomer_ddg(pdb_path: str | Path, variant: str, chain_id: str | None
             chain_id,
             [{"wt": wildtype, "position": position, "mut": mutant}],
         )
-        if not scored or scored[0].get("status") != "scored" or scored[0].get("score") in ("", None):
-            return None
-        return round(-float(scored[0]["score"]), 4)
-    except Exception:
-        return None
+        if not scored:
+            error = f"ThermoMPNN returned no score records for {variant} on chain {chain_id}"
+            logger.warning(error)
+            return {"monomer_ddg": None, "status": "analysis_failed", "error": error}
+        status = str(scored[0].get("status") or "analysis_failed")
+        raw_score = scored[0].get("score")
+        if status != "scored" or raw_score in ("", None):
+            error = f"ThermoMPNN {status} for {variant} on chain {chain_id}"
+            logger.warning(error)
+            return {"monomer_ddg": None, "status": status, "error": error}
+        return {
+            "monomer_ddg": round(-float(raw_score), 4),
+            "status": "scored",
+            "error": None,
+        }
+    except ModuleNotFoundError as exc:
+        error = f"{type(exc).__name__}: {exc}"
+        logger.warning("ThermoMPNN missing dependency for %s: %s", variant, error)
+        return {"monomer_ddg": None, "status": "missing_dependency", "error": error}
+    except FileNotFoundError as exc:
+        error = f"{type(exc).__name__}: {exc}"
+        logger.warning("ThermoMPNN missing file for %s: %s", variant, error)
+        return {"monomer_ddg": None, "status": "missing_weights", "error": error}
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"
+        logger.warning("ThermoMPNN failed for %s: %s", variant, error)
+        return {"monomer_ddg": None, "status": "error", "error": error}
+
+
+def predict_monomer_ddg(pdb_path: str | Path, variant: str, chain_id: str | None = None) -> float | None:
+    """ThermoMPNN folding ΔΔG for one substitution, or None if unavailable."""
+    return score_monomer_ddg(pdb_path, variant, chain_id)["monomer_ddg"]
 
 
 def score_structure(model, pdb_path: Path, chain: str, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    from datasets import Mutation
+    repo = DEFAULT_REPO.resolve()
+    if str(repo) not in sys.path:
+        sys.path.insert(0, str(repo))
     from protein_mpnn_utils import alt_parse_PDB
 
     parsed = alt_parse_PDB(str(pdb_path), [chain])
@@ -161,7 +233,7 @@ def score_structure(model, pdb_path: Path, chain: str, rows: list[dict[str, Any]
             scored.append(record)
             continue
         mutations.append(
-            Mutation(
+            _Mutation(
                 position=index,
                 wildtype=pdb["seq"][index],
                 mutation=row["mut"],

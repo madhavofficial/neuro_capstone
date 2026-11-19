@@ -176,8 +176,19 @@ def build_confidence_matrix(
         elif any_source >= 1 or has_gene_level:
             clinical_val = CM_CLINICAL_PARTIAL
 
+    has_monomer_ddg = bool(
+        isinstance(physics_vector, dict) and _is_number(physics_vector.get("monomer_ddg"))
+    )
+    if has_monomer_ddg:
+        thermompnn_val = "SCORED"
+    elif isinstance(physics_vector, dict) and physics_vector.get("thermompnn_status"):
+        thermompnn_val = str(physics_vector["thermompnn_status"]).upper()
+    else:
+        thermompnn_val = "UNAVAILABLE"
+
     return {
         "physics_engine":   physics_val,
+        "thermompnn_status": thermompnn_val,
         "literature_rag":   rag_val,
         "clinical_context": clinical_val,
         "clinical_context_scope": (
@@ -537,6 +548,17 @@ def assemble_payload(
     # above; volume and hydrophobicity deltas do not set pathogenic or benign.
     if isinstance(physics_vector, dict):
         payload["site_description"] = build_site_description(physics_vector)
+        if _is_number(physics_vector.get("monomer_ddg")):
+            payload["thermompnn"] = {
+                "status": "scored",
+                "monomer_ddg": float(physics_vector["monomer_ddg"]),
+            }
+        else:
+            payload["thermompnn"] = {
+                "status": str(physics_vector.get("thermompnn_status") or "unavailable"),
+                "monomer_ddg": None,
+                "error": physics_vector.get("thermompnn_error"),
+            }
 
     # ── Step 5: Attach VUS artefacts ─────────────────────────────────────────
     if status == "STRUCTURAL_DISCOVERY_VUS" and physics_vector:

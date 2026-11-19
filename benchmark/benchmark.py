@@ -182,7 +182,7 @@ def calculate_metrics(rows: list[dict[str, Any]], *, _nested: bool = False) -> d
         "external_api_failure_rate": rate(sum(r.get("external_api_failure") is True for r in rows), len(rows)),
         "compatibility_failure_rate": rate(sum(r.get("compatibility_failure") is True for r in rows), len(rows)),
         "failure_by_stage": {
-            stage: sum(1 for r in rows if r.get("stage_status", {}).get(stage) in {"failed", "error", "empty"})
+            stage: sum(1 for r in rows if r.get("stage_status", {}).get(stage) in {"failed", "error", "empty", "incomplete"})
             for stage in ("pipeline_entry", "structure", "clinical", "physics", "literature_fetch", "literature_process", "retrieval", "payload")
         },
         "prediction_by_class": {
