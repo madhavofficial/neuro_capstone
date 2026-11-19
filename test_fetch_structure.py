@@ -116,6 +116,41 @@ class TestFetchStructureFallback(unittest.TestCase):
             self.assertEqual(mock_get.call_count, 1)
             self.assertEqual(result, str(saved))
 
+    def test_empty_uniprot_result_does_not_fall_back_to_local_pdb(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            saved = Path(tmpdir) / "BOGUS.pdb"
+            saved.write_text("HEADER    STALE\nEND\n", encoding="utf-8")
+            with patch.object(fetch_structure, "STRUCTURE_DIR", tmpdir), \
+                 patch.object(fetch_structure.requests, "get", return_value=_mock_response(status_code=200, json_data={"results": []})):
+                result = fetch_structure.get_structure("BOGUS")
+
+            self.assertIsNone(result)
+            self.assertIn("no reviewed human entry", fetch_structure.get_last_structure_error())
+
+    def test_last_structure_error_is_thread_local(self):
+        import threading
+
+        other_error = []
+
+        def worker():
+            with tempfile.TemporaryDirectory() as tmpdir:
+                with patch.object(fetch_structure, "STRUCTURE_DIR", tmpdir), \
+                     patch.object(fetch_structure.requests, "get", return_value=_mock_response(status_code=502)):
+                    fetch_structure.get_structure("OTHER")
+            other_error.append(fetch_structure.get_last_structure_error())
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch.object(fetch_structure, "STRUCTURE_DIR", tmpdir), \
+                 patch.object(fetch_structure.requests, "get", return_value=_mock_response(status_code=403)):
+                fetch_structure.get_structure("MAIN")
+
+        t = threading.Thread(target=worker)
+        t.start()
+        t.join()
+
+        self.assertIn("403", fetch_structure.get_last_structure_error())
+        self.assertIn("502", other_error[0])
+
 
 if __name__ == "__main__":
     unittest.main()
