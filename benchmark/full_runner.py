@@ -153,13 +153,13 @@ def _model_synthesis(payload: dict[str, Any], target: dict[str, str], spec: dict
 
 
 def _check_synthesis(synthesis: dict[str, Any], payload: dict[str, Any], target: dict[str, str]) -> tuple[bool, list[dict[str, Any]], bool, bool]:
+    from benchmark.claim_verifier import verify_claim
+
     valid = isinstance(synthesis, dict) and all(key in synthesis for key in SYNTHESIS_SCHEMA["required"]) and isinstance(synthesis.get("claims"), list) and synthesis.get("prediction") in {"pathogenic", "benign", "vus"} and isinstance(synthesis.get("uncertainty"), bool)
-    evidence = payload.get("evidence", [])
-    pmids = {str(item.get("pmid")) for item in evidence}
-    checks = []
-    for claim in synthesis.get("claims", []) if isinstance(synthesis.get("claims"), list) else []:
-        pmid = claim.get("pmid") if isinstance(claim, dict) else None
-        checks.append({"pmid": pmid, "citation_valid": pmid is not None and str(pmid) in pmids, "unsupported": pmid is None or str(pmid) not in pmids, "scope_mistake": target["variant"].lower() not in str(claim).lower() and target["gene"].lower() not in str(claim).lower()})
+    checks = [
+        verify_claim(claim, payload, target)
+        for claim in (synthesis.get("claims", []) if isinstance(synthesis.get("claims"), list) else [])
+    ]
     uncertainty = synthesis.get("uncertainty") is True or normalise_prediction(synthesis) == "vus"
     return valid, checks, uncertainty, any(check["scope_mistake"] for check in checks)
 
@@ -377,7 +377,9 @@ def write_html_report(rows: list[dict[str, Any]], path: Path) -> None:
         "pipeline_completion_rate",
         "exact_variant_clinical_lookup_accuracy",
         "literature_relevance_top5",
-        "citation_validity",
+        "paper_citation_validity",
+        "invented_pmid_rate",
+        "clinical_field_validity",
         "unsupported_claim_rate",
         "json_schema_validity",
         "mean_runtime_seconds",
@@ -405,14 +407,14 @@ def write_html_report(rows: list[dict[str, Any]], path: Path) -> None:
 
 def write_model_comparison(rows: list[dict[str, Any]], path: Path) -> None:
     rows = scored_rows(rows)
-    fields = ["model", "n_runs", "completion_rate", "prediction_accuracy", "pathogenic_benign_agreement", "pathogenic_benign_macro_agreement", "citation_validity", "unsupported_claim_rate", "json_schema_validity", "vus_uncertainty_preservation", "scope_mistake_rate"]
+    fields = ["model", "n_runs", "completion_rate", "prediction_accuracy", "pathogenic_benign_agreement", "pathogenic_benign_macro_agreement", "paper_citation_validity", "invented_pmid_rate", "clinical_field_validity", "citation_validity", "unsupported_claim_rate", "json_schema_validity", "vus_uncertainty_preservation", "scope_mistake_rate"]
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
         for model in sorted({str(row.get("model", "")) for row in rows}):
             subset = [row for row in rows if row.get("model") == model]
             metrics = calculate_metrics(subset)
-            writer.writerow({"model": model, "n_runs": len(subset), "completion_rate": metrics["completion_rate"], "prediction_accuracy": metrics["prediction_accuracy"], "pathogenic_benign_agreement": metrics["pathogenic_benign_agreement"], "pathogenic_benign_macro_agreement": metrics["pathogenic_benign_macro_agreement"], "citation_validity": metrics["citation_validity"], "unsupported_claim_rate": metrics["unsupported_claim_rate"], "json_schema_validity": metrics["json_schema_validity"], "vus_uncertainty_preservation": metrics["vus_uncertainty_preservation"], "scope_mistake_rate": round(sum(bool(row.get("scope_mistake")) for row in subset) / len(subset), 4) if subset else None})
+            writer.writerow({"model": model, "n_runs": len(subset), "completion_rate": metrics["completion_rate"], "prediction_accuracy": metrics["prediction_accuracy"], "pathogenic_benign_agreement": metrics["pathogenic_benign_agreement"], "pathogenic_benign_macro_agreement": metrics["pathogenic_benign_macro_agreement"], "paper_citation_validity": metrics["paper_citation_validity"], "invented_pmid_rate": metrics["invented_pmid_rate"], "clinical_field_validity": metrics["clinical_field_validity"], "citation_validity": metrics["citation_validity"], "unsupported_claim_rate": metrics["unsupported_claim_rate"], "json_schema_validity": metrics["json_schema_validity"], "vus_uncertainty_preservation": metrics["vus_uncertainty_preservation"], "scope_mistake_rate": round(sum(bool(row.get("scope_mistake")) for row in subset) / len(subset), 4) if subset else None})
 
 
 def write_metrics(rows: list[dict[str, Any]], path: Path) -> None:
@@ -448,7 +450,10 @@ def write_markdown_report(rows: list[dict[str, Any]], path: Path) -> None:
         "pipeline_completion_rate",
         "exact_variant_clinical_lookup_accuracy",
         "literature_relevance_top5",
-        "citation_validity",
+        "paper_citation_validity",
+        "invented_pmid_rate",
+        "clinical_field_validity",
+        "n_gene_context_claims",
         "unsupported_claim_rate",
         "json_schema_validity",
         "n_unsettled_excluded",

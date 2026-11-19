@@ -150,11 +150,31 @@ def calculate_metrics(rows: list[dict[str, Any]], *, _nested: bool = False) -> d
     top5_total = sum(r.get("top5_evidence_count", 0) for r in completed)
     top5_mentions = sum(r.get("top5_variant_mentions", 0) for r in completed)
     claims = [c for r in completed for c in r.get("claim_checks", [])]
+    has_categorized_claims = any("claim_category" in c for c in claims)
+    paper_claims = [
+        c for c in claims
+        if c.get("claim_category") == "paper_citation"
+        or (
+            "claim_category" not in c
+            and c.get("pmid") is not None
+            and str(c.get("pmid")).strip().lower() not in {"", "null", "none", "n/a"}
+        )
+    ]
+    clinical_claims = [c for c in claims if c.get("claim_category") == "clinical_database"]
+    gene_context_claims = [c for c in claims if c.get("claim_category") == "gene_context"]
+    variant_claims = [c for c in claims if c.get("claim_category") != "gene_context"]
+
+    valid_paper_claims = sum(c.get("citation_valid") is True for c in paper_claims)
+    invented_pmids = sum(c.get("citation_valid") is not True for c in paper_claims)
+    valid_clinical_claims = sum(c.get("clinical_field_valid") is True for c in clinical_claims)
     valid_claims = sum(c.get("citation_valid") is True for c in claims)
-    unsupported = sum(c.get("unsupported") is True for c in claims)
+    unsupported = sum(c.get("unsupported") is True for c in variant_claims)
     schema_valid = sum(r.get("json_schema_valid") is True for r in completed)
     def rate(n: int, d: int) -> float | None:
         return round(n / d, 4) if d else None
+    paper_citation_validity = rate(valid_paper_claims, len(paper_claims))
+    invented_pmid_rate = rate(invented_pmids, len(paper_claims))
+    clinical_field_validity = rate(valid_clinical_claims, len(clinical_claims))
     prediction_matches = {
         id(r): normalise_prediction(r.get("prediction", r.get("synthesis"))) == r.get("gold_label")
         for r in scored_for_accuracy
@@ -171,8 +191,14 @@ def calculate_metrics(rows: list[dict[str, Any]], *, _nested: bool = False) -> d
         "pipeline_completion_rate": rate(sum(r.get("stage_status", {}).get("payload") == "success" for r in rows), len(rows)),
         "exact_variant_clinical_lookup_accuracy": rate(sum(r.get("exact_clinvar_match") is True for r in completed), len(completed)),
         "literature_relevance_top5": rate(top5_mentions, top5_total),
-        "citation_validity": rate(valid_claims, len(claims)),
-        "unsupported_claim_rate": rate(unsupported, len(claims)),
+        "paper_citation_validity": paper_citation_validity,
+        "invented_pmid_rate": invented_pmid_rate,
+        "clinical_field_validity": clinical_field_validity,
+        "n_paper_citation_claims": len(paper_claims),
+        "n_clinical_database_claims": len(clinical_claims),
+        "n_gene_context_claims": len(gene_context_claims),
+        "citation_validity": paper_citation_validity if has_categorized_claims else rate(valid_claims, len(claims)),
+        "unsupported_claim_rate": rate(unsupported, len(variant_claims)),
         "json_schema_validity": rate(schema_valid, len(completed)),
         "prediction_accuracy": rate(sum(prediction_matches[id(r)] for r in scored_for_accuracy), len(scored_for_accuracy)),
         "pathogenic_benign_agreement": rate(sum(prediction_matches[id(r)] for r in non_vus), len(non_vus)),
