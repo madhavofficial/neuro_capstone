@@ -17,6 +17,7 @@ import StructuralAudit from './StructuralAudit';
 import ClinicalContext from './ClinicalContext';
 import Literature from './Literature';
 import ProteinViewer from './ProteinViewer';
+import SequenceDiff from './SequenceDiff';
 import { AnalyzeResponse } from '../types';
 
 interface ResultsDashboardProps {
@@ -201,7 +202,7 @@ export default function ResultsDashboard({ data }: ResultsDashboardProps) {
       <section className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[1.15fr_0.85fr]">
 
         {/* STRUCTURAL */}
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
 
           <StructuralAudit
             physicsData={data.physics_data}
@@ -239,6 +240,11 @@ export default function ResultsDashboard({ data }: ResultsDashboardProps) {
               <div className="p-5 sm:p-6">
 
                 <ProteinViewer
+                  pdbContent={data.pdb_content}
+                  variant={data.variant}
+                />
+
+                <SequenceDiff
                   pdbContent={data.pdb_content}
                   variant={data.variant}
                 />
