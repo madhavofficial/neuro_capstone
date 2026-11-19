@@ -27,17 +27,26 @@ HEADERS = {
     "Accept": "application/json"
 }
 
+_LAST_STRUCTURE_ERROR = None
+
+
+def get_last_structure_error():
+    """Return the failure detail from the most recent get_structure call, if any."""
+    return _LAST_STRUCTURE_ERROR
+
+
 # ==========================================
 #  INTELLIGENCE LAYER (Resolvers)
 # ==========================================
 
-def resolve_uniprot_id(gene_symbol):
+def resolve_uniprot_id_with_error(gene_symbol):
     """
     Auto-detects the UniProt ID for a gene symbol.
     Defaults to: Human (9606) + Reviewed (Swiss-Prot).
+    Returns (primary_accession, error_message).
     """
     print(f"   >> Resolving ID for gene '{gene_symbol}'...")
-    
+
     # Query: Gene Name + Human + Reviewed (High Confidence)
     query = f"gene_exact:{gene_symbol} AND organism_id:9606 AND reviewed:true"
     params = {
@@ -45,23 +54,38 @@ def resolve_uniprot_id(gene_symbol):
         "format": "json",
         "size": 1  # We only want the top match
     }
-    
+
     try:
-        response = requests.get(UNIPROT_SEARCH_URL, params=params, headers=HEADERS)
+        response = requests.get(UNIPROT_SEARCH_URL, params=params, headers=HEADERS, timeout=15)
+        if response.status_code != 200:
+            err = f"UniProt lookup failed for '{gene_symbol}' (HTTP {response.status_code})"
+            print(f"      [ERROR] {err}")
+            return None, err
+
         data = response.json()
-        
-        if response.status_code == 200 and data["results"]:
+        if data.get("results"):
             primary_accession = data["results"][0]["primaryAccession"]
             protein_name = data["results"][0]["proteinDescription"]["recommendedName"]["fullName"]["value"]
             print(f"      [OK] Found: {primary_accession} ({protein_name})")
-            return primary_accession
-        else:
-            print(f"      [ERROR] Could not resolve UniProt ID for '{gene_symbol}'.")
-            return None
-            
+            return primary_accession, None
+
+        err = f"UniProt lookup returned no reviewed human entry for '{gene_symbol}'"
+        print(f"      [ERROR] {err}")
+        return None, err
+
     except Exception as e:
-        print(f"      [ERROR] Connection Error resolving ID: {e}")
-        return None
+        err = f"UniProt lookup failed for '{gene_symbol}': {type(e).__name__}: {e}"
+        print(f"      [ERROR] {err}")
+        return None, err
+
+
+def resolve_uniprot_id(gene_symbol):
+    """
+    Auto-detects the UniProt ID for a gene symbol.
+    Defaults to: Human (9606) + Reviewed (Swiss-Prot).
+    """
+    uniprot_id, _ = resolve_uniprot_id_with_error(gene_symbol)
+    return uniprot_id
 
 def get_uniprot_sequence(uniprot_id):
     """
@@ -130,14 +154,25 @@ def apply_mutation(wild_type_seq, mutation_code):
 # ==========================================
 
 def get_structure(gene_symbol, uniprot_id_arg=None, manual_sequence=None, variant_tag=None):
+    global _LAST_STRUCTURE_ERROR
+    _LAST_STRUCTURE_ERROR = None
     print(f"\n--- >> STARTING STRUCTURE RETRIEVAL: {gene_symbol} ---")
+
+    save_path = os.path.join(STRUCTURE_DIR, f"{gene_symbol}.pdb")
 
     # 1. RESOLVE ID
     uniprot_id = uniprot_id_arg
+    uniprot_error = None
     if not uniprot_id:
-        uniprot_id = resolve_uniprot_id(gene_symbol)
+        uniprot_id, uniprot_error = resolve_uniprot_id_with_error(gene_symbol)
         if not uniprot_id:
-            return None # Cannot proceed without ID
+            if not variant_tag and os.path.isfile(save_path):
+                print(
+                    f"   [WARN]  {uniprot_error}; using saved local structure at: {save_path}"
+                )
+                return save_path
+            _LAST_STRUCTURE_ERROR = uniprot_error or f"Could not resolve UniProt ID for '{gene_symbol}'"
+            return None  # Cannot proceed without ID or saved local structure
 
     # ------------------------------------------
     # PATH A: EXPLICIT VARIANT (Force Generation)
@@ -156,9 +191,11 @@ def get_structure(gene_symbol, uniprot_id_arg=None, manual_sequence=None, varian
                 target_seq = apply_mutation(wt_seq, variant_tag)
         
         if target_seq:
+            _LAST_STRUCTURE_ERROR = "Variant structure generation is not supported (ESMFold removed)."
             print("   [ERROR] Variant structure generation is not supported (ESMFold removed). Use a pre-folded PDB.")
             return None
         else:
+            _LAST_STRUCTURE_ERROR = f"Failed to prepare variant sequence for {label}."
             print("   [ERROR] Failed to prepare variant sequence.")
             return None
 
@@ -167,8 +204,7 @@ def get_structure(gene_symbol, uniprot_id_arg=None, manual_sequence=None, varian
     # ------------------------------------------
     print(f"   [INFO]  Mode: Canonical (Wild Type). Checking AlphaFold DB...")
     
-    save_path = os.path.join(STRUCTURE_DIR, f"{gene_symbol}.pdb")
-    if os.path.exists(save_path):
+    if os.path.isfile(save_path):
         print(f"   [OK] Structure already exists at: {save_path}")
         return save_path
 
@@ -179,15 +215,23 @@ def get_structure(gene_symbol, uniprot_id_arg=None, manual_sequence=None, varian
         print(f"      >> Found URL via API: {pdb_url}")
         try:
             # Step 2: Download the file
-            pdb_resp = requests.get(pdb_url, headers=HEADERS)
+            pdb_resp = requests.get(pdb_url, headers=HEADERS, timeout=30)
             if pdb_resp.status_code == 200:
+                os.makedirs(STRUCTURE_DIR, exist_ok=True)
                 with open(save_path, "wb") as f:
                     f.write(pdb_resp.content)
                 print(f"   [OK] Success! Downloaded from AlphaFold DB (High Confidence).")
                 return save_path
+            _LAST_STRUCTURE_ERROR = (
+                f"AlphaFold download failed for {gene_symbol} ({uniprot_id}) (HTTP {pdb_resp.status_code})"
+            )
         except Exception as e:
+            _LAST_STRUCTURE_ERROR = (
+                f"AlphaFold download error for {gene_symbol} ({uniprot_id}): {type(e).__name__}: {e}"
+            )
             print(f"      [ERROR] Download Error: {e}")
     else:
+        _LAST_STRUCTURE_ERROR = f"No AlphaFold model found for {gene_symbol} ({uniprot_id})"
         print(f"   [WARN]  No AlphaFold model found in API. No fallback available.")
 
     return None
