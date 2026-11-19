@@ -34,13 +34,20 @@ logger = logging.getLogger(__name__)
 # PHASE 1: Fetch Literature
 # ==========================================
 
-def phase_1_fetch_literature(gene: str, variant: str) -> str:
+def phase_1_fetch_literature(
+    gene: str,
+    variant: str,
+    *,
+    clinical_context: Optional[Dict[str, Any]] = None,
+) -> str:
     """
     Execute fetch_literature module.
     
     Args:
         gene: Gene symbol (e.g., "SNCA")
         variant: Variant code (e.g., "A53T")
+        clinical_context: Optional clinical context dict whose dbSNP citation
+            PMIDs are fetched alongside Europe PMC search results.
     
     Returns:
         Path to fetched corpus JSON
@@ -51,8 +58,9 @@ def phase_1_fetch_literature(gene: str, variant: str) -> str:
     logger.info(f">> Phase 1: Fetching literature for {gene} {variant}...")
     
     try:
-        from pipeline import fetch_literature_json
-        corpus_path = fetch_literature_json(gene, variant)
+        from pipeline import extract_dbsnp_citation_pmids, fetch_literature_json
+        dbsnp_pmids = extract_dbsnp_citation_pmids(clinical_context)
+        corpus_path = fetch_literature_json(gene, variant, extra_pmids=dbsnp_pmids)
         logger.info(f"[OK] Phase 1 complete: {corpus_path}")
         return corpus_path
     except Exception as e:
@@ -248,6 +256,7 @@ def run_full_pipeline(
     skip_phases: Optional[List[int]] = None,
     physics_path: Optional[str] = None,
     mechanism_tags: Optional[List[str]] = None,
+    clinical_context: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Execute the complete evidence pipeline in strict sequence.
@@ -322,7 +331,7 @@ def run_full_pipeline(
     try:
         # Phase 1: Fetch Literature
         if 1 not in skip_phases:
-            corpus_path = phase_1_fetch_literature(gene, variant)
+            corpus_path = phase_1_fetch_literature(gene, variant, clinical_context=clinical_context)
         else:
             logger.info("[SKIP]  Skipping Phase 1")
             corpus_path = f"data/literature/{gene}_{variant}_corpus.json"
@@ -361,7 +370,7 @@ def run_full_pipeline(
                 query, ranked_results, confidence_threshold,
                 physics_vector=physics_dict,
                 rag_status=_rag_status,
-                clinical_context=None,  # context not held here; pipeline.py passes it
+                clinical_context=clinical_context,
             )
         else:
             logger.info("[SKIP]  Skipping Phase 4")
