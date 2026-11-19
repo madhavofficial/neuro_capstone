@@ -176,7 +176,16 @@ def _run_stages(target: dict[str, str], ablation: str, run_dir: Path) -> tuple[d
     # that repository-defined cache location while isolating physics artifacts
     # and benchmark outputs under the run directory.
     pdb_path, context, physics_path = run_pipeline(target["gene"], target["variant"], run_structure=use_physics, run_context=use_clinical, run_analysis=use_physics, run_fetch_literature=use_literature, run_process_literature=use_literature, literature_dir=str(ROOT / "data" / "literature"), analysis_out_dir=str(run_dir / "analysis"))
-    stage.update({"structure": "success" if pdb_path else "skipped", "clinical": "success" if context else ("skipped" if not use_clinical else "empty"), "physics": "success" if physics_path else "skipped", "literature_fetch": "success" if use_literature else "skipped", "literature_process": "success" if use_literature else "skipped"})
+    physics = json.loads(Path(physics_path).read_text()) if physics_path else None
+    if not use_physics:
+        physics_stage = "skipped"
+    elif not isinstance(physics, dict):
+        physics_stage = "failed"
+    elif isinstance(physics.get("monomer_ddg"), (int, float)) and not isinstance(physics.get("monomer_ddg"), bool):
+        physics_stage = "success"
+    else:
+        physics_stage = "incomplete"
+    stage.update({"structure": "success" if pdb_path else "skipped", "clinical": "success" if context else ("skipped" if not use_clinical else "empty"), "physics": physics_stage, "literature_fetch": "success" if use_literature else "skipped", "literature_process": "success" if use_literature else "skipped"})
     ranked: list[dict[str, Any]] = []
     rag_status = "NULL_RESULTS"
     if use_literature:
@@ -184,7 +193,6 @@ def _run_stages(target: dict[str, str], ablation: str, run_dir: Path) -> tuple[d
         ranked = phase_3_vector_engine(target["gene"], target["variant"], f"{target['gene']} {target['variant']}")
         rag_status = "SUCCESS" if ranked else "NULL_RESULTS"
         stage["retrieval"] = "success" if ranked else "empty"
-    physics = json.loads(Path(physics_path).read_text()) if physics_path else None
     payload = assemble(query=f"{target['gene']} {target['variant']}", ranked_results=ranked, output_path=str(run_dir / "payload.json"), physics_vector=physics, rag_status=rag_status, clinical_context=context)
     if context:
         payload["clinical_context"] = context
@@ -221,8 +229,9 @@ def run_full(gold_path: Path, *, model_specs: list[dict[str, str]], ablations: t
                     synthesis_path.write_text(json.dumps(synthesis, indent=2), encoding="utf-8")
                     schema_ok, claims, uncertainty, scope_mistake = _check_synthesis(synthesis, payload, target)
                     clinical = payload.get("clinical_context", {}).get("clinvar", {}) if isinstance(payload.get("clinical_context"), dict) else {}
+                    thermompnn = payload.get("thermompnn") if isinstance(payload.get("thermompnn"), dict) else {}
                     predicted = normalise_prediction(synthesis)
-                    row.update({"completed": True, "stage_status": stages, "model_meta": model_meta, "payload_path": str((run_dir / "payload.json").relative_to(OUT)), "synthesis_path": str(synthesis_path.relative_to(OUT)), "json_schema_valid": schema_ok, "claim_checks": claims, "exact_clinvar_match": clinical.get("variant_match") is True, "top5_evidence_count": len(payload.get("evidence", [])[:5]), "top5_variant_mentions": sum(target["gene"].lower() in str(item).lower() and target["variant"].lower() in str(item).lower() for item in payload.get("evidence", [])[:5]), "prediction": predicted, "clinical_agreement": None if target["label"] == "unsettled" else predicted == target["label"], "uncertainty_preserved": uncertainty, "scope_mistake": scope_mistake, "synthesis": synthesis})
+                    row.update({"completed": True, "stage_status": stages, "model_meta": model_meta, "payload_path": str((run_dir / "payload.json").relative_to(OUT)), "synthesis_path": str(synthesis_path.relative_to(OUT)), "json_schema_valid": schema_ok, "claim_checks": claims, "exact_clinvar_match": clinical.get("variant_match") is True, "top5_evidence_count": len(payload.get("evidence", [])[:5]), "top5_variant_mentions": sum(target["gene"].lower() in str(item).lower() and target["variant"].lower() in str(item).lower() for item in payload.get("evidence", [])[:5]), "prediction": predicted, "clinical_agreement": None if target["label"] == "unsettled" else predicted == target["label"], "uncertainty_preserved": uncertainty, "scope_mistake": scope_mistake, "thermompnn_status": thermompnn.get("status"), "thermompnn_error": thermompnn.get("error"), "synthesis": synthesis})
                 except Exception as exc:
                     error_type = type(exc).__name__
                     row.update({"stage_status": {"pipeline_entry": "failed"}, "error_type": error_type, "error": str(exc), "external_api_failure": error_type in {"HTTPError", "URLError", "TimeoutError", "ConnectionError"}, "compatibility_failure": error_type in {"ModuleNotFoundError", "TypeError", "ImportError"}})
