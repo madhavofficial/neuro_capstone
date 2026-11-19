@@ -200,6 +200,99 @@ class FullRunnerTests(unittest.TestCase):
         self.assertTrue(synthesis["uncertainty"])
         self.assertEqual(payload["clinical_label"], "Pathogenic")
 
+    def test_empty_corpus_completes_row_with_no_results_and_model_sees_empty_evidence(self):
+        class EmptyCorpusError(RuntimeError):
+            pass
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            gold_path = root / "gold.csv"
+            gold_path.write_text(
+                "variant_id,gene,variant,label,label_source,clinvar_variation_id,review_status,condition,source_url,date_retrieved\n"
+                "ttr-v48m,TTR,V48M,unsettled,Unsettled,4193819,retrieved,ATTR,https://example.org,2026-08-17\n",
+                encoding="utf-8",
+            )
+            physics_file = root / "TTR_V48M_physics.json"
+            physics_file.write_text('{"deltas": {"delta_volume": 10.0}, "monomer_ddg": 0.3}', encoding="utf-8")
+            seen_payloads = []
+
+            def fake_run_pipeline(*args, **kwargs):
+                return (str(root / "TTR.pdb"), {"clinvar": {"variant_match": True, "clinical_significance": "Uncertain significance"}}, str(physics_file))
+
+            def fake_phase3(*args, **kwargs):
+                raise EmptyCorpusError("Chunked corpus for TTR V48M contains 0 chunks")
+
+            def fake_json_request(url, req_payload, key):
+                seen_payloads.append(req_payload)
+                return {
+                    "choices": [
+                        {
+                            "message": {
+                                "content": '{"prediction":"vus","conclusion":"No papers retrieved.","uncertainty":true,"scope":"variant","claims":[]}'
+                            }
+                        }
+                    ]
+                }
+
+            spec = {"name": "GPT-OSS 120B", "provider": "groq", "model": "openai/gpt-oss-120b"}
+            with patch.object(runner, "OUT", root), \
+                 patch.object(runner, "RUNS", root / "runs"), \
+                 patch("pipeline.run_pipeline", side_effect=fake_run_pipeline), \
+                 patch("orchestration.phase_3_vector_engine", side_effect=fake_phase3), \
+                 patch.dict(os.environ, {"GROQ_API_KEY": "k1"}, clear=False), \
+                 patch.object(runner, "_json_request", side_effect=fake_json_request):
+                rows = runner.run_full(gold_path, model_specs=[spec], ablations=("all_evidence",))
+
+            self.assertEqual(len(rows), 1)
+            row = rows[0]
+            self.assertTrue(row["completed"])
+            self.assertEqual(row["stage_status"]["retrieval"], "empty")
+            self.assertEqual(row["top5_evidence_count"], 0)
+            self.assertEqual(len(seen_payloads), 1)
+            saved_payload = runner.json.loads((root / row["payload_path"]).read_text(encoding="utf-8"))
+            self.assertEqual(saved_payload["evidence"], [])
+            self.assertEqual(saved_payload["confidence_matrix"]["literature_rag"], "NULL_RESULTS")
+
+    def test_real_fetch_exception_stays_failed_and_distinct_from_empty_corpus(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            gold_path = root / "gold.csv"
+            gold_path.write_text(
+                "variant_id,gene,variant,label,label_source,clinvar_variation_id,review_status,condition,source_url,date_retrieved\n"
+                "ttr-v48m,TTR,V48M,unsettled,Unsettled,4193819,retrieved,ATTR,https://example.org,2026-08-17\n",
+                encoding="utf-8",
+            )
+            spec = {"name": "GPT-OSS 120B", "provider": "groq", "model": "openai/gpt-oss-120b"}
+            with patch.object(runner, "OUT", root), \
+                 patch.object(runner, "RUNS", root / "runs"), \
+                 patch("pipeline.run_pipeline", side_effect=TimeoutError("Europe PMC timed out")):
+                rows = runner.run_full(gold_path, model_specs=[spec], ablations=("all_evidence",))
+
+            self.assertEqual(len(rows), 1)
+            row = rows[0]
+            self.assertFalse(row["completed"])
+            self.assertEqual(row["error_type"], "TimeoutError")
+            self.assertTrue(row["external_api_failure"])
+            self.assertIn("Europe PMC timed out", row["error"])
+
+    def test_physics_only_keeps_literature_stages_skipped(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            physics_file = root / "TTR_V48M_physics.json"
+            physics_file.write_text('{"deltas": {"delta_volume": 10.0}, "monomer_ddg": 0.3}', encoding="utf-8")
+
+            def fake_run_pipeline(*args, **kwargs):
+                return (str(root / "TTR.pdb"), None, str(physics_file))
+
+            with patch("pipeline.run_pipeline", side_effect=fake_run_pipeline):
+                payload, stages = runner._run_stages({"variant_id": "ttr-v48m", "gene": "TTR", "variant": "V48M"}, "physics_only", root)
+
+            self.assertEqual(stages["literature_fetch"], "skipped")
+            self.assertEqual(stages["literature_process"], "skipped")
+            self.assertEqual(stages["retrieval"], "skipped")
+            self.assertEqual(stages["physics"], "success")
+            self.assertEqual(payload["evidence"], [])
+
     def test_markdown_report_excludes_unsettled_and_does_not_lead_with_benign_agreement(self):
         rows = [
             _scored_row(run_id="p1", gold_label="pathogenic", prediction="pathogenic"),

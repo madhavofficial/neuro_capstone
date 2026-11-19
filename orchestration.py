@@ -343,10 +343,13 @@ def run_full_pipeline(
                 )
                 _rag_status = "SUCCESS" if ranked_results else "NULL_RESULTS"
             except Exception as e3:
-                # Distinguish empty-corpus (timeout) from other errors
-                err_msg = str(e3).lower()
-                _rag_status = "TIMEOUT_ERROR" if "empty" in err_msg or "timeout" in err_msg else "NULL_RESULTS"
-                logger.warning(f"[WARN]  Phase 3 retrieval issue ({_rag_status}): {e3}")
+                if type(e3).__name__ == "EmptyCorpusError":
+                    _rag_status = "NULL_RESULTS"
+                    logger.info(f"[INFO]  Phase 3 retrieval found 0 chunks (NULL_RESULTS): {e3}")
+                else:
+                    err_msg = str(e3).lower()
+                    _rag_status = "TIMEOUT_ERROR" if "timeout" in err_msg else "NULL_RESULTS"
+                    logger.warning(f"[WARN]  Phase 3 retrieval issue ({_rag_status}): {e3}")
                 ranked_results = []
         else:
             logger.info("[SKIP]  Skipping Phase 3")
