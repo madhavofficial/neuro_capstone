@@ -77,6 +77,58 @@ class TestDbsnpCitationsIntoEvidence(unittest.TestCase):
             self.assertNotIn("99999999", by_pmid)
             self.assertNotIn("88888888", by_pmid)
 
+    def test_fetch_papers_by_pmids_fetches_beyond_50_in_batches(self):
+        pmids = [str(10000000 + i) for i in range(60)]
+
+        def fake_get(url, params=None, timeout=30):
+            query = params["query"]
+            batch_ids = [tok.split("EXT_ID:")[1] for tok in query.split(" OR ")]
+            return _mock_epmc_response(
+                [{"pmid": pid, "title": f"Title {pid}", "abstractText": f"Abstract for {pid}."} for pid in batch_ids]
+            )
+
+        with patch("requests.get", side_effect=fake_get) as mock_get:
+            papers = pipeline.fetch_papers_by_pmids(pmids)
+
+        self.assertEqual(len(papers), 60)
+        self.assertEqual(mock_get.call_count, 3)  # 25 + 25 + 10
+
+    def test_short_dbsnp_abstract_survives_chunking_and_runs_through_vector_engine(self):
+        import vector_engine
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            lit_dir = Path(tmpdir) / "literature"
+            faiss_dir = Path(tmpdir) / "faiss"
+            lit_dir.mkdir()
+            faiss_dir.mkdir()
+
+            corpus = [
+                {
+                    "pmid": "31217996",
+                    "title": "TTR Gly6Ser polymorphism",
+                    "abstract": "TTR G26S is a benign polymorphism observed in healthy populations.",
+                },
+                {
+                    "pmid": "31270413",
+                    "title": "gnomAD frequency of TTR G26S",
+                    "abstract": "TTR G26S allele frequency in gnomAD is high and benign.",
+                    "source": "dbsnp_citation",
+                },
+            ]
+            (lit_dir / "TTR_G26S_corpus.json").write_text(json.dumps(corpus), encoding="utf-8")
+
+            chunked_path = pipeline.process_literature_json("TTR", "G26S", literature_dir=str(lit_dir))
+            chunks = json.loads(Path(chunked_path).read_text(encoding="utf-8"))
+            self.assertEqual({c["pmid"] for c in chunks}, {"31217996", "31270413"})
+
+            with patch.object(vector_engine, "_get_chunked_corpus_path", return_value=chunked_path), \
+                 patch.object(vector_engine, "_get_faiss_dir", return_value=str(faiss_dir)):
+                vector_engine.setup_pipeline("TTR", "G26S")
+                ranked = vector_engine.retrieve_evidence("TTR", "G26S", "TTR G26S gnomAD allele frequency benign")
+
+            self.assertIn("31270413", {r["pmid"] for r in ranked})
+            self.assertTrue(all("rerank_score" in r for r in ranked))
+
     def test_retrieved_dbsnp_paper_is_citation_valid_and_unretrieved_stays_unverified(self):
         # Simulate encoder/reranker output containing both an EPMC chunk and a
         # dbSNP citation chunk passing the 0.70 gate, plus a low-scoring dbSNP
