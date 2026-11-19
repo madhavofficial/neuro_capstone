@@ -1,6 +1,17 @@
 {
   "models": [
-    {"name": "GPT-OSS 120B", "provider": "groq", "model": "openai/gpt-oss-120b", "enabled": true},
+    {
+      "name": "GPT-OSS 120B",
+      "provider": "groq",
+      "model": "openai/gpt-oss-120b",
+      "enabled": true,
+      "fallback_models": [
+        {"provider": "groq", "model": "openai/gpt-oss-20b"},
+        {"provider": "groq", "model": "llama-3.3-70b-versatile"},
+        {"provider": "groq", "model": "qwen/qwen3-32b"},
+        {"provider": "openrouter", "model": "meta-llama/llama-3.3-70b-instruct"}
+      ]
+    },
     {"name": "Llama 3.3 70B", "provider": "openrouter", "model": "meta-llama/llama-3.3-70b-instruct", "enabled": true},
     {"name": "Qwen3 235B", "provider": "openrouter", "model": "qwen/qwen3-235b-a22b", "enabled": true},
     {"name": "DeepSeek R1", "provider": "openrouter", "model": "deepseek/deepseek-r1", "enabled": false},

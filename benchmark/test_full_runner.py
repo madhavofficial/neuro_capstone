@@ -73,8 +73,40 @@ class FullRunnerTests(unittest.TestCase):
         self.assertFalse(is_scored_gptoss_run(_scored_row(model="Llama 3.3 70B", model_meta={"provider": "openrouter", "model": "meta-llama/llama-3.3-70b-instruct", "mode": "api"})))
 
     def test_groq_keys_keep_primary_then_numbered(self):
-        with patch.dict(os.environ, {"GROQ_API_KEY": "primary", "GROQ_API_KEY_1": "second", "GROQ_API_KEY_2": "primary"}, clear=False):
-            self.assertEqual(_groq_keys(), ["primary", "second"])
+        with patch.dict(os.environ, {"GROQ_API_KEY": "primary", "GROQ_API_KEY_1": "second", "GROQ_API_KEY_2": "primary", "GROQ_API_KEYS": "third, second"}, clear=False):
+            self.assertEqual(_groq_keys(), ["primary", "second", "third"])
+
+    def test_model_fallback_steps_in_when_primary_model_hits_429_across_keys(self):
+        calls: list[tuple[str, str]] = []
+
+        def fake_request(url, payload, key):
+            calls.append((payload["model"], key))
+            if payload["model"] == "openai/gpt-oss-120b":
+                raise HTTPError(url, 429, "Too Many Requests", hdrs=None, fp=BytesIO(b""))
+            return {"choices": [{"message": {"content": '{"prediction":"vus","conclusion":"uncertain","uncertainty":true,"scope":"variant","claims":[]}'}}]}
+
+        runner._groq_cursor = 0
+        spec = {
+            "provider": "groq",
+            "model": "openai/gpt-oss-120b",
+            "fallback_models": [
+                {"provider": "groq", "model": "openai/gpt-oss-20b"},
+                {"provider": "groq", "model": "llama-3.3-70b-versatile"},
+            ],
+        }
+        with patch.dict(os.environ, {"GROQ_API_KEY": "k1", "GROQ_API_KEY_1": "k2"}, clear=False), \
+             patch.object(runner, "_json_request", side_effect=fake_request):
+            synthesis, meta = _model_synthesis({}, {"gene": "SNCA", "variant": "A53T"}, spec)
+
+        self.assertEqual(calls, [("openai/gpt-oss-120b", "k1"), ("openai/gpt-oss-120b", "k2"), ("openai/gpt-oss-20b", "k2")])
+        self.assertEqual(meta["mode"], "api")
+        self.assertEqual(meta["model"], "openai/gpt-oss-20b")
+        self.assertEqual(meta["requested_model"], "openai/gpt-oss-120b")
+        self.assertTrue(meta["fallback_used"])
+        self.assertEqual(meta["keys_tried"], 3)
+        self.assertEqual(synthesis["prediction"], "vus")
+        self.assertNotIn("k1", str(meta))
+        self.assertNotIn("k2", str(meta))
 
     def test_429_tries_the_next_groq_key(self):
         seen: list[str] = []

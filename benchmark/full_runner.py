@@ -75,18 +75,39 @@ def _load_project_env() -> None:
 
 
 _groq_cursor = 0
+_openrouter_cursor = 0
+
+DEFAULT_GROQ_FALLBACK_MODELS: tuple[dict[str, str], ...] = (
+    {"provider": "groq", "model": "openai/gpt-oss-20b"},
+    {"provider": "groq", "model": "llama-3.3-70b-versatile"},
+    {"provider": "groq", "model": "qwen/qwen3-32b"},
+    {"provider": "openrouter", "model": "meta-llama/llama-3.3-70b-instruct"},
+)
+
+
+def _provider_keys(provider: str) -> list[str]:
+    """Collect deduplicated API keys for a provider from single, numbered, and list env vars."""
+    prefix = "GROQ_API_KEY" if provider == "groq" else "OPENROUTER_API_KEY"
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for name in (prefix, *[f"{prefix}_{index}" for index in range(1, 21)]):
+        value = os.getenv(name, "").strip().strip("\"'")
+        if value and value not in seen:
+            seen.add(value)
+            ordered.append(value)
+    multi = os.getenv(f"{prefix}S", "").strip()
+    if multi:
+        for token in re.split(r"[,\n;]+", multi):
+            value = token.strip().strip("\"'")
+            if value and value not in seen:
+                seen.add(value)
+                ordered.append(value)
+    return ordered
 
 
 def _groq_keys() -> list[str]:
     """GROQ_API_KEY, then GROQ_API_KEY_1 .. GROQ_API_KEY_20, duplicates dropped."""
-    ordered: list[str] = []
-    seen: set[str] = set()
-    for name in ("GROQ_API_KEY", *[f"GROQ_API_KEY_{index}" for index in range(1, 21)]):
-        value = os.getenv(name, "").strip()
-        if value and value not in seen:
-            seen.add(value)
-            ordered.append(value)
-    return ordered
+    return _provider_keys("groq")
 
 
 def _json_request(url: str, payload: dict[str, Any], key: str) -> dict[str, Any]:
@@ -107,48 +128,141 @@ def _baseline_synthesis(payload: dict[str, Any], target: dict[str, str]) -> dict
     return {"prediction": prediction, "conclusion": "uncertain; evidence is insufficient for a definitive classification" if uncertain else f"evidence supports a {prediction} classification", "uncertainty": uncertain, "scope": "variant", "claims": []}
 
 
-def _model_synthesis(payload: dict[str, Any], target: dict[str, str], spec: dict[str, str]) -> tuple[dict[str, Any] | None, dict[str, Any]]:
-    global _groq_cursor
-    provider = spec["provider"]
-    if provider == "groq":
-        keys = _groq_keys()
-    else:
-        openrouter = os.getenv("OPENROUTER_API_KEY", "").strip()
-        keys = [openrouter] if openrouter else []
-    if not keys:
-        return None, {"provider": provider, "model": spec["model"], "mode": "api_failed", "error": "missing_api_key", "keys_tried": 0}
-    endpoint = "https://api.groq.com/openai/v1/chat/completions" if provider == "groq" else "https://openrouter.ai/api/v1/chat/completions"
+def _model_synthesis(payload: dict[str, Any], target: dict[str, str], spec: dict[str, Any]) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+    global _groq_cursor, _openrouter_cursor
+    primary_provider = spec["provider"]
+    primary_model = spec["model"]
+
+    candidates: list[dict[str, str]] = [{"provider": primary_provider, "model": primary_model}]
+    raw_fallbacks = spec.get("fallback_models")
+    if isinstance(raw_fallbacks, list):
+        for fb in raw_fallbacks:
+            if isinstance(fb, dict) and fb.get("provider") and fb.get("model"):
+                candidates.append({"provider": str(fb["provider"]), "model": str(fb["model"])})
+
     system = SYNTHESIS_SYSTEM_PROMPT
     user = json.dumps({"target": target, "payload": payload}, ensure_ascii=False)
-    request_payload = {"model": spec["model"], "temperature": 0, "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}], "response_format": {"type": "json_schema", "json_schema": {"name": "evidence_synthesis", "strict": True, "schema": SYNTHESIS_SCHEMA}}}
-    start = _groq_cursor % len(keys) if provider == "groq" else 0
-    attempts = len(keys) if provider == "groq" else 1
+
     last_error: Exception | None = None
-    tried = 0
-    for offset in range(attempts):
-        index = (start + offset) % len(keys)
-        tried = offset + 1
-        try:
-            data = _json_request(endpoint, request_payload, keys[index])
-            content = data["choices"][0]["message"]["content"]
-            if provider == "groq":
-                _groq_cursor = (index + 1) % len(keys)
-            meta = {"provider": provider, "model": spec["model"], "mode": "api", "keys_tried": tried}
-            if provider == "groq":
-                meta["key_slot"] = index + 1
-            return json.loads(content), meta
-        except HTTPError as exc:
-            last_error = exc
-            if provider == "groq" and exc.code == 429 and offset + 1 < attempts:
-                continue
+    total_tried = 0
+    any_key_found = False
+
+    for cand in candidates:
+        provider = cand["provider"]
+        model_id = cand["model"]
+        keys = _provider_keys(provider)
+        if not keys:
+            continue
+        any_key_found = True
+        endpoint = (
+            "https://api.groq.com/openai/v1/chat/completions"
+            if provider == "groq"
+            else "https://openrouter.ai/api/v1/chat/completions"
+        )
+        start = (_groq_cursor if provider == "groq" else _openrouter_cursor) % len(keys)
+        attempts = len(keys)
+        model_exhausted_rate_limit = False
+
+        for offset in range(attempts):
+            index = (start + offset) % len(keys)
+            total_tried += 1
+            request_payload = {
+                "model": model_id,
+                "temperature": 0,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                "response_format": {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "evidence_synthesis",
+                        "strict": True,
+                        "schema": SYNTHESIS_SCHEMA,
+                    },
+                },
+            }
+            try:
+                data = _json_request(endpoint, request_payload, keys[index])
+                content = data["choices"][0]["message"]["content"]
+                if provider == "groq":
+                    _groq_cursor = (index + 1) % len(keys)
+                else:
+                    _openrouter_cursor = (index + 1) % len(keys)
+                fallback_used = (model_id != primary_model) or (provider != primary_provider)
+                meta: dict[str, Any] = {
+                    "provider": provider,
+                    "model": model_id,
+                    "mode": "api",
+                    "keys_tried": total_tried,
+                    "key_slot": index + 1,
+                }
+                if fallback_used:
+                    meta["requested_model"] = primary_model
+                    meta["fallback_used"] = True
+                return json.loads(content), meta
+            except HTTPError as exc:
+                last_error = exc
+                if exc.code == 400:
+                    # Some fallback models require json_object instead of strict json_schema.
+                    fallback_payload = dict(request_payload, response_format={"type": "json_object"})
+                    try:
+                        data = _json_request(endpoint, fallback_payload, keys[index])
+                        content = data["choices"][0]["message"]["content"]
+                        if provider == "groq":
+                            _groq_cursor = (index + 1) % len(keys)
+                        else:
+                            _openrouter_cursor = (index + 1) % len(keys)
+                        fallback_used = (model_id != primary_model) or (provider != primary_provider)
+                        meta = {
+                            "provider": provider,
+                            "model": model_id,
+                            "mode": "api",
+                            "keys_tried": total_tried,
+                            "key_slot": index + 1,
+                        }
+                        if fallback_used:
+                            meta["requested_model"] = primary_model
+                            meta["fallback_used"] = True
+                        return json.loads(content), meta
+                    except (HTTPError, KeyError, TypeError, ValueError, URLError, TimeoutError) as inner_exc:
+                        last_error = inner_exc
+                        break
+                if exc.code in {429, 503} and offset + 1 < attempts:
+                    continue
+                if exc.code in {429, 503}:
+                    model_exhausted_rate_limit = True
+                break
+            except (KeyError, TypeError, ValueError, URLError, TimeoutError) as exc:
+                last_error = exc
+                break
+
+        if provider == "groq":
+            _groq_cursor = (start + 1) % len(keys)
+        else:
+            _openrouter_cursor = (start + 1) % len(keys)
+
+        # If this model hit rate limits / service errors or failed, continue to the next fallback model.
+        if not model_exhausted_rate_limit and len(candidates) == 1:
             break
-        except (KeyError, TypeError, ValueError, URLError, TimeoutError) as exc:
-            last_error = exc
-            break
-    if provider == "groq":
-        _groq_cursor = (start + 1) % len(keys)
+
+    if not any_key_found:
+        return None, {
+            "provider": primary_provider,
+            "model": primary_model,
+            "mode": "api_failed",
+            "error": "missing_api_key",
+            "keys_tried": 0,
+        }
+
     error = f"{type(last_error).__name__}: {last_error}" if last_error else "request_failed"
-    meta = {"provider": provider, "model": spec["model"], "mode": "api_failed", "error": error, "keys_tried": tried}
+    meta = {
+        "provider": primary_provider,
+        "model": primary_model,
+        "mode": "api_failed",
+        "error": error,
+        "keys_tried": total_tried,
+    }
     return None, meta
 
 
