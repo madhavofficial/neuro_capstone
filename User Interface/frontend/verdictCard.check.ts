@@ -191,4 +191,31 @@ assert.equal(withLitDefaultVus.verdictType, "VUS");
 assert.equal(withLitDefaultVus.verdictTitle, "VARIANT OF UNCERTAIN SIGNIFICANCE (VUS)");
 assert.match(withLitDefaultVus.verdictDescription, /Epistemic uncertainty is preserved/);
 
+// 8. Contradictory payload: structure-only statuses WITH retrieved papers must not claim no papers were retrieved
+for (const status of ["STRUCTURAL_DISCOVERY_VUS", "PREDICTED_PATHOGENIC_VUS"] as const) {
+  const contradictoryWithLit = resolveVerdictHero(
+    baseResponse({
+      status,
+      confidence_matrix: {
+        physics_engine: "HEURISTIC",
+        literature_rag: "NULL_RESULTS",
+        clinical_context: "HIGH",
+      },
+      context_data: {
+        clinvar: {
+          clinical_significance: "Pathogenic",
+          variation_id: "14010",
+        },
+      },
+      evidence: [{ pmid: "9197268", title: "Paper", text: "Text", score: 0.9 }],
+    }),
+  );
+  assert.equal(contradictoryWithLit.hypothesisLiteratureGap, false);
+  assert.equal(contradictoryWithLit.literatureStatusLabel, "Top Reranked");
+  assert.equal(contradictoryWithLit.verdictType, "PATHOGENIC");
+  assert.equal(contradictoryWithLit.verdictTitle, "PATHOGENIC / LIKELY PATHOGENIC");
+  assert.match(contradictoryWithLit.verdictDescription, /Multi-modal evidence confirms deleterious impact/);
+  assert.doesNotMatch(contradictoryWithLit.verdictDescription, /no literature evidence was retrieved/i);
+}
+
 console.log("verdict card checks passed");
