@@ -51,12 +51,19 @@ def load_gold(path: Path) -> list[dict[str, Any]]:
     if rows and not required.issubset(rows[0]):
         raise ValueError(f"gold set is missing columns: {sorted(required - set(rows[0]))}")
     has_label_source = bool(rows and "label_source" in rows[0])
+    seen_clinvar_ids: dict[str, str] = {}
     for row in rows:
         row["label"] = row["label"].strip().lower()
         if row["label"] not in VALID_GOLD_LABELS:
             raise ValueError(f"invalid gold label for {row.get('variant_id')}: {row['label']}")
-        if not row["clinvar_variation_id"] or row["clinvar_variation_id"] in {"NA", "UNRESOLVED"}:
+        cid = row.get("clinvar_variation_id", "")
+        if not cid or cid in {"NA", "UNRESOLVED"}:
             continue
+        if cid in seen_clinvar_ids:
+            raise ValueError(
+                f"duplicate clinvar_variation_id {cid} for {row.get('variant_id')} (already used by {seen_clinvar_ids[cid]})"
+            )
+        seen_clinvar_ids[cid] = str(row.get("variant_id", ""))
         if has_label_source and row["label"] in {"pathogenic", "benign"} and not str(row.get("label_source", "")).strip():
             raise ValueError(f"settled gold row {row.get('variant_id')} is missing label_source")
     resolved = [row for row in rows if row.get("clinvar_variation_id") not in {"", "NA", "UNRESOLVED"}]

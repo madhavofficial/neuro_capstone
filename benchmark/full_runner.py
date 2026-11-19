@@ -242,8 +242,19 @@ def _is_gpt_oss(row: dict[str, Any]) -> bool:
     return "gpt-oss" in f"{row.get('model', '')} {meta.get('model', '')}".lower()
 
 
+DUPLICATE_VARIANT_ALIASES = {
+    "ttr-a45t": "ttr-a25t",
+}
+
+
+def _is_duplicate_variant(row: dict[str, Any]) -> bool:
+    return bool(row.get("duplicate_of")) or str(row.get("variant_id", "")) in DUPLICATE_VARIANT_ALIASES
+
+
 def is_scored_gptoss_run(row: dict[str, Any]) -> bool:
     """True when every full-pipeline stage succeeded and GPT-OSS returned an API synthesis."""
+    if _is_duplicate_variant(row):
+        return False
     if row.get("completed") is not True or row.get("ablation") != "all_evidence":
         return False
     meta = row.get("model_meta") if isinstance(row.get("model_meta"), dict) else {}
@@ -257,6 +268,8 @@ def exclusion_reason(row: dict[str, Any]) -> str | None:
     """Why a recorded run is left out of the scored benchmark, if it is."""
     if is_scored_gptoss_run(row):
         return None
+    if _is_duplicate_variant(row):
+        return "duplicate_variant"
     if row.get("completed") is not True:
         return "pipeline_failed"
     if row.get("ablation") != "all_evidence":
@@ -277,7 +290,15 @@ def relabel_rows_from_gold(rows: list[dict[str, Any]], gold_path: Path) -> list[
     updated: list[dict[str, Any]] = []
     for row in rows:
         item = dict(row)
-        gold = by_variant.get(str(item.get("variant_id", "")))
+        variant_id = str(item.get("variant_id", ""))
+        canonical = DUPLICATE_VARIANT_ALIASES.get(variant_id)
+        if canonical and variant_id not in by_variant:
+            item["duplicate_of"] = canonical
+            item["clinical_agreement"] = None
+            updated.append(item)
+            continue
+        item.pop("duplicate_of", None)
+        gold = by_variant.get(variant_id)
         if gold is not None:
             item["gold_label"] = gold["label"]
             if gold.get("label_source"):
@@ -388,7 +409,7 @@ def write_markdown_report(rows: list[dict[str, Any]], path: Path) -> None:
         "",
         "## Settled literature-class agreement (reference only)",
         "",
-        "Settled labels come from published literature named in `data/benchmarks/gold_variants.csv`, not ClinVar class strings alone. Variants left unsettled by published reviews are excluded from agreement rather than marked wrong when the model chooses a class. Because only two settled benign/protective variants appear in this 36-variant set (`TTR T139M` protective and `TTR G26S` polymorphism), this table is a reference sanity check rather than a balanced clinical benchmark; blinded rescue-set AUROC is tracked separately.",
+        "Settled labels come from published literature named in `data/benchmarks/gold_variants.csv`, not ClinVar class strings alone. Variants left unsettled by published reviews are excluded from agreement rather than marked wrong when the model chooses a class. Because only two settled benign/protective variants appear in this 35-variant set (`TTR T139M` protective and `TTR G26S` polymorphism), this table is a reference sanity check rather than a balanced clinical benchmark; blinded rescue-set AUROC is tracked separately.",
         "",
         f"Overall settled agreement: {metrics.get('pathogenic_benign_agreement')} (unsettled excluded: {metrics.get('n_unsettled_excluded', 0)}).",
         "",

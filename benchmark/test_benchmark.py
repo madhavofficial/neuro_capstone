@@ -69,7 +69,8 @@ class BenchmarkTests(unittest.TestCase):
         gold_path = benchmark.DEFAULT_DIR / "gold_variants.csv"
         rows = benchmark.load_gold(gold_path)
         by_id = {row["variant_id"]: row for row in rows}
-        for vid in ("mapt-g272v", "mapt-n279k", "ttr-v20i", "ttr-a25t", "ttr-v30a", "ttr-a45t"):
+        self.assertNotIn("ttr-a45t", by_id)
+        for vid in ("mapt-g272v", "mapt-n279k", "ttr-v20i", "ttr-a25t", "ttr-v30a"):
             self.assertEqual(by_id[vid]["label"], "pathogenic", vid)
             self.assertTrue(by_id[vid]["label_source"].strip(), vid)
         for vid in ("ttr-t139m", "ttr-g26s"):
@@ -79,6 +80,18 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(len(unsettled), 9)
         for vid in ("snca-h50q", "snca-a53v", "snca-v15a"):
             self.assertIn(vid, unsettled)
+
+    def test_load_gold_rejects_duplicate_clinvar_variation_ids(self):
+        with tempfile.TemporaryDirectory() as directory:
+            csv_path = Path(directory) / "gold.csv"
+            csv_path.write_text(
+                "variant_id,gene,variant,label,label_source,clinvar_variation_id,review_status,condition,source_url,date_retrieved\n"
+                "ttr-a25t,TTR,A25T,pathogenic,Shimizu 2006,13437,retrieved,ATTR,https://example.org,2026-08-17\n"
+                "ttr-a45t,TTR,A45T,pathogenic,Shimizu 2006,13437,retrieved,ATTR,https://example.org,2026-08-17\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(ValueError):
+                benchmark.load_gold(csv_path)
 
     def test_load_gold_requires_label_source_on_settled_rows(self):
         with tempfile.TemporaryDirectory() as directory:
