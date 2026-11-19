@@ -155,6 +155,17 @@ class TestFetchStructureFallback(unittest.TestCase):
                 self.assertIsNone(result)
                 self.assertIn("no reviewed human entry", fetch_structure.get_last_structure_error())
 
+    def test_null_protein_description_still_resolves_primary_accession(self):
+        resp = _mock_response(
+            status_code=200,
+            json_data={"results": [{"primaryAccession": "P37840", "proteinDescription": None}]},
+        )
+        with patch.object(fetch_structure.requests, "get", return_value=resp):
+            accession, err, unreachable = fetch_structure.resolve_uniprot_id_with_error("SNCA")
+        self.assertEqual(accession, "P37840")
+        self.assertIsNone(err)
+        self.assertFalse(unreachable)
+
     def test_last_structure_error_is_thread_local(self):
         import threading
 

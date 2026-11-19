@@ -82,13 +82,10 @@ def resolve_uniprot_id_with_error(gene_symbol):
     results = data.get("results") if isinstance(data, dict) else None
     if isinstance(results, list) and results and isinstance(results[0], dict) and results[0].get("primaryAccession"):
         primary_accession = results[0]["primaryAccession"]
-        protein_name = (
-            results[0]
-            .get("proteinDescription", {})
-            .get("recommendedName", {})
-            .get("fullName", {})
-            .get("value", "unknown")
-        )
+        desc = results[0].get("proteinDescription")
+        rec = desc.get("recommendedName") if isinstance(desc, dict) else None
+        full = rec.get("fullName") if isinstance(rec, dict) else None
+        protein_name = full.get("value", "unknown") if isinstance(full, dict) else "unknown"
         print(f"      [OK] Found: {primary_accession} ({protein_name})")
         return primary_accession, None, False
 
