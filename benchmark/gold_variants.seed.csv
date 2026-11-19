@@ -26,7 +26,6 @@ ttr-a25t,TTR,A25T,pathogenic,"Shimizu et al. 2006 (PMID:16690499); Hagiwara et a
 ttr-g26s,TTR,G26S,benign,"Jacobson et al. 1995 (PMID:7896964); Gustavsson et al. 1995 (PMID:7474913) (mature Gly6Ser polymorphism)",UNRESOLVED,seed,benign polymorphism,,
 ttr-v30a,TTR,V30A,pathogenic,"Liu et al. 2011 (PMID:21397913); Mutations in Hereditary Amyloidosis (p.Val50Ala)",UNRESOLVED,seed,hereditary transthyretin amyloidosis,,
 ttr-t59a,TTR,T59A,unsettled,"No settled clinical classification",UNRESOLVED,seed,not specified,,
-ttr-a45t,TTR,A45T,pathogenic,"Shimizu et al. 2006 (PMID:16690499); Hagiwara et al. 2009 (PMID:19365015) (mature Ala25Thr)",UNRESOLVED,seed,hereditary transthyretin amyloidosis,,
 ttr-v48m,TTR,V48M,unsettled,"Rare TTR variant (mature Val28Met); unsettled clinical evidence across reviews",UNRESOLVED,seed,not specified,,
 ttr-v52g,TTR,V52G,unsettled,"No settled clinical classification",UNRESOLVED,seed,not specified,,
 mapt-p301l,MAPT,P301L,pathogenic,"Hutton et al. 1998 (PMID:9641683); Alzforum Pathogenic",UNRESOLVED,seed,frontotemporal dementia,,

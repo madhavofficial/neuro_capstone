@@ -1,18 +1,18 @@
 {
-  "n_runs": 20,
+  "n_runs": 19,
   "n_unsettled_excluded": 3,
   "completion_rate": 1.0,
   "pipeline_completion_rate": 1.0,
   "exact_variant_clinical_lookup_accuracy": 1.0,
-  "literature_relevance_top5": 0.7105,
-  "citation_validity": 0.6364,
-  "unsupported_claim_rate": 0.3636,
+  "literature_relevance_top5": 0.7297,
+  "citation_validity": 0.6533,
+  "unsupported_claim_rate": 0.3467,
   "json_schema_validity": 1.0,
-  "prediction_accuracy": 0.8824,
-  "pathogenic_benign_agreement": 0.8824,
-  "pathogenic_benign_macro_agreement": 0.7167,
+  "prediction_accuracy": 0.875,
+  "pathogenic_benign_agreement": 0.875,
+  "pathogenic_benign_macro_agreement": 0.7143,
   "vus_uncertainty_preservation": null,
-  "mean_runtime_seconds": 112.0786,
+  "mean_runtime_seconds": 113.2136,
   "external_api_failure_rate": 0.0,
   "compatibility_failure_rate": 0.0,
   "failure_by_stage": {
@@ -27,9 +27,9 @@
   },
   "prediction_by_class": {
     "pathogenic": {
-      "n": 15,
-      "correct": 14,
-      "agreement": 0.9333
+      "n": 14,
+      "correct": 13,
+      "agreement": 0.9286
     },
     "benign": {
       "n": 2,
@@ -39,20 +39,20 @@
   },
   "by_ablation": {
     "all_evidence": {
-      "n_runs": 20,
+      "n_runs": 19,
       "n_unsettled_excluded": 3,
       "completion_rate": 1.0,
       "pipeline_completion_rate": 1.0,
       "exact_variant_clinical_lookup_accuracy": 1.0,
-      "literature_relevance_top5": 0.7105,
-      "citation_validity": 0.6364,
-      "unsupported_claim_rate": 0.3636,
+      "literature_relevance_top5": 0.7297,
+      "citation_validity": 0.6533,
+      "unsupported_claim_rate": 0.3467,
       "json_schema_validity": 1.0,
-      "prediction_accuracy": 0.8824,
-      "pathogenic_benign_agreement": 0.8824,
-      "pathogenic_benign_macro_agreement": 0.7167,
+      "prediction_accuracy": 0.875,
+      "pathogenic_benign_agreement": 0.875,
+      "pathogenic_benign_macro_agreement": 0.7143,
       "vus_uncertainty_preservation": null,
-      "mean_runtime_seconds": 112.0786,
+      "mean_runtime_seconds": 113.2136,
       "external_api_failure_rate": 0.0,
       "compatibility_failure_rate": 0.0,
       "failure_by_stage": {
@@ -67,9 +67,9 @@
       },
       "prediction_by_class": {
         "pathogenic": {
-          "n": 15,
-          "correct": 14,
-          "agreement": 0.9333
+          "n": 14,
+          "correct": 13,
+          "agreement": 0.9286
         },
         "benign": {
           "n": 2,
@@ -80,6 +80,6 @@
     }
   },
   "n_recorded": 144,
-  "n_scored": 20,
-  "n_excluded": 124
+  "n_scored": 19,
+  "n_excluded": 125
 }

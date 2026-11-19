@@ -55,6 +55,10 @@ class FullRunnerTests(unittest.TestCase):
 
     def test_scoring_keeps_full_pipeline_gptoss_api_only(self):
         self.assertTrue(is_scored_gptoss_run(_scored_row()))
+        self.assertFalse(is_scored_gptoss_run(_scored_row(duplicate_of="ttr-a25t")))
+        self.assertEqual(runner.exclusion_reason(_scored_row(duplicate_of="ttr-a25t")), "duplicate_variant")
+        self.assertFalse(is_scored_gptoss_run(_scored_row(variant_id="ttr-a45t")))
+        self.assertEqual(runner.exclusion_reason(_scored_row(variant_id="ttr-a45t")), "duplicate_variant")
         self.assertFalse(is_scored_gptoss_run(_scored_row(model_meta={"provider": "groq", "model": "openai/gpt-oss-120b", "mode": "fallback_baseline"})))
         self.assertFalse(is_scored_gptoss_run(_scored_row(ablation="literature_only")))
         self.assertFalse(is_scored_gptoss_run(_scored_row(completed=False)))
