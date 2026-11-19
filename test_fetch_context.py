@@ -63,6 +63,21 @@ class TestLovdLookup(unittest.TestCase):
         self.assertEqual(mock_get.call_count, 3)
         self.assertEqual(len(logs.output), 3)
 
+    def test_read_timeout_across_all_terms_also_starts_one_probe_cooldown(self):
+        with patch.object(
+            fetch_context.requests,
+            "get",
+            side_effect=requests.exceptions.ReadTimeout("stalled host"),
+        ) as mock_get, self.assertLogs(fetch_context.logger, level="WARNING"):
+            first = fetch_context.get_lovd_variants("SNCA", "A53T")
+            self.assertIsNone(first)
+            self.assertEqual(mock_get.call_count, 3)
+
+            mock_get.reset_mock()
+            second = fetch_context.get_lovd_variants("TTR", "V50M")
+            self.assertIsNone(second)
+            self.assertEqual(mock_get.call_count, 1)
+
     def test_dead_host_uses_single_attempt_for_subsequent_variants(self):
         with patch.object(
             fetch_context.requests,

@@ -603,7 +603,7 @@ def get_lovd_variants(gene: str, variant_code: str):
 
     host_known_down = time.monotonic() < _lovd_host_down_until
     any_host_response = False
-    connection_failures = 0
+    timeout_or_connection_failures = 0
 
     for term in search_terms:
         # Try the gene-specific API if available
@@ -624,8 +624,7 @@ def get_lovd_variants(gene: str, variant_code: str):
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             logger.warning("LOVD query failed for %s %s (%s): %s", gene, variant_code, term, e)
             print(f"      [WARN] LOVD query failed for '{term}': {e}")
-            if isinstance(e, (requests.exceptions.ConnectTimeout, requests.exceptions.ConnectionError)):
-                connection_failures += 1
+            timeout_or_connection_failures += 1
             if host_known_down:
                 _lovd_host_down_until = time.monotonic() + LOVD_DOWN_COOLDOWN_SECONDS
                 print(
@@ -673,7 +672,7 @@ def get_lovd_variants(gene: str, variant_code: str):
             except json.JSONDecodeError:
                 continue
 
-    if not any_host_response and connection_failures == len(search_terms):
+    if not any_host_response and timeout_or_connection_failures == len(search_terms):
         _lovd_host_down_until = time.monotonic() + LOVD_DOWN_COOLDOWN_SECONDS
 
     print(f"      [INFO]  No LOVD records found for {gene} {variant_code}")
