@@ -231,7 +231,8 @@ def run_full(gold_path: Path, *, model_specs: list[dict[str, str]], ablations: t
                     clinical = payload.get("clinical_context", {}).get("clinvar", {}) if isinstance(payload.get("clinical_context"), dict) else {}
                     thermompnn = payload.get("thermompnn") if isinstance(payload.get("thermompnn"), dict) else {}
                     predicted = normalise_prediction(synthesis)
-                    row.update({"completed": True, "stage_status": stages, "model_meta": model_meta, "payload_path": str((run_dir / "payload.json").relative_to(OUT)), "synthesis_path": str(synthesis_path.relative_to(OUT)), "json_schema_valid": schema_ok, "claim_checks": claims, "exact_clinvar_match": clinical.get("variant_match") is True, "top5_evidence_count": len(payload.get("evidence", [])[:5]), "top5_variant_mentions": sum(target["gene"].lower() in str(item).lower() and target["variant"].lower() in str(item).lower() for item in payload.get("evidence", [])[:5]), "prediction": predicted, "clinical_agreement": None if target["label"] == "unsettled" else predicted == target["label"], "uncertainty_preserved": uncertainty, "scope_mistake": scope_mistake, "thermompnn_status": thermompnn.get("status"), "thermompnn_error": thermompnn.get("error"), "synthesis": synthesis})
+                    physics_complete = stages.get("physics") not in {"incomplete", "failed"}
+                    row.update({"completed": physics_complete, "stage_status": stages, "model_meta": model_meta, "payload_path": str((run_dir / "payload.json").relative_to(OUT)), "synthesis_path": str(synthesis_path.relative_to(OUT)), "json_schema_valid": schema_ok, "claim_checks": claims, "exact_clinvar_match": clinical.get("variant_match") is True, "top5_evidence_count": len(payload.get("evidence", [])[:5]), "top5_variant_mentions": sum(target["gene"].lower() in str(item).lower() and target["variant"].lower() in str(item).lower() for item in payload.get("evidence", [])[:5]), "prediction": predicted, "clinical_agreement": None if target["label"] == "unsettled" else predicted == target["label"], "uncertainty_preserved": uncertainty, "scope_mistake": scope_mistake, "thermompnn_status": thermompnn.get("status"), "thermompnn_error": thermompnn.get("error"), "synthesis": synthesis})
                 except Exception as exc:
                     error_type = type(exc).__name__
                     row.update({"stage_status": {"pipeline_entry": "failed"}, "error_type": error_type, "error": str(exc), "external_api_failure": error_type in {"HTTPError", "URLError", "TimeoutError", "ConnectionError"}, "compatibility_failure": error_type in {"ModuleNotFoundError", "TypeError", "ImportError"}})
@@ -279,11 +280,13 @@ def exclusion_reason(row: dict[str, Any]) -> str | None:
         return None
     if _is_duplicate_variant(row):
         return "duplicate_variant"
+    stages = row.get("stage_status") if isinstance(row.get("stage_status"), dict) else {}
+    if stages.get("physics") == "incomplete":
+        return "stage_not_successful"
     if row.get("completed") is not True:
         return "pipeline_failed"
     if row.get("ablation") != "all_evidence":
         return "partial_pipeline"
-    stages = row.get("stage_status") if isinstance(row.get("stage_status"), dict) else {}
     if not all(stages.get(stage) == "success" for stage in FULL_PIPELINE_STAGES):
         return "stage_not_successful"
     return "gptoss_not_successful"

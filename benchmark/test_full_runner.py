@@ -60,7 +60,8 @@ class FullRunnerTests(unittest.TestCase):
         self.assertFalse(is_scored_gptoss_run(_scored_row(variant_id="ttr-a45t")))
         self.assertEqual(runner.exclusion_reason(_scored_row(variant_id="ttr-a45t")), "duplicate_variant")
         incomplete_physics = _scored_row(
-            stage_status={**{stage: "success" for stage in FULL_PIPELINE_STAGES}, "physics": "incomplete"}
+            completed=False,
+            stage_status={**{stage: "success" for stage in FULL_PIPELINE_STAGES}, "physics": "incomplete"},
         )
         self.assertFalse(is_scored_gptoss_run(incomplete_physics))
         self.assertEqual(runner.exclusion_reason(incomplete_physics), "stage_not_successful")

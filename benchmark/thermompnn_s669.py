@@ -10,6 +10,7 @@ so this report gives both signs.
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import csv
 from dataclasses import dataclass
 import logging
@@ -59,7 +60,8 @@ def resolve_sequence_index(seq: str, resn_list: list[str], position: int, wildty
     return None
 
 
-def _enable_full_checkpoints() -> None:
+@contextmanager
+def _full_checkpoint_loading():
     original = torch.load
 
     def load(*args, **kwargs):
@@ -67,6 +69,10 @@ def _enable_full_checkpoints() -> None:
         return original(*args, **kwargs)
 
     torch.load = load
+    try:
+        yield
+    finally:
+        torch.load = original
 
 
 class _AttrDict(dict):
@@ -96,7 +102,6 @@ _MODEL_CACHE: dict[Path, Any] = {}
 
 def load_thermompnn(repo: Path):
     """Load the published ThermoMPNN weights on CPU using pure PyTorch."""
-    _enable_full_checkpoints()
     repo = repo.resolve()
     cached = _MODEL_CACHE.get(repo)
     if cached is not None:
@@ -128,15 +133,16 @@ def load_thermompnn(repo: Path):
     checkpoint_path = repo / "models" / "thermoMPNN_default.pt"
     if not checkpoint_path.is_file():
         raise FileNotFoundError(f"ThermoMPNN weights not found at {checkpoint_path}")
-    checkpoint = torch.load(str(checkpoint_path), map_location="cpu", weights_only=False)
-    raw_state = checkpoint.get("state_dict", checkpoint) if isinstance(checkpoint, dict) else checkpoint
-    state_dict = {
-        (key[len("model."):] if key.startswith("model.") else key): value
-        for key, value in raw_state.items()
-        if key.startswith("model.") or not any(k.startswith("model.") for k in raw_state)
-    }
-    model = TransferModel(config)
-    model.load_state_dict(state_dict, strict=True)
+    with _full_checkpoint_loading():
+        checkpoint = torch.load(str(checkpoint_path), map_location="cpu", weights_only=False)
+        raw_state = checkpoint.get("state_dict", checkpoint) if isinstance(checkpoint, dict) else checkpoint
+        state_dict = {
+            (key[len("model."):] if key.startswith("model.") else key): value
+            for key, value in raw_state.items()
+            if key.startswith("model.") or not any(k.startswith("model.") for k in raw_state)
+        }
+        model = TransferModel(config)
+        model.load_state_dict(state_dict, strict=True)
     model = model.eval()
     _MODEL_CACHE[repo] = model
     return model

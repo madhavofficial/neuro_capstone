@@ -80,10 +80,14 @@ class MonomerContextTests(unittest.TestCase):
         self.assertIn("residue_mismatch", res["error"])
 
     def test_real_pdb_scores_without_omegaconf(self):
+        import torch
+
         pdb = Path("data/benchmarks/s669_structures/1DIV.pdb")
         if not pdb.is_file():
             self.skipTest("1DIV.pdb not present")
+        original_load = torch.load
         res = score_monomer_ddg(pdb, "D23A", "A")
+        self.assertIs(torch.load, original_load)
         self.assertEqual(res["status"], "scored")
         self.assertIsInstance(res["monomer_ddg"], float)
         self.assertIsNone(res["error"])
