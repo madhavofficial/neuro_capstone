@@ -71,20 +71,24 @@ export function resolveVerdictHero(data: AnalyzeResponse): VerdictHeroModel {
     Boolean(customBadge && customBadge.toUpperCase().includes('PATHOGENIC')) ||
     hasClinvarPathogenic;
 
-  // Any call without retrieved papers (or an explicit structure-only status)
-  // must be labeled a hypothesis, even when ClinVar records a clinical class.
-  const structureOnlyHypothesis = [
-    'STRUCTURAL_DISCOVERY_VUS',
-    'PREDICTED_PATHOGENIC_VUS',
-  ].includes(statusStr);
+  // Any call without retrieved papers must be labeled a hypothesis,
+  // even when ClinVar records a clinical class. Guarding on
+  // !hasRetrievedLiterature prevents a contradictory payload with
+  // non-empty evidence from claiming no papers were retrieved.
+  const structureOnlyHypothesis =
+    !hasRetrievedLiterature &&
+    [
+      'STRUCTURAL_DISCOVERY_VUS',
+      'PREDICTED_PATHOGENIC_VUS',
+    ].includes(statusStr);
 
   const hypothesisLiteratureGap =
-    structureOnlyHypothesis ||
-    (!hasRetrievedLiterature && (
+    !hasRetrievedLiterature && (
+      structureOnlyHypothesis ||
       ['NULL_RESULTS', 'TIMEOUT_ERROR'].includes(ragStatus) ||
       hasPathogenicCall ||
       hasClinvarClassification
-    ));
+    );
 
   let verdictType: VerdictType = 'VUS';
   let verdictTitle = 'VARIANT OF UNCERTAIN SIGNIFICANCE (VUS)';
