@@ -127,6 +127,19 @@ class TestFetchStructureFallback(unittest.TestCase):
             self.assertIsNone(result)
             self.assertIn("no reviewed human entry", fetch_structure.get_last_structure_error())
 
+    def test_invalid_json_200_response_does_not_fall_back_to_local_pdb(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            saved = Path(tmpdir) / "SNCA.pdb"
+            saved.write_text("HEADER    STALE\nEND\n", encoding="utf-8")
+            bad_resp = _mock_response(status_code=200)
+            bad_resp.json.side_effect = ValueError("not json")
+            with patch.object(fetch_structure, "STRUCTURE_DIR", tmpdir), \
+                 patch.object(fetch_structure.requests, "get", return_value=bad_resp):
+                result = fetch_structure.get_structure("SNCA")
+
+            self.assertIsNone(result)
+            self.assertIn("invalid JSON", fetch_structure.get_last_structure_error())
+
     def test_last_structure_error_is_thread_local(self):
         import threading
 
