@@ -52,16 +52,58 @@ def _claimed_class(text: str) -> str:
     return ""
 
 
+def _clinvar_tier(text: str) -> str:
+    """Return granular ClinVar significance tier so Pathogenic != Likely pathogenic."""
+    lower = text.lower()
+    if any(
+        token in lower
+        for token in (
+            "conflicting",
+            "uncertain",
+            "vus",
+            "ambiguous",
+            "unknown",
+            "indeterminate",
+        )
+    ):
+        return "vus"
+    has_pathogenic_likely = bool(re.search(r"\bpathogenic\s*/\s*likely\s+pathogenic\b", lower))
+    has_benign_likely = bool(re.search(r"\bbenign\s*/\s*likely\s+benign\b", lower))
+    if has_pathogenic_likely:
+        return "pathogenic/likely_pathogenic"
+    if has_benign_likely:
+        return "benign/likely_benign"
+    if re.search(r"\blikely\s+pathogenic\b", lower) and not re.search(r"\b(?:not|non|unlikely)\s+likely\s+pathogenic\b", lower):
+        return "likely_pathogenic"
+    if re.search(r"\bpathogenic\b", lower) and not re.search(r"\b(?:not|non|unlikely)\s+pathogenic\b", lower):
+        return "pathogenic"
+    if re.search(r"\blikely\s+benign\b", lower) and not re.search(r"\b(?:not|non|unlikely)\s+likely\s+benign\b", lower):
+        return "likely_benign"
+    if re.search(r"\bbenign\b", lower) and not re.search(r"\b(?:not|non|unlikely)\s+benign\b", lower):
+        return "benign"
+    return ""
+
+
+def _clinvar_tiers_match(stated: str, expected: str) -> bool:
+    if stated == expected:
+        return True
+    if expected == "pathogenic/likely_pathogenic" and stated in {"pathogenic", "likely_pathogenic"}:
+        return True
+    if expected == "benign/likely_benign" and stated in {"benign", "likely_benign"}:
+        return True
+    return False
+
+
 def _verify_clinvar_claim(text: str, clinvar: dict[str, Any] | None) -> tuple[bool, str]:
     if not isinstance(clinvar, dict) or not clinvar:
         return False, "clinvar_missing_from_payload"
 
-    expected_class = _clinical_class(clinvar.get("clinical_significance"))
-    stated_class = _claimed_class(text)
-    if not expected_class or not stated_class:
+    expected_tier = _clinvar_tier(str(clinvar.get("clinical_significance") or ""))
+    stated_tier = _clinvar_tier(text)
+    if not expected_tier or not stated_tier:
         return False, "clinvar_class_missing"
-    if stated_class != expected_class:
-        return False, f"clinvar_class_mismatch:{stated_class}!={expected_class}"
+    if not _clinvar_tiers_match(stated_tier, expected_tier):
+        return False, f"clinvar_class_mismatch:{stated_tier}!={expected_tier}"
 
     expected_var_id = str(clinvar.get("variation_id") or "").strip()
     expected_acc = str(clinvar.get("accession") or "").strip()
@@ -247,18 +289,35 @@ def verify_claim(
     )
 
     # 1. Explicit PMID -> paper citation check (must be in payload["evidence"]).
+    #    If the sentence also makes an explicit ClinVar / AlphaMissense / dbSNP
+    #    claim, verify that clinical statement too so a real PMID cannot hide a
+    #    false database claim.
     if pmid is not None:
-        valid = pmid in supplied_pmids
+        paper_valid = pmid in supplied_pmids
+        lower = text.lower()
+        clinical_valid: bool | None = None
+        clinical_reason: str | None = None
+        if "clinvar" in lower or re.search(r"\bVCV0*\d+", text, flags=re.IGNORECASE):
+            clinical_valid, clinical_reason = _verify_clinvar_claim(text, clinical_context.get("clinvar"))
+        elif "alphamissense" in lower:
+            clinical_valid, clinical_reason = _verify_alphamissense_claim(text, clinical_context.get("alphamissense_sniper"))
+        elif "dbsnp" in lower or re.search(r"\brs\d+\b", text, flags=re.IGNORECASE):
+            clinical_valid, clinical_reason = _verify_dbsnp_claim(text, clinical_context.get("dbsnp"))
+
+        unsupported = (not paper_valid) or (clinical_valid is False)
+        reason = "paper_pmid_verified" if paper_valid else "pmid_not_in_evidence"
+        if clinical_valid is False and clinical_reason:
+            reason = f"{reason};{clinical_reason}"
         return {
             "pmid": pmid,
             "claim_category": "paper_citation",
-            "citation_valid": valid,
-            "clinical_field_valid": None,
+            "citation_valid": paper_valid,
+            "clinical_field_valid": clinical_valid,
             "gene_context": False,
             "variant_level_evidence": True,
-            "unsupported": not valid,
+            "unsupported": unsupported,
             "scope_mistake": scope_mistake,
-            "reason": "paper_pmid_verified" if valid else "pmid_not_in_evidence",
+            "reason": reason,
         }
 
     lower = text.lower()
