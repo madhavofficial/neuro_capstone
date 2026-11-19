@@ -94,12 +94,6 @@ overleaf-paper.png
 paper-source.txt
 paper.pdf
 
-# Local developer scratch scripts
-reasoning_engine.py
-
-# Local regression/test scratch files
-tests/
-
 # Logs
 *.log
 
@@ -107,7 +101,16 @@ tests/
 run_*.json
 *.snapshot
 
+# Diagram generators and exported writeups. The pipeline does not read these.
 draw_architecture.py
+draw_dependency_graph.py
+COMPILED_ARCHITECTURE_AND_STAGE_WALKTHROUGHS.*
+IMPLEMENTATION_GUIDE.md
+IMPLEMENTATION_SUMMARY.md
+Neuro_Capstone_Project_Overview.md
+compiled_walkthrough_style.css
+pdf_style.css
+data/benchmarks/archive_before_rerun/
 
 # Frontend dependencies and generated files
 User Interface/frontend/node_modules/
