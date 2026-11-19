@@ -159,15 +159,19 @@ class ClaimVerifierTests(unittest.TestCase):
         self.assertFalse(mixed_freq_missing_dbsnp["clinical_field_valid"])
         self.assertTrue(mixed_freq_missing_dbsnp["unsupported"])
 
-        # Mentioning gnomAD in a cited paper without stating a frequency or rsID stays a pure paper citation.
-        paper_mentions_gnomad = verify_claim(
-            {"text": "This SNCA A53T paper discusses gnomAD methodology.", "pmid": "41002401"},
-            payload_no_dbsnp,
-            TARGET,
-        )
-        self.assertTrue(paper_mentions_gnomad["citation_valid"])
-        self.assertIsNone(paper_mentions_gnomad["clinical_field_valid"])
-        self.assertFalse(paper_mentions_gnomad["unsupported"])
+        # Mentioning gnomAD or dbSNP in a cited paper without stating a frequency or rsID stays a pure paper citation.
+        for sentence in (
+            "This SNCA A53T paper discusses gnomAD methodology.",
+            "This SNCA A53T paper discusses dbSNP.",
+        ):
+            paper_mention = verify_claim(
+                {"text": sentence, "pmid": "41002401"},
+                payload_no_dbsnp,
+                TARGET,
+            )
+            self.assertTrue(paper_mention["citation_valid"])
+            self.assertIsNone(paper_mention["clinical_field_valid"])
+            self.assertFalse(paper_mention["unsupported"])
 
         am_tier_mismatch = verify_claim(
             {"text": "AlphaMissense assigns SNCA A53T a score of 0.7863 with verdict Likely pathogenic.", "pmid": None},
