@@ -67,7 +67,13 @@ def resolve_uniprot_id_with_error(gene_symbol):
             print(f"      [ERROR] {err}")
             return None, err, True
 
-        data = response.json()
+        try:
+            data = response.json()
+        except ValueError as e:
+            err = f"UniProt lookup returned invalid JSON for '{gene_symbol}': {e}"
+            print(f"      [ERROR] {err}")
+            return None, err, False
+
         if data.get("results"):
             primary_accession = data["results"][0]["primaryAccession"]
             protein_name = data["results"][0]["proteinDescription"]["recommendedName"]["fullName"]["value"]
