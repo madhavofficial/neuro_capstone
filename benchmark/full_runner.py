@@ -27,6 +27,15 @@ from benchmark.benchmark import ABLATIONS, ROOT, calculate_metrics, load_gold, n
 OUT = ROOT / "data" / "benchmarks"
 RUNS = OUT / "runs"
 
+SYNTHESIS_SYSTEM_PROMPT = (
+    "You are a cautious biomedical evidence synthesizer. Use only supplied evidence. "
+    "Set prediction to exactly one of pathogenic, benign, or vus; use vus for conflicting, insufficient, or uncertain evidence. "
+    "Preserve VUS uncertainty. Every factual claim must cite a supplied PMID or be explicitly marked as unsupported. "
+    "Do not use gene-level evidence as exact-variant evidence. "
+    "You may use the labeled site_description when choosing pathogenic, benign, or vus, and those values are not, by themselves, a folding effect or proof of either class, and they are not proof of pathogenicity; literature claims still need a supplied PMID. "
+    "Return only JSON matching the schema."
+)
+
 SYNTHESIS_SCHEMA = {
     "type": "object", "additionalProperties": False,
     "required": ["prediction", "conclusion", "uncertainty", "claims", "scope"],
@@ -88,7 +97,7 @@ def _model_synthesis(payload: dict[str, Any], target: dict[str, str], spec: dict
     if not key:
         return _baseline_synthesis(payload, target), {"provider": provider, "model": spec["model"], "mode": "deterministic_baseline", "error": "missing_api_key"}
     endpoint = "https://api.groq.com/openai/v1/chat/completions" if provider == "groq" else "https://openrouter.ai/api/v1/chat/completions"
-    system = "You are a cautious biomedical evidence synthesizer. Use only supplied evidence. Set prediction to exactly one of pathogenic, benign, or vus; use vus for conflicting, insufficient, or uncertain evidence. Preserve VUS uncertainty. Every factual claim must cite a supplied PMID or be explicitly marked as unsupported. Do not use gene-level evidence as exact-variant evidence. Return only JSON matching the schema."
+    system = SYNTHESIS_SYSTEM_PROMPT
     user = json.dumps({"target": target, "payload": payload}, ensure_ascii=False)
     request_payload = {"model": spec["model"], "temperature": 0, "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}], "response_format": {"type": "json_schema", "json_schema": {"name": "evidence_synthesis", "strict": True, "schema": SYNTHESIS_SCHEMA}}}
     try:

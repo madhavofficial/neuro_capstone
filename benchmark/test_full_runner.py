@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from benchmark.full_runner import write_html_report, write_markdown_report, write_model_comparison
+from benchmark.full_runner import SYNTHESIS_SYSTEM_PROMPT, write_html_report, write_markdown_report, write_model_comparison
 
 
 class FullRunnerTests(unittest.TestCase):
@@ -16,6 +16,14 @@ class FullRunnerTests(unittest.TestCase):
             self.assertIn("Ablation comparison", (root / "report.html").read_text())
             self.assertIn("benchmark report", (root / "report.md").read_text())
             self.assertIn("baseline", (root / "models.csv").read_text())
+
+    def test_system_prompt_may_use_labeled_site_description(self):
+        prompt = SYNTHESIS_SYSTEM_PROMPT
+        self.assertIn("may use the labeled site_description", prompt)
+        self.assertIn("choosing pathogenic, benign, or vus", prompt)
+        self.assertIn("not, by themselves, a folding effect", prompt)
+        self.assertIn("not proof of pathogenicity", prompt)
+        self.assertIn("literature claims still need a supplied PMID", prompt)
 
 
 if __name__ == "__main__":
