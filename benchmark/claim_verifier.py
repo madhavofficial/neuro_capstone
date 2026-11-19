@@ -304,7 +304,10 @@ def verify_claim(
         elif (
             "dbsnp" in lower
             or re.search(r"\brs\d+\b", text, flags=re.IGNORECASE)
-            or any(tok in lower for tok in ("allele frequency", "minor allele", "maf", "gnomad"))
+            or (
+                any(tok in lower for tok in ("allele frequency", "minor allele", "maf", "gnomad"))
+                and bool(_extract_claimed_frequencies(text))
+            )
         ):
             clinical_valid, clinical_reason = _verify_dbsnp_claim(text, clinical_context.get("dbsnp"))
 
