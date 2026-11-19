@@ -149,11 +149,11 @@ def _verify_alphamissense_claim(text: str, am: dict[str, Any] | None) -> tuple[b
     except (TypeError, ValueError):
         return False, "alphamissense_score_invalid"
 
-    expected_verdict = _clinical_class(raw_verdict)
-    stated_verdict = _claimed_class(text)
+    expected_verdict = _clinvar_tier(raw_verdict)
+    stated_verdict = _clinvar_tier(text)
     if not expected_verdict or not stated_verdict:
         return False, "alphamissense_verdict_missing"
-    if stated_verdict != expected_verdict:
+    if not _clinvar_tiers_match(stated_verdict, expected_verdict):
         return False, f"alphamissense_verdict_mismatch:{stated_verdict}!={expected_verdict}"
 
     # Extract decimal numbers (e.g. 0.7863, 0.794, 0.09) from claim text.
@@ -301,7 +301,14 @@ def verify_claim(
             clinical_valid, clinical_reason = _verify_clinvar_claim(text, clinical_context.get("clinvar"))
         elif "alphamissense" in lower:
             clinical_valid, clinical_reason = _verify_alphamissense_claim(text, clinical_context.get("alphamissense_sniper"))
-        elif "dbsnp" in lower or re.search(r"\brs\d+\b", text, flags=re.IGNORECASE):
+        elif (
+            "dbsnp" in lower
+            or re.search(r"\brs\d+\b", text, flags=re.IGNORECASE)
+            or (
+                clinical_context.get("dbsnp")
+                and any(tok in lower for tok in ("allele frequency", "minor allele", "maf", "gnomad"))
+            )
+        ):
             clinical_valid, clinical_reason = _verify_dbsnp_claim(text, clinical_context.get("dbsnp"))
 
         unsupported = (not paper_valid) or (clinical_valid is False)

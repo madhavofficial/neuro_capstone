@@ -139,6 +139,23 @@ class ClaimVerifierTests(unittest.TestCase):
         self.assertFalse(mixed["clinical_field_valid"])
         self.assertTrue(mixed["unsupported"])
 
+        mixed_freq = verify_claim(
+            {"text": "SNCA A53T has a gnomAD allele frequency of 0.42.", "pmid": "41002401"},
+            payload,
+            TARGET,
+        )
+        self.assertTrue(mixed_freq["citation_valid"])
+        self.assertFalse(mixed_freq["clinical_field_valid"])
+        self.assertTrue(mixed_freq["unsupported"])
+
+        am_tier_mismatch = verify_claim(
+            {"text": "AlphaMissense assigns SNCA A53T a score of 0.7863 with verdict Likely pathogenic.", "pmid": None},
+            payload,
+            TARGET,
+        )
+        self.assertFalse(am_tier_mismatch["clinical_field_valid"])
+        self.assertTrue(am_tier_mismatch["unsupported"])
+
     def test_unmatched_open_targets_claim_counts_as_unsupported(self):
         payload = _sample_payload()
         bad_gc = verify_claim(
