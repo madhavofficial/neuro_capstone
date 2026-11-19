@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import requests
 import json
 
@@ -7,6 +8,9 @@ import os
 import argparse
 import sys
 import re
+import time
+
+logger = logging.getLogger(__name__)
 
 # ==========================================
 # ️ CONFIGURATION
@@ -28,6 +32,9 @@ NCBI_EUTILS_BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
 CLINVAR_ESEARCH = NCBI_EUTILS_BASE + "esearch.fcgi"
 CLINVAR_ESUMMARY = NCBI_EUTILS_BASE + "esummary.fcgi"
 LOVD_SHARED_API = "https://databases.lovd.nl/shared/api/rest.php/variants"
+LOVD_TIMEOUT = 15
+LOVD_DOWN_COOLDOWN_SECONDS = 300.0
+_lovd_host_down_until: float = 0.0
 CLINGEN_ALLELE_REGISTRY = "https://reg.genome.network/allele"  # Proper endpoint from docs
 NCBI_VARIATION_API = "https://api.ncbi.nlm.nih.gov/variation/v0/"  # Variation Services API v0.1.10
 
@@ -556,6 +563,12 @@ def get_clinvar_direct(gene: str, variant_code: str, *, uniprot_id: str | None =
         return None
 
 
+def _reset_lovd_host_state() -> None:
+    """Reset cached LOVD host reachability state (primarily for tests)."""
+    global _lovd_host_down_until
+    _lovd_host_down_until = 0.0
+
+
 def get_lovd_variants(gene: str, variant_code: str):
     """Search LOVD (Leiden Open Variation Database) for variant information.
     
@@ -564,6 +577,8 @@ def get_lovd_variants(gene: str, variant_code: str):
     
     Returns normalized variant data or None if not found.
     """
+    global _lovd_host_down_until
+
     if not variant_code:
         return None
     
@@ -585,56 +600,84 @@ def get_lovd_variants(gene: str, variant_code: str):
         f"p.({AA_MAP.get(old_aa, old_aa)}{pos}{AA_MAP.get(new_aa, new_aa)})",
         f"{old_aa}{pos}{new_aa}",
     ]
-    
-    try:
-        # LOVD has a search interface that can be queried
-        # Try searching for the gene's variant page
-        for term in search_terms:
-            # Try the gene-specific API if available
-            gene_api_url = f"{lovd_base}/api/rest.php/variants/{gene}"
-            search_params = {
-                "search_VariantOnTranscript/Protein": term,
-                "format": "application/json",
-                "page_size": "10"
-            }
-            
-            resp = requests.get(gene_api_url, params=search_params, headers=HEADERS, timeout=15)
-            if resp.status_code == 200:
-                try:
-                    data = resp.json()
-                    # LOVD API typically returns list of variants
-                    if isinstance(data, list) and len(data) > 0:
-                        print(f"      [OK] LOVD: Found {len(data)} variant(s)")
+
+    host_known_down = time.monotonic() < _lovd_host_down_until
+    any_host_response = False
+    connection_failures = 0
+
+    for term in search_terms:
+        # Try the gene-specific API if available
+        gene_api_url = f"{lovd_base}/api/rest.php/variants/{gene}"
+        search_params = {
+            "search_VariantOnTranscript/Protein": term,
+            "format": "application/json",
+            "page_size": "10",
+        }
+
+        try:
+            resp = requests.get(
+                gene_api_url,
+                params=search_params,
+                headers=HEADERS,
+                timeout=LOVD_TIMEOUT,
+            )
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            logger.warning("LOVD query failed for %s %s (%s): %s", gene, variant_code, term, e)
+            print(f"      [WARN] LOVD query failed for '{term}': {e}")
+            if isinstance(e, (requests.exceptions.ConnectTimeout, requests.exceptions.ConnectionError)):
+                connection_failures += 1
+            if host_known_down:
+                _lovd_host_down_until = time.monotonic() + LOVD_DOWN_COOLDOWN_SECONDS
+                print(
+                    f"      [WARN] LOVD host is still unreachable; skipping remaining search terms for {gene} {variant_code}"
+                )
+                return None
+            continue
+        except requests.exceptions.RequestException as e:
+            logger.warning("LOVD request error for %s %s (%s): %s", gene, variant_code, term, e)
+            print(f"      [WARN] LOVD query error for '{term}': {e}")
+            continue
+
+        # Host responded — clear any cached down state.
+        any_host_response = True
+        host_known_down = False
+        _lovd_host_down_until = 0.0
+
+        if resp.status_code == 200:
+            try:
+                data = resp.json()
+                # LOVD API typically returns list of variants
+                if isinstance(data, list) and len(data) > 0:
+                    print(f"      [OK] LOVD: Found {len(data)} variant(s)")
+                    return {
+                        "source": "LOVD",
+                        "database_coverage": True,
+                        "search_term": term,
+                        "variants_found": len(data),
+                        "clinical_relevance": "Variant documented in LOVD",
+                        "first_variant": data[0] if data else None,
+                    }
+                # Sometimes returns dict with data key
+                elif isinstance(data, dict):
+                    if "data" in data and data["data"]:
+                        variants = data["data"]
+                        print(f"      [OK] LOVD: Found {len(variants)} variant(s)")
                         return {
                             "source": "LOVD",
                             "database_coverage": True,
                             "search_term": term,
-                            "variants_found": len(data),
+                            "variants_found": len(variants),
                             "clinical_relevance": "Variant documented in LOVD",
-                            "first_variant": data[0] if data else None
+                            "first_variant": variants[0] if variants else None,
                         }
-                    # Sometimes returns dict with data key
-                    elif isinstance(data, dict):
-                        if "data" in data and data["data"]:
-                            variants = data["data"]
-                            print(f"      [OK] LOVD: Found {len(variants)} variant(s)")
-                            return {
-                                "source": "LOVD",
-                                "database_coverage": True,
-                                "search_term": term,
-                                "variants_found": len(variants),
-                                "clinical_relevance": "Variant documented in LOVD",
-                                "first_variant": variants[0] if variants else None
-                            }
-                except json.JSONDecodeError:
-                    continue
-        
-        print(f"      [INFO]  No LOVD records found for {gene} {variant_code}")
-        return None
-        
-    except Exception as e:
-        print(f"      [ERROR] LOVD query error: {e}")
-        return None
+            except json.JSONDecodeError:
+                continue
+
+    if not any_host_response and connection_failures == len(search_terms):
+        _lovd_host_down_until = time.monotonic() + LOVD_DOWN_COOLDOWN_SECONDS
+
+    print(f"      [INFO]  No LOVD records found for {gene} {variant_code}")
+    return None
 
 
 def get_clingenreg_allele(gene: str, variant_code: str, *, genomic_mapping=None, refseq_ids=None):
