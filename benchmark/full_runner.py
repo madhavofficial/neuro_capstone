@@ -281,7 +281,7 @@ def exclusion_reason(row: dict[str, Any]) -> str | None:
     if _is_duplicate_variant(row):
         return "duplicate_variant"
     stages = row.get("stage_status") if isinstance(row.get("stage_status"), dict) else {}
-    if stages.get("physics") == "incomplete":
+    if stages.get("physics") in {"incomplete", "failed"}:
         return "stage_not_successful"
     if row.get("completed") is not True:
         return "pipeline_failed"
