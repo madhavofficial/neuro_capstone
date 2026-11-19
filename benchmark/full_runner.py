@@ -73,6 +73,21 @@ def _load_project_env() -> None:
             os.environ[name] = value
 
 
+_groq_cursor = 0
+
+
+def _groq_keys() -> list[str]:
+    """GROQ_API_KEY, then GROQ_API_KEY_1 .. GROQ_API_KEY_20, duplicates dropped."""
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for name in ("GROQ_API_KEY", *[f"GROQ_API_KEY_{index}" for index in range(1, 21)]):
+        value = os.getenv(name, "").strip()
+        if value and value not in seen:
+            seen.add(value)
+            ordered.append(value)
+    return ordered
+
+
 def _json_request(url: str, payload: dict[str, Any], key: str) -> dict[str, Any]:
     request = Request(url, data=json.dumps(payload).encode(), headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json", "User-Agent": "NeuroCapstoneBenchmark/1.0"})
     try:
@@ -92,20 +107,48 @@ def _baseline_synthesis(payload: dict[str, Any], target: dict[str, str]) -> dict
 
 
 def _model_synthesis(payload: dict[str, Any], target: dict[str, str], spec: dict[str, str]) -> tuple[dict[str, Any], dict[str, Any]]:
+    global _groq_cursor
     provider = spec["provider"]
-    key = os.getenv("GROQ_API_KEY" if provider == "groq" else "OPENROUTER_API_KEY")
-    if not key:
+    if provider == "groq":
+        keys = _groq_keys()
+    else:
+        openrouter = os.getenv("OPENROUTER_API_KEY", "").strip()
+        keys = [openrouter] if openrouter else []
+    if not keys:
         return _baseline_synthesis(payload, target), {"provider": provider, "model": spec["model"], "mode": "deterministic_baseline", "error": "missing_api_key"}
     endpoint = "https://api.groq.com/openai/v1/chat/completions" if provider == "groq" else "https://openrouter.ai/api/v1/chat/completions"
     system = SYNTHESIS_SYSTEM_PROMPT
     user = json.dumps({"target": target, "payload": payload}, ensure_ascii=False)
     request_payload = {"model": spec["model"], "temperature": 0, "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}], "response_format": {"type": "json_schema", "json_schema": {"name": "evidence_synthesis", "strict": True, "schema": SYNTHESIS_SCHEMA}}}
-    try:
-        data = _json_request(endpoint, request_payload, key)
-        content = data["choices"][0]["message"]["content"]
-        return json.loads(content), {"provider": provider, "model": spec["model"], "mode": "api"}
-    except (KeyError, TypeError, ValueError, HTTPError, URLError, TimeoutError) as exc:
-        return _baseline_synthesis(payload, target), {"provider": provider, "model": spec["model"], "mode": "fallback_baseline", "error": f"{type(exc).__name__}: {exc}"}
+    start = _groq_cursor % len(keys) if provider == "groq" else 0
+    attempts = len(keys) if provider == "groq" else 1
+    last_error: Exception | None = None
+    tried = 0
+    for offset in range(attempts):
+        index = (start + offset) % len(keys)
+        tried = offset + 1
+        try:
+            data = _json_request(endpoint, request_payload, keys[index])
+            content = data["choices"][0]["message"]["content"]
+            if provider == "groq":
+                _groq_cursor = (index + 1) % len(keys)
+            meta = {"provider": provider, "model": spec["model"], "mode": "api", "keys_tried": tried}
+            if provider == "groq":
+                meta["key_slot"] = index + 1
+            return json.loads(content), meta
+        except HTTPError as exc:
+            last_error = exc
+            if provider == "groq" and exc.code == 429 and offset + 1 < attempts:
+                continue
+            break
+        except (KeyError, TypeError, ValueError, URLError, TimeoutError) as exc:
+            last_error = exc
+            break
+    if provider == "groq":
+        _groq_cursor = (start + 1) % len(keys)
+    error = f"{type(last_error).__name__}: {last_error}" if last_error else "request_failed"
+    meta = {"provider": provider, "model": spec["model"], "mode": "fallback_baseline", "error": error, "keys_tried": tried}
+    return _baseline_synthesis(payload, target), meta
 
 
 def _check_synthesis(synthesis: dict[str, Any], payload: dict[str, Any], target: dict[str, str]) -> tuple[bool, list[dict[str, Any]], bool, bool]:
@@ -179,7 +222,7 @@ def run_full(gold_path: Path, *, model_specs: list[dict[str, str]], ablations: t
                     schema_ok, claims, uncertainty, scope_mistake = _check_synthesis(synthesis, payload, target)
                     clinical = payload.get("clinical_context", {}).get("clinvar", {}) if isinstance(payload.get("clinical_context"), dict) else {}
                     predicted = normalise_prediction(synthesis)
-                    row.update({"completed": True, "stage_status": stages, "model_meta": model_meta, "payload_path": str((run_dir / "payload.json").relative_to(OUT)), "synthesis_path": str(synthesis_path.relative_to(OUT)), "json_schema_valid": schema_ok, "claim_checks": claims, "exact_clinvar_match": clinical.get("variant_match") is True, "top5_evidence_count": len(payload.get("evidence", [])[:5]), "top5_variant_mentions": sum(target["gene"].lower() in str(item).lower() and target["variant"].lower() in str(item).lower() for item in payload.get("evidence", [])[:5]), "prediction": predicted, "clinical_agreement": predicted == target["label"], "uncertainty_preserved": uncertainty, "scope_mistake": scope_mistake, "synthesis": synthesis})
+                    row.update({"completed": True, "stage_status": stages, "model_meta": model_meta, "payload_path": str((run_dir / "payload.json").relative_to(OUT)), "synthesis_path": str(synthesis_path.relative_to(OUT)), "json_schema_valid": schema_ok, "claim_checks": claims, "exact_clinvar_match": clinical.get("variant_match") is True, "top5_evidence_count": len(payload.get("evidence", [])[:5]), "top5_variant_mentions": sum(target["gene"].lower() in str(item).lower() and target["variant"].lower() in str(item).lower() for item in payload.get("evidence", [])[:5]), "prediction": predicted, "clinical_agreement": None if target["label"] == "unsettled" else predicted == target["label"], "uncertainty_preserved": uncertainty, "scope_mistake": scope_mistake, "synthesis": synthesis})
                 except Exception as exc:
                     error_type = type(exc).__name__
                     row.update({"stage_status": {"pipeline_entry": "failed"}, "error_type": error_type, "error": str(exc), "external_api_failure": error_type in {"HTTPError", "URLError", "TimeoutError", "ConnectionError"}, "compatibility_failure": error_type in {"ModuleNotFoundError", "TypeError", "ImportError"}})
@@ -187,23 +230,102 @@ def run_full(gold_path: Path, *, model_specs: list[dict[str, str]], ablations: t
                 row["finished_at"] = _now()
                 rows.append(row)
     (OUT / "results.jsonl").write_text("".join(json.dumps(row, ensure_ascii=False) + "\n" for row in rows), encoding="utf-8")
-    (OUT / "metrics.json").write_text(json.dumps(calculate_metrics(rows), indent=2), encoding="utf-8")
+    write_metrics(rows, OUT / "metrics.json")
     return rows
 
 
+FULL_PIPELINE_STAGES = ("structure", "clinical", "physics", "literature_fetch", "literature_process", "retrieval", "payload")
+
+
+def _is_gpt_oss(row: dict[str, Any]) -> bool:
+    meta = row.get("model_meta") if isinstance(row.get("model_meta"), dict) else {}
+    return "gpt-oss" in f"{row.get('model', '')} {meta.get('model', '')}".lower()
+
+
+def is_scored_gptoss_run(row: dict[str, Any]) -> bool:
+    """True when every full-pipeline stage succeeded and GPT-OSS returned an API synthesis."""
+    if row.get("completed") is not True or row.get("ablation") != "all_evidence":
+        return False
+    meta = row.get("model_meta") if isinstance(row.get("model_meta"), dict) else {}
+    if not _is_gpt_oss(row) or meta.get("mode") != "api":
+        return False
+    stages = row.get("stage_status") if isinstance(row.get("stage_status"), dict) else {}
+    return all(stages.get(stage) == "success" for stage in FULL_PIPELINE_STAGES)
+
+
+def exclusion_reason(row: dict[str, Any]) -> str | None:
+    """Why a recorded run is left out of the scored benchmark, if it is."""
+    if is_scored_gptoss_run(row):
+        return None
+    if row.get("completed") is not True:
+        return "pipeline_failed"
+    if row.get("ablation") != "all_evidence":
+        return "partial_pipeline"
+    stages = row.get("stage_status") if isinstance(row.get("stage_status"), dict) else {}
+    if not all(stages.get(stage) == "success" for stage in FULL_PIPELINE_STAGES):
+        return "stage_not_successful"
+    return "gptoss_not_successful"
+
+
+def scored_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [row for row in rows if is_scored_gptoss_run(row)]
+
+
+def relabel_rows_from_gold(rows: list[dict[str, Any]], gold_path: Path) -> list[dict[str, Any]]:
+    """Sync recorded result rows with the curated literature labels in gold_variants.csv."""
+    by_variant = {row["variant_id"]: row for row in load_gold(gold_path)}
+    updated: list[dict[str, Any]] = []
+    for row in rows:
+        item = dict(row)
+        gold = by_variant.get(str(item.get("variant_id", "")))
+        if gold is not None:
+            item["gold_label"] = gold["label"]
+            if gold.get("label_source"):
+                item["label_source"] = gold["label_source"]
+            if item.get("completed") is True:
+                predicted = normalise_prediction(item.get("prediction", item.get("synthesis")))
+                item["clinical_agreement"] = None if gold["label"] == "unsettled" else (predicted == gold["label"])
+        updated.append(item)
+    return updated
+
+
 def write_html_report(rows: list[dict[str, Any]], path: Path) -> None:
-    metrics = calculate_metrics(rows)
+    scored = scored_rows(rows)
+    metrics = calculate_metrics(scored)
     def pct(value: Any) -> str:
         return "n/a" if value is None else f"{float(value) * 100:.1f}%"
-    cards = "".join(f"<div class='card'><div class='label'>{html.escape(key.replace('_',' '))}</div><div class='value'>{html.escape(pct(value) if isinstance(value,(float,int)) and 'runtime' not in key else str(value if value is not None else 'n/a'))}</div></div>" for key, value in metrics.items() if key not in {"by_ablation", "prediction_by_class", "failure_by_stage"} and not key.startswith("n_"))
-    failures = [r for r in rows if not r.get("completed")]
-    failure_rows = "".join(f"<tr><td>{html.escape(r.get('run_id',''))}</td><td>{html.escape(r.get('variant',''))}</td><td>{html.escape(r.get('ablation',''))}</td><td>{html.escape(r.get('error',''))}</td></tr>" for r in failures[:30]) or "<tr><td colspan='4'>No failures recorded</td></tr>"
+    summary_keys = (
+        "pipeline_completion_rate",
+        "exact_variant_clinical_lookup_accuracy",
+        "literature_relevance_top5",
+        "citation_validity",
+        "unsupported_claim_rate",
+        "json_schema_validity",
+        "mean_runtime_seconds",
+        "external_api_failure_rate",
+        "compatibility_failure_rate",
+    )
+    cards = "".join(
+        f"<div class='card'><div class='label'>{html.escape(key.replace('_',' '))}</div><div class='value'>{html.escape(pct(metrics.get(key)) if isinstance(metrics.get(key),(float,int)) and 'runtime' not in key else str(metrics.get(key) if metrics.get(key) is not None else 'n/a'))}</div></div>"
+        for key in summary_keys
+    )
+    reasons: dict[str, int] = {}
+    for row in rows:
+        reason = exclusion_reason(row)
+        if reason:
+            reasons[reason] = reasons.get(reason, 0) + 1
+    exclusion_rows = "".join(f"<tr><td>{html.escape(reason)}</td><td>{count}</td></tr>" for reason, count in sorted(reasons.items())) or "<tr><td colspan='2'>None</td></tr>"
     ablation_rows = "".join(f"<tr><td>{html.escape(a)}</td><td>{pct(v.get('completion_rate'))}</td><td>{pct(v.get('literature_relevance_top5'))}</td><td>{pct(v.get('citation_validity'))}</td><td>{pct(v.get('vus_uncertainty_preservation'))}</td></tr>" for a,v in metrics.get("by_ablation", {}).items())
-    document = f"<!doctype html><html><head><meta charset='utf-8'><title>Neuro-Capstone Benchmark</title><style>body{{font:15px system-ui;background:#f5f7fb;color:#172033;margin:32px}}h1{{color:#102a43}}.grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}}.card,section{{background:white;border-radius:12px;padding:18px;box-shadow:0 2px 10px #102a4318;margin-bottom:18px}}.label{{color:#627d98;text-transform:capitalize}}.value{{font-size:25px;font-weight:700;margin-top:8px}}table{{width:100%;border-collapse:collapse}}td,th{{padding:9px;border-bottom:1px solid #e6e8ec;text-align:left}}th{{color:#486581}}code{{white-space:pre-wrap}}</style></head><body><h1>Neuro-Capstone benchmark</h1><p>Evidence-grounded evaluation; physics is a heuristic, not a clinical diagnosis.</p><div class='grid'>{cards}</div><section><h2>Ablation comparison</h2><table><tr><th>Setting</th><th>Completion</th><th>Top-5 relevance</th><th>Citation validity</th><th>VUS uncertainty</th></tr>{ablation_rows}</table></section><section><h2>Failure examples</h2><table><tr><th>Run</th><th>Variant</th><th>Ablation</th><th>Error</th></tr>{failure_rows}</table></section></body></html>"
+    class_rows = "".join(
+        f"<tr><td>{html.escape(label)}</td><td>{values.get('n')}</td><td>{values.get('correct')}</td><td>{pct(values.get('agreement'))}</td></tr>"
+        for label, values in metrics.get("prediction_by_class", {}).items()
+    )
+    document = f"<!doctype html><html><head><meta charset='utf-8'><title>Neuro-Capstone Benchmark</title><style>body{{font:15px system-ui;background:#f5f7fb;color:#172033;margin:32px}}h1{{color:#102a43}}.grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}}.card,section{{background:white;border-radius:12px;padding:18px;box-shadow:0 2px 10px #102a4318;margin-bottom:18px}}.label{{color:#627d98;text-transform:capitalize}}.value{{font-size:25px;font-weight:700;margin-top:8px}}table{{width:100%;border-collapse:collapse}}td,th{{padding:9px;border-bottom:1px solid #e6e8ec;text-align:left}}th{{color:#486581}}code{{white-space:pre-wrap}}</style></head><body><h1>Neuro-Capstone benchmark</h1><p>Scored runs are full-pipeline cases only: every stage succeeded and GPT-OSS 120B returned an API synthesis. Physics is a heuristic, not a clinical diagnosis. Recorded {len(rows)}; scored {len(scored)}; unsettled variants excluded from agreement: {metrics.get('n_unsettled_excluded', 0)}.</p><div class='grid'>{cards}</div><section><h2>Ablation comparison</h2><table><tr><th>Setting</th><th>Completion</th><th>Top-5 relevance</th><th>Citation validity</th><th>VUS uncertainty</th></tr>{ablation_rows}</table></section><section><h2>Excluded runs</h2><table><tr><th>Reason</th><th>N</th></tr>{exclusion_rows}</table></section><section><h2>Settled literature-class agreement (reference only)</h2><p>Settled classes come from published literature named in gold_variants.csv. Unsettled variants ({metrics.get('n_unsettled_excluded', 0)}) are excluded rather than marked wrong. Because the settled benign/protective subset is tiny, this table is a reference check rather than a balanced clinical classifier benchmark.</p><table><tr><th>Gold class</th><th>N</th><th>Correct</th><th>Agreement</th></tr>{class_rows}</table></section></body></html>"
     path.write_text(document, encoding="utf-8")
 
 
 def write_model_comparison(rows: list[dict[str, Any]], path: Path) -> None:
+    rows = scored_rows(rows)
     fields = ["model", "n_runs", "completion_rate", "prediction_accuracy", "pathogenic_benign_agreement", "pathogenic_benign_macro_agreement", "citation_validity", "unsupported_claim_rate", "json_schema_validity", "vus_uncertainty_preservation", "scope_mistake_rate"]
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields)
@@ -214,23 +336,78 @@ def write_model_comparison(rows: list[dict[str, Any]], path: Path) -> None:
             writer.writerow({"model": model, "n_runs": len(subset), "completion_rate": metrics["completion_rate"], "prediction_accuracy": metrics["prediction_accuracy"], "pathogenic_benign_agreement": metrics["pathogenic_benign_agreement"], "pathogenic_benign_macro_agreement": metrics["pathogenic_benign_macro_agreement"], "citation_validity": metrics["citation_validity"], "unsupported_claim_rate": metrics["unsupported_claim_rate"], "json_schema_validity": metrics["json_schema_validity"], "vus_uncertainty_preservation": metrics["vus_uncertainty_preservation"], "scope_mistake_rate": round(sum(bool(row.get("scope_mistake")) for row in subset) / len(subset), 4) if subset else None})
 
 
+def write_metrics(rows: list[dict[str, Any]], path: Path) -> None:
+    metrics = calculate_metrics(scored_rows(rows))
+    metrics["n_recorded"] = len(rows)
+    metrics["n_scored"] = metrics["n_runs"]
+    metrics["n_excluded"] = len(rows) - metrics["n_runs"]
+    path.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
+
+
 def write_markdown_report(rows: list[dict[str, Any]], path: Path) -> None:
-    metrics = calculate_metrics(rows)
-    lines = ["# Neuro-Capstone benchmark report", "", "Generated from the full stage runner. Physics is a heuristic and is not treated as a clinical diagnosis.", "", "## Summary", "", "| Metric | Value |", "|---|---:|"]
-    for key in ("n_runs", "pipeline_completion_rate", "exact_variant_clinical_lookup_accuracy", "literature_relevance_top5", "citation_validity", "unsupported_claim_rate", "json_schema_validity", "prediction_accuracy", "pathogenic_benign_agreement", "pathogenic_benign_macro_agreement", "vus_uncertainty_preservation", "mean_runtime_seconds", "external_api_failure_rate", "compatibility_failure_rate"):
+    scored = scored_rows(rows)
+    metrics = calculate_metrics(scored)
+    reasons: dict[str, int] = {}
+    for row in rows:
+        reason = exclusion_reason(row)
+        if reason:
+            reasons[reason] = reasons.get(reason, 0) + 1
+    lines = [
+        "# Neuro-Capstone benchmark report",
+        "",
+        "Scored runs are limited to cases where the full pipeline succeeded and GPT-OSS 120B returned an API synthesis. That means the all_evidence setting, with structure, clinical context, physics, literature fetch, literature processing, retrieval, and payload each marked success, and model_meta.mode equal to api. Partial ablations, pipeline failures, and fallback baselines are excluded. Physics is a heuristic and is not treated as a clinical diagnosis.",
+        "",
+        f"Recorded runs: {len(rows)}. Scored runs: {len(scored)}. Unsettled variants excluded from agreement: {metrics.get('n_unsettled_excluded', 0)}.",
+        "",
+        "## Summary",
+        "",
+        "| Metric | Value |",
+        "|---|---:|",
+    ]
+    for key in (
+        "n_runs",
+        "pipeline_completion_rate",
+        "exact_variant_clinical_lookup_accuracy",
+        "literature_relevance_top5",
+        "citation_validity",
+        "unsupported_claim_rate",
+        "json_schema_validity",
+        "n_unsettled_excluded",
+        "mean_runtime_seconds",
+        "external_api_failure_rate",
+        "compatibility_failure_rate",
+    ):
         lines.append(f"| {key} | {metrics.get(key)} |")
-    lines.extend(["", "## Pathogenic/benign agreement by gold class", "", "| Gold class | N | Correct | Agreement |", "|---|---:|---:|---:|"])
-    for label, values in metrics.get("prediction_by_class", {}).items():
-        lines.append(f"| {label} | {values.get('n')} | {values.get('correct')} | {values.get('agreement')} |")
     lines.extend(["", "## Ablation comparison", "", "| Setting | Completion | Top-5 relevance | Citation validity | VUS uncertainty |", "|---|---:|---:|---:|---:|"])
     for ablation, values in metrics.get("by_ablation", {}).items():
         lines.append(f"| {ablation} | {values.get('completion_rate')} | {values.get('literature_relevance_top5')} | {values.get('citation_validity')} | {values.get('vus_uncertainty_preservation')} |")
-    failures = [row for row in rows if not row.get("completed")]
-    lines.extend(["", "## Example failures", "", "| Run | Variant | Ablation | Error |", "|---|---|---|---|"])
-    for row in failures[:20]:
-        error = str(row.get("error", "")).replace("|", "\\|")
-        lines.append(f"| {row.get('run_id')} | {row.get('variant')} | {row.get('ablation')} | {error} |")
+    lines.extend(["", "## Excluded runs", "", "| Reason | N |", "|---|---:|"])
+    for reason, count in sorted(reasons.items()):
+        lines.append(f"| {reason} | {count} |")
+    lines.extend([
+        "",
+        "## Settled literature-class agreement (reference only)",
+        "",
+        "Settled labels come from published literature named in `data/benchmarks/gold_variants.csv`, not ClinVar class strings alone. Variants left unsettled by published reviews are excluded from agreement rather than marked wrong when the model chooses a class. Because only two settled benign/protective variants appear in this 36-variant set (`TTR T139M` protective and `TTR G26S` polymorphism), this table is a reference sanity check rather than a balanced clinical benchmark; blinded rescue-set AUROC is tracked separately.",
+        "",
+        f"Overall settled agreement: {metrics.get('pathogenic_benign_agreement')} (unsettled excluded: {metrics.get('n_unsettled_excluded', 0)}).",
+        "",
+        "| Gold class | N | Correct | Agreement |",
+        "|---|---:|---:|---:|",
+    ])
+    for label, values in metrics.get("prediction_by_class", {}).items():
+        lines.append(f"| {label} | {values.get('n')} | {values.get('correct')} | {values.get('agreement')} |")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def publish_reports(rows: list[dict[str, Any]], html_path: Path | None = None) -> list[dict[str, Any]]:
+    """Write metrics and reports for full-pipeline GPT-OSS successes only."""
+    write_metrics(rows, OUT / "metrics.json")
+    write_html_report(rows, html_path or (OUT / "benchmark_report.html"))
+    write_model_comparison(rows, OUT / "model_comparison.csv")
+    write_markdown_report(rows, OUT / "benchmark_report.md")
+    write_markdown_report(rows, OUT / "gbenchmark_report.md")
+    return scored_rows(rows)
 
 
 def main() -> int:
@@ -252,11 +429,8 @@ def main() -> int:
     if os.getenv("BENCHMARK_OFFLINE", "").lower() in {"1", "true", "yes"} or not configured:
         configured = [{"name": "deterministic baseline"}]
     rows = run_full(args.gold, model_specs=configured, ablations=tuple(args.ablation or ABLATIONS))
-    write_html_report(rows, args.html)
-    write_model_comparison(rows, OUT / "model_comparison.csv")
-    write_markdown_report(rows, OUT / "benchmark_report.md")
-    write_markdown_report(rows, OUT / "gbenchmark_report.md")
-    print(f"wrote {len(rows)} runs, {args.html}, {OUT / 'benchmark_report.md'}, and {OUT / 'model_comparison.csv'}")
+    scored = publish_reports(rows, args.html)
+    print(f"recorded {len(rows)} runs, scored {len(scored)} full-pipeline GPT-OSS runs, {args.html}, {OUT / 'benchmark_report.md'}, and {OUT / 'model_comparison.csv'}")
     return 0
 
 

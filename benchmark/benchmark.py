@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DIR = ROOT / "data" / "benchmarks"
 ABLATIONS = ("clinical_only", "literature_only", "physics_only", "all_evidence")
 VALID_LABELS = {"pathogenic", "benign", "vus"}
+VALID_GOLD_LABELS = VALID_LABELS | {"unsettled"}
 
 
 def _now() -> str:
@@ -49,12 +50,15 @@ def load_gold(path: Path) -> list[dict[str, Any]]:
     }
     if rows and not required.issubset(rows[0]):
         raise ValueError(f"gold set is missing columns: {sorted(required - set(rows[0]))}")
+    has_label_source = bool(rows and "label_source" in rows[0])
     for row in rows:
         row["label"] = row["label"].strip().lower()
-        if row["label"] not in VALID_LABELS:
+        if row["label"] not in VALID_GOLD_LABELS:
             raise ValueError(f"invalid gold label for {row.get('variant_id')}: {row['label']}")
         if not row["clinvar_variation_id"] or row["clinvar_variation_id"] in {"NA", "UNRESOLVED"}:
             continue
+        if has_label_source and row["label"] in {"pathogenic", "benign"} and not str(row.get("label_source", "")).strip():
+            raise ValueError(f"settled gold row {row.get('variant_id')} is missing label_source")
     resolved = [row for row in rows if row.get("clinvar_variation_id") not in {"", "NA", "UNRESOLVED"}]
     unresolved = len(rows) - len(resolved)
     if unresolved:
@@ -133,6 +137,8 @@ def calculate_metrics(rows: list[dict[str, Any]], *, _nested: bool = False) -> d
     """Calculate metrics from result rows without assuming a particular LLM."""
     completed = [r for r in rows if r.get("completed") is True]
     non_vus = [r for r in completed if r.get("gold_label") in {"pathogenic", "benign"}]
+    unsettled = [r for r in completed if r.get("gold_label") == "unsettled"]
+    scored_for_accuracy = [r for r in completed if r.get("gold_label") != "unsettled"]
     vus = [r for r in completed if r.get("gold_label") == "vus"]
     top5_total = sum(r.get("top5_evidence_count", 0) for r in completed)
     top5_mentions = sum(r.get("top5_variant_mentions", 0) for r in completed)
@@ -144,7 +150,7 @@ def calculate_metrics(rows: list[dict[str, Any]], *, _nested: bool = False) -> d
         return round(n / d, 4) if d else None
     prediction_matches = {
         id(r): normalise_prediction(r.get("prediction", r.get("synthesis"))) == r.get("gold_label")
-        for r in completed
+        for r in scored_for_accuracy
     }
     class_rates = [
         sum(prediction_matches[id(r)] for r in non_vus if r.get("gold_label") == label) / sum(1 for r in non_vus if r.get("gold_label") == label)
@@ -153,6 +159,7 @@ def calculate_metrics(rows: list[dict[str, Any]], *, _nested: bool = False) -> d
     ]
     metrics = {
         "n_runs": len(rows),
+        "n_unsettled_excluded": len(unsettled),
         "completion_rate": rate(len(completed), len(rows)),
         "pipeline_completion_rate": rate(sum(r.get("stage_status", {}).get("payload") == "success" for r in rows), len(rows)),
         "exact_variant_clinical_lookup_accuracy": rate(sum(r.get("exact_clinvar_match") is True for r in completed), len(completed)),
@@ -160,7 +167,7 @@ def calculate_metrics(rows: list[dict[str, Any]], *, _nested: bool = False) -> d
         "citation_validity": rate(valid_claims, len(claims)),
         "unsupported_claim_rate": rate(unsupported, len(claims)),
         "json_schema_validity": rate(schema_valid, len(completed)),
-        "prediction_accuracy": rate(sum(prediction_matches[id(r)] for r in completed), len(completed)),
+        "prediction_accuracy": rate(sum(prediction_matches[id(r)] for r in scored_for_accuracy), len(scored_for_accuracy)),
         "pathogenic_benign_agreement": rate(sum(prediction_matches[id(r)] for r in non_vus), len(non_vus)),
         "pathogenic_benign_macro_agreement": round(sum(class_rates) / len(class_rates), 4) if class_rates else None,
         "vus_uncertainty_preservation": rate(sum(r.get("uncertainty_preserved") is True for r in vus), len(vus)),
@@ -226,7 +233,7 @@ def run_one(target: dict[str, Any], ablation: str, pipeline: Callable[..., dict[
             "top5_evidence_count": len(evidence[:5]),
             "top5_variant_mentions": sum(_variant_mentions(e, target["gene"], target["variant"]) for e in evidence[:5]),
             "prediction": normalise_prediction(synth),
-            "clinical_agreement": normalise_prediction(synth) == target["label"],
+            "clinical_agreement": None if target["label"] == "unsettled" else normalise_prediction(synth) == target["label"],
             "uncertainty_preserved": target["label"] != "vus" or bool(synth.get("uncertainty") is True or "uncertain" in str(synth).lower()),
             "claim_checks": checked_claims, "synthesis": synth,
         })

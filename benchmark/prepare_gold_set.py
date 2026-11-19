@@ -22,7 +22,7 @@ from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 SEED = ROOT / "benchmark" / "gold_variants.seed.csv"
-FIELDS = ["variant_id", "gene", "variant", "label", "clinvar_variation_id", "review_status", "condition", "source_url", "date_retrieved"]
+FIELDS = ["variant_id", "gene", "variant", "label", "label_source", "clinvar_variation_id", "review_status", "condition", "source_url", "date_retrieved"]
 AA3 = {"A":"Ala", "R":"Arg", "N":"Asn", "D":"Asp", "C":"Cys", "Q":"Gln", "E":"Glu", "G":"Gly", "H":"His", "I":"Ile", "L":"Leu", "K":"Lys", "M":"Met", "F":"Phe", "P":"Pro", "S":"Ser", "T":"Thr", "W":"Trp", "Y":"Tyr", "V":"Val"}
 
 

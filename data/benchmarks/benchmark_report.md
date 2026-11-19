@@ -1,45 +1,46 @@
 # Neuro-Capstone benchmark report
 
-Generated from the full stage runner. Physics is a heuristic and is not treated as a clinical diagnosis.
+Scored runs are limited to cases where the full pipeline succeeded and GPT-OSS 120B returned an API synthesis. That means the all_evidence setting, with structure, clinical context, physics, literature fetch, literature processing, retrieval, and payload each marked success, and model_meta.mode equal to api. Partial ablations, pipeline failures, and fallback baselines are excluded. Physics is a heuristic and is not treated as a clinical diagnosis.
+
+Recorded runs: 144. Scored runs: 20. Unsettled variants excluded from agreement: 3.
 
 ## Summary
 
 | Metric | Value |
 |---|---:|
-| n_runs | 144 |
-| pipeline_completion_rate | 0.9861 |
-| exact_variant_clinical_lookup_accuracy | 0.5 |
-| literature_relevance_top5 | 0.7203 |
-| citation_validity | None |
-| unsupported_claim_rate | None |
+| n_runs | 20 |
+| pipeline_completion_rate | 1.0 |
+| exact_variant_clinical_lookup_accuracy | 1.0 |
+| literature_relevance_top5 | 0.7105 |
+| citation_validity | 0.6364 |
+| unsupported_claim_rate | 0.3636 |
 | json_schema_validity | 1.0 |
-| prediction_accuracy | 0.331 |
-| pathogenic_benign_agreement | 0.2759 |
-| pathogenic_benign_macro_agreement | 0.2414 |
-| vus_uncertainty_preservation | 0.8462 |
-| mean_runtime_seconds | 37.4711 |
+| n_unsettled_excluded | 3 |
+| mean_runtime_seconds | 112.0786 |
 | external_api_failure_rate | 0.0 |
 | compatibility_failure_rate | 0.0 |
-
-## Pathogenic/benign agreement by gold class
-
-| Gold class | N | Correct | Agreement |
-|---|---:|---:|---:|
-| pathogenic | 68 | 30 | 0.4412 |
-| benign | 48 | 2 | 0.0417 |
 
 ## Ablation comparison
 
 | Setting | Completion | Top-5 relevance | Citation validity | VUS uncertainty |
 |---|---:|---:|---:|---:|
-| clinical_only | 1.0 | None | None | 1.0 |
-| literature_only | 0.9722 | 0.7203 | None | 1.0 |
-| physics_only | 1.0 | None | None | 1.0 |
-| all_evidence | 0.9722 | 0.7203 | None | 0.3333 |
+| all_evidence | 1.0 | 0.7105 | 0.6364 | None |
 
-## Example failures
+## Excluded runs
 
-| Run | Variant | Ablation | Error |
-|---|---|---|---|
-| ec33da36c901ce10 | V48M | literature_only | Chunked corpus for TTR V48M contains 0 chunks. The literature fetch likely failed (e.g. Europe PMC timeout). Re-run pipeline after network connectivity is restored to populate the corpus. |
-| 061b846ec426663e | V48M | all_evidence | Chunked corpus for TTR V48M contains 0 chunks. The literature fetch likely failed (e.g. Europe PMC timeout). Re-run pipeline after network connectivity is restored to populate the corpus. |
+| Reason | N |
+|---|---:|
+| gptoss_not_successful | 13 |
+| partial_pipeline | 104 |
+| pipeline_failed | 7 |
+
+## Settled literature-class agreement (reference only)
+
+Settled labels come from published literature named in `data/benchmarks/gold_variants.csv`, not ClinVar class strings alone. Variants left unsettled by published reviews are excluded from agreement rather than marked wrong when the model chooses a class. Because only two settled benign/protective variants appear in this 36-variant set (`TTR T139M` protective and `TTR G26S` polymorphism), this table is a reference sanity check rather than a balanced clinical benchmark; blinded rescue-set AUROC is tracked separately.
+
+Overall settled agreement: 0.8824 (unsettled excluded: 3).
+
+| Gold class | N | Correct | Agreement |
+|---|---:|---:|---:|
+| pathogenic | 15 | 14 | 0.9333 |
+| benign | 2 | 1 | 0.5 |
