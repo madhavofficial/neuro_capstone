@@ -62,32 +62,39 @@ def resolve_uniprot_id_with_error(gene_symbol):
 
     try:
         response = requests.get(UNIPROT_SEARCH_URL, params=params, headers=HEADERS, timeout=15)
-        if response.status_code != 200:
-            err = f"UniProt lookup failed for '{gene_symbol}' (HTTP {response.status_code})"
-            print(f"      [ERROR] {err}")
-            return None, err, True
-
-        try:
-            data = response.json()
-        except ValueError as e:
-            err = f"UniProt lookup returned invalid JSON for '{gene_symbol}': {e}"
-            print(f"      [ERROR] {err}")
-            return None, err, False
-
-        if data.get("results"):
-            primary_accession = data["results"][0]["primaryAccession"]
-            protein_name = data["results"][0]["proteinDescription"]["recommendedName"]["fullName"]["value"]
-            print(f"      [OK] Found: {primary_accession} ({protein_name})")
-            return primary_accession, None, False
-
-        err = f"UniProt lookup returned no reviewed human entry for '{gene_symbol}'"
-        print(f"      [ERROR] {err}")
-        return None, err, False
-
     except Exception as e:
         err = f"UniProt lookup failed for '{gene_symbol}': {type(e).__name__}: {e}"
         print(f"      [ERROR] {err}")
         return None, err, True
+
+    if response.status_code != 200:
+        err = f"UniProt lookup failed for '{gene_symbol}' (HTTP {response.status_code})"
+        print(f"      [ERROR] {err}")
+        return None, err, True
+
+    try:
+        data = response.json()
+    except ValueError as e:
+        err = f"UniProt lookup returned invalid JSON for '{gene_symbol}': {e}"
+        print(f"      [ERROR] {err}")
+        return None, err, False
+
+    results = data.get("results") if isinstance(data, dict) else None
+    if isinstance(results, list) and results and isinstance(results[0], dict) and results[0].get("primaryAccession"):
+        primary_accession = results[0]["primaryAccession"]
+        protein_name = (
+            results[0]
+            .get("proteinDescription", {})
+            .get("recommendedName", {})
+            .get("fullName", {})
+            .get("value", "unknown")
+        )
+        print(f"      [OK] Found: {primary_accession} ({protein_name})")
+        return primary_accession, None, False
+
+    err = f"UniProt lookup returned no reviewed human entry for '{gene_symbol}'"
+    print(f"      [ERROR] {err}")
+    return None, err, False
 
 
 def resolve_uniprot_id(gene_symbol):
