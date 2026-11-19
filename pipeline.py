@@ -337,7 +337,7 @@ def run_pipeline(
 
     if run_structure:
         try:
-            from fetch_structure import get_structure
+            from fetch_structure import get_last_structure_error, get_structure
         except ModuleNotFoundError as e:
             raise RuntimeError(
                 "Structure step import failed. This usually means you're running the pipeline with a Python "
@@ -356,7 +356,9 @@ def run_pipeline(
             variant_tag=None,
         )
         if not pdb_path:
-            raise RuntimeError(f"Structure step failed for {gene}{' ' + variant if variant else ''}")
+            reason = get_last_structure_error()
+            detail = f": {reason}" if reason else ""
+            raise RuntimeError(f"Structure step failed for {gene}{' ' + variant if variant else ''}{detail}")
 
     if run_context:
         try:
