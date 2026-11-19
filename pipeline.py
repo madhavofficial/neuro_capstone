@@ -135,7 +135,7 @@ def fetch_papers_by_pmids(
     pmids: Iterable[str],
     *,
     seen: Optional[set[str]] = None,
-    max_papers: int = 50,
+    max_papers: Optional[int] = None,
     batch_size: int = 25,
 ) -> list[dict]:
     """Fetch paper titles and abstracts for explicit PMIDs from Europe PMC.
@@ -150,7 +150,9 @@ def fetch_papers_by_pmids(
         str(pmid).strip()
         for pmid in pmids
         if str(pmid).strip() and str(pmid).strip() not in already_seen
-    ][:max_papers]
+    ]
+    if max_papers is not None:
+        pending = pending[:max_papers]
     if not pending:
         return []
 
@@ -408,7 +410,7 @@ def process_literature_json(gene: str, variant: str, *, literature_dir: str = "d
         chunks = _chunk_by_tokens_offsets(abstract, tokenizer) if tokenizer else _chunk_by_words(abstract)
         for i, chunk in enumerate(chunks):
             token_count = len(tokenizer.encode(chunk, add_special_tokens=False)) if tokenizer else len(chunk.split())
-            if token_count < 40:
+            if token_count < 40 and len(chunks) > 1:
                 continue
             chunked_data.append(
                 {
