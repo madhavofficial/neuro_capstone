@@ -160,9 +160,18 @@ def calculate_metrics(rows: list[dict[str, Any]], *, _nested: bool = False) -> d
             and str(c.get("pmid")).strip().lower() not in {"", "null", "none", "n/a"}
         )
     ]
-    clinical_claims = [c for c in claims if c.get("claim_category") == "clinical_database"]
+    clinical_claims = [
+        c for c in claims
+        if c.get("claim_category") == "clinical_database"
+        or (c.get("claim_category") == "paper_citation" and c.get("clinical_field_valid") is not None)
+    ]
     gene_context_claims = [c for c in claims if c.get("claim_category") == "gene_context"]
-    variant_claims = [c for c in claims if c.get("claim_category") != "gene_context"]
+    # Verified gene-context lines stay excluded from exact-variant unsupported rate,
+    # while unmatched/fabricated gene-context claims still count as unsupported.
+    variant_claims = [
+        c for c in claims
+        if c.get("claim_category") != "gene_context" or c.get("unsupported") is True
+    ]
 
     valid_paper_claims = sum(c.get("citation_valid") is True for c in paper_claims)
     invented_pmids = sum(c.get("citation_valid") is not True for c in paper_claims)

@@ -118,6 +118,40 @@ class ClaimVerifierTests(unittest.TestCase):
         self.assertFalse(wrong_id["clinical_field_valid"])
         self.assertTrue(wrong_id["unsupported"])
 
+        # "Likely pathogenic" must not silently match a "Pathogenic" ClinVar record.
+        tier_mismatch = verify_claim(
+            {"text": "ClinVar lists SNCA A53T (variation ID 14007) as Likely pathogenic.", "pmid": None},
+            payload,
+            TARGET,
+        )
+        self.assertFalse(tier_mismatch["clinical_field_valid"])
+        self.assertTrue(tier_mismatch["unsupported"])
+
+    def test_real_pmid_cannot_hide_false_clinvar_claim(self):
+        payload = _sample_payload()
+        mixed = verify_claim(
+            {"text": "ClinVar lists SNCA A53T (variation ID 14007) as Benign.", "pmid": "41002401"},
+            payload,
+            TARGET,
+        )
+        self.assertEqual(mixed["claim_category"], "paper_citation")
+        self.assertTrue(mixed["citation_valid"])
+        self.assertFalse(mixed["clinical_field_valid"])
+        self.assertTrue(mixed["unsupported"])
+
+    def test_unmatched_open_targets_claim_counts_as_unsupported(self):
+        payload = _sample_payload()
+        bad_gc = verify_claim(
+            {"text": "Open Targets associates SNCA with Cystic fibrosis.", "pmid": None, "claim_type": "gene_context"},
+            payload,
+            TARGET,
+        )
+        self.assertEqual(bad_gc["claim_category"], "gene_context")
+        self.assertFalse(bad_gc["gene_context_valid"])
+        self.assertTrue(bad_gc["unsupported"])
+        metrics = calculate_metrics([{"completed": True, "gold_label": "pathogenic", "prediction": "pathogenic", "claim_checks": [bad_gc], "json_schema_valid": True, "runtime_seconds": 1.0}])
+        self.assertEqual(metrics["unsupported_claim_rate"], 1.0)
+
     def test_alphamissense_claim_requires_matching_score_and_verdict(self):
         payload = _sample_payload()
         ok = verify_claim(
