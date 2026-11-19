@@ -30,6 +30,7 @@ RUNS = OUT / "runs"
 SYNTHESIS_SYSTEM_PROMPT = (
     "You are a cautious biomedical evidence synthesizer. Use only supplied evidence. "
     "Set prediction to exactly one of pathogenic, benign, or vus; use vus for conflicting, insufficient, or uncertain evidence. "
+    "When ClinVar and a retrieved paper disagree, return vus rather than letting literature silently replace the clinical record. "
     "Preserve VUS uncertainty. Every factual claim must cite a supplied PMID or be explicitly marked as unsupported. "
     "Do not use gene-level evidence as exact-variant evidence. "
     "You may use the labeled site_description when choosing pathogenic, benign, or vus, and those values are not, by themselves, a folding effect or proof of either class, and they are not proof of pathogenicity; literature claims still need a supplied PMID. "
@@ -106,7 +107,7 @@ def _baseline_synthesis(payload: dict[str, Any], target: dict[str, str]) -> dict
     return {"prediction": prediction, "conclusion": "uncertain; evidence is insufficient for a definitive classification" if uncertain else f"evidence supports a {prediction} classification", "uncertainty": uncertain, "scope": "variant", "claims": []}
 
 
-def _model_synthesis(payload: dict[str, Any], target: dict[str, str], spec: dict[str, str]) -> tuple[dict[str, Any], dict[str, Any]]:
+def _model_synthesis(payload: dict[str, Any], target: dict[str, str], spec: dict[str, str]) -> tuple[dict[str, Any] | None, dict[str, Any]]:
     global _groq_cursor
     provider = spec["provider"]
     if provider == "groq":
@@ -115,7 +116,7 @@ def _model_synthesis(payload: dict[str, Any], target: dict[str, str], spec: dict
         openrouter = os.getenv("OPENROUTER_API_KEY", "").strip()
         keys = [openrouter] if openrouter else []
     if not keys:
-        return _baseline_synthesis(payload, target), {"provider": provider, "model": spec["model"], "mode": "deterministic_baseline", "error": "missing_api_key"}
+        return None, {"provider": provider, "model": spec["model"], "mode": "api_failed", "error": "missing_api_key", "keys_tried": 0}
     endpoint = "https://api.groq.com/openai/v1/chat/completions" if provider == "groq" else "https://openrouter.ai/api/v1/chat/completions"
     system = SYNTHESIS_SYSTEM_PROMPT
     user = json.dumps({"target": target, "payload": payload}, ensure_ascii=False)
@@ -147,8 +148,8 @@ def _model_synthesis(payload: dict[str, Any], target: dict[str, str], spec: dict
     if provider == "groq":
         _groq_cursor = (start + 1) % len(keys)
     error = f"{type(last_error).__name__}: {last_error}" if last_error else "request_failed"
-    meta = {"provider": provider, "model": spec["model"], "mode": "fallback_baseline", "error": error, "keys_tried": tried}
-    return _baseline_synthesis(payload, target), meta
+    meta = {"provider": provider, "model": spec["model"], "mode": "api_failed", "error": error, "keys_tried": tried}
+    return None, meta
 
 
 def _check_synthesis(synthesis: dict[str, Any], payload: dict[str, Any], target: dict[str, str]) -> tuple[bool, list[dict[str, Any]], bool, bool]:
@@ -225,14 +226,39 @@ def run_full(gold_path: Path, *, model_specs: list[dict[str, str]], ablations: t
                     payload, stages = stage_cache[cache_key]
                     (run_dir / "payload.json").write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
                     synthesis, model_meta = _model_synthesis(payload, target, spec) if spec.get("provider") else (_baseline_synthesis(payload, target), {"mode": "deterministic_baseline"})
-                    synthesis_path = run_dir / "synthesis.json"
-                    synthesis_path.write_text(json.dumps(synthesis, indent=2), encoding="utf-8")
-                    schema_ok, claims, uncertainty, scope_mistake = _check_synthesis(synthesis, payload, target)
                     clinical = payload.get("clinical_context", {}).get("clinvar", {}) if isinstance(payload.get("clinical_context"), dict) else {}
                     thermompnn = payload.get("thermompnn") if isinstance(payload.get("thermompnn"), dict) else {}
-                    predicted = normalise_prediction(synthesis)
-                    physics_complete = stages.get("physics") not in {"incomplete", "failed"}
-                    row.update({"completed": physics_complete, "stage_status": stages, "model_meta": model_meta, "payload_path": str((run_dir / "payload.json").relative_to(OUT)), "synthesis_path": str(synthesis_path.relative_to(OUT)), "json_schema_valid": schema_ok, "claim_checks": claims, "exact_clinvar_match": clinical.get("variant_match") is True, "top5_evidence_count": len(payload.get("evidence", [])[:5]), "top5_variant_mentions": sum(target["gene"].lower() in str(item).lower() and target["variant"].lower() in str(item).lower() for item in payload.get("evidence", [])[:5]), "prediction": predicted, "clinical_agreement": None if target["label"] == "unsettled" else predicted == target["label"], "uncertainty_preserved": uncertainty, "scope_mistake": scope_mistake, "thermompnn_status": thermompnn.get("status"), "thermompnn_error": thermompnn.get("error"), "synthesis": synthesis})
+                    synthesis_path = run_dir / "synthesis.json"
+                    if synthesis is None:
+                        failed_synthesis = {"prediction": None, "conclusion": None, "uncertainty": None, "scope": None, "claims": [], "error": model_meta.get("error")}
+                        synthesis_path.write_text(json.dumps(failed_synthesis, indent=2), encoding="utf-8")
+                        row.update({
+                            "completed": False,
+                            "stage_status": stages,
+                            "model_meta": model_meta,
+                            "payload_path": str((run_dir / "payload.json").relative_to(OUT)),
+                            "synthesis_path": str(synthesis_path.relative_to(OUT)),
+                            "json_schema_valid": False,
+                            "claim_checks": [],
+                            "exact_clinvar_match": clinical.get("variant_match") is True,
+                            "top5_evidence_count": len(payload.get("evidence", [])[:5]),
+                            "top5_variant_mentions": sum(target["gene"].lower() in str(item).lower() and target["variant"].lower() in str(item).lower() for item in payload.get("evidence", [])[:5]),
+                            "prediction": None,
+                            "clinical_agreement": None,
+                            "uncertainty_preserved": None,
+                            "scope_mistake": False,
+                            "external_api_failure": True,
+                            "error": model_meta.get("error"),
+                            "thermompnn_status": thermompnn.get("status"),
+                            "thermompnn_error": thermompnn.get("error"),
+                            "synthesis": failed_synthesis,
+                        })
+                    else:
+                        synthesis_path.write_text(json.dumps(synthesis, indent=2), encoding="utf-8")
+                        schema_ok, claims, uncertainty, scope_mistake = _check_synthesis(synthesis, payload, target)
+                        predicted = normalise_prediction(synthesis)
+                        physics_complete = stages.get("physics") not in {"incomplete", "failed"}
+                        row.update({"completed": physics_complete, "stage_status": stages, "model_meta": model_meta, "payload_path": str((run_dir / "payload.json").relative_to(OUT)), "synthesis_path": str(synthesis_path.relative_to(OUT)), "json_schema_valid": schema_ok, "claim_checks": claims, "exact_clinvar_match": clinical.get("variant_match") is True, "top5_evidence_count": len(payload.get("evidence", [])[:5]), "top5_variant_mentions": sum(target["gene"].lower() in str(item).lower() and target["variant"].lower() in str(item).lower() for item in payload.get("evidence", [])[:5]), "prediction": predicted, "clinical_agreement": None if target["label"] == "unsettled" else predicted == target["label"], "uncertainty_preserved": uncertainty, "scope_mistake": scope_mistake, "thermompnn_status": thermompnn.get("status"), "thermompnn_error": thermompnn.get("error"), "synthesis": synthesis})
                 except Exception as exc:
                     error_type = type(exc).__name__
                     row.update({"stage_status": {"pipeline_entry": "failed"}, "error_type": error_type, "error": str(exc), "external_api_failure": error_type in {"HTTPError", "URLError", "TimeoutError", "ConnectionError"}, "compatibility_failure": error_type in {"ModuleNotFoundError", "TypeError", "ImportError"}})
@@ -280,6 +306,9 @@ def exclusion_reason(row: dict[str, Any]) -> str | None:
         return None
     if _is_duplicate_variant(row):
         return "duplicate_variant"
+    meta = row.get("model_meta") if isinstance(row.get("model_meta"), dict) else {}
+    if meta.get("mode") == "api_failed":
+        return "model_api_failed"
     stages = row.get("stage_status") if isinstance(row.get("stage_status"), dict) else {}
     if stages.get("physics") in {"incomplete", "failed"}:
         return "stage_not_successful"
