@@ -18,6 +18,8 @@ import random
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
+
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -209,8 +211,8 @@ def evaluate(rows: list[dict[str, Any]], *, folds: int, iterations: int,
                 "Reduce --folds or obtain a better class-by-gene distribution."
             )
         model = _make_model()
-        model.fit([x_rows[i] for i in train], y_train)
-        scores = model.predict_proba([x_rows[i] for i in test])[:, 1]
+        model.fit(pd.DataFrame([x_rows[i] for i in train]), y_train)
+        scores = model.predict_proba(pd.DataFrame([x_rows[i] for i in test]))[:, 1]
         for index, score in zip(test, scores):
             predictions[index] = float(score)
         fold_summary.append({
