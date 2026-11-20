@@ -76,11 +76,25 @@ def export_batch(runs_root: Path, labels_csv: Path, features_out: Path,
             continue
         # Prefer a run with a payload containing AlphaMissense, then newest
         # modification time. Duplicate runs are not emitted as duplicate variants.
-        ranked = sorted(paths, key=lambda p: (
-            (p.parent.parent / "payload.json").exists(),
-            (p.parent.parent / "payload.json").stat().st_mtime if (p.parent.parent / "payload.json").exists() else 0,
-            p.stat().st_mtime,
-        ), reverse=True)
+        def run_rank(physics: Path) -> tuple[int, float, float]:
+            run_dir = physics.parent.parent
+            payload_path = run_dir / "payload.json"
+            has_alpha = 0
+            payload_mtime = 0.0
+            if payload_path.exists():
+                try:
+                    payload = _load_json(payload_path)
+                    clinical = payload.get("clinical_context")
+                    if not isinstance(clinical, dict):
+                        clinical = payload
+                    context_block = clinical.get("alphamissense_sniper") if isinstance(clinical, dict) else None
+                    has_alpha = int(isinstance(context_block, dict) and context_block.get("score") is not None)
+                    payload_mtime = payload_path.stat().st_mtime
+                except Exception:
+                    pass
+            return (has_alpha, payload_mtime, physics.stat().st_mtime)
+
+        ranked = sorted(paths, key=run_rank, reverse=True)
         chosen = None
         chosen_context = None
         chosen_error = None
