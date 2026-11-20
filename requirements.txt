@@ -22,3 +22,5 @@ faiss-cpu
 sentence-transformers
 torch
 transformers
+
+pandas>=2.2
