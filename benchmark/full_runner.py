@@ -59,28 +59,29 @@ def _safe_name(value: str) -> str:
 
 
 def _load_project_env() -> None:
-    """Load simple KEY=VALUE entries from the project .env when present."""
-    env_path = ROOT / ".env"
-    if not env_path.exists():
-        return
-    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
+    """Load simple KEY=VALUE entries from project .env files when present."""
+    for env_path in (ROOT / ".env", ROOT / "User Interface" / "backend" / ".env"):
+        if not env_path.exists():
             continue
-        name, value = line.split("=", 1)
-        name = name.strip()
-        value = value.strip().strip("\"'")
-        if name and name not in os.environ:
-            os.environ[name] = value
+        for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            name, value = line.split("=", 1)
+            name = name.strip()
+            value = value.strip().strip("\"'")
+            if name and name not in os.environ:
+                os.environ[name] = value
 
 
 _groq_cursor = 0
 _openrouter_cursor = 0
 
 DEFAULT_GROQ_FALLBACK_MODELS: tuple[dict[str, str], ...] = (
+    {"provider": "openrouter", "model": "openai/gpt-oss-120b"},
     {"provider": "groq", "model": "openai/gpt-oss-20b"},
-    {"provider": "groq", "model": "llama-3.3-70b-versatile"},
-    {"provider": "groq", "model": "qwen/qwen3-32b"},
+    {"provider": "openrouter", "model": "openai/gpt-oss-20b"},
+    {"provider": "groq", "model": "qwen/qwen3.8-27b"},
     {"provider": "openrouter", "model": "meta-llama/llama-3.3-70b-instruct"},
 )
 
@@ -228,6 +229,8 @@ def _model_synthesis(payload: dict[str, Any], target: dict[str, str], spec: dict
                     except (HTTPError, KeyError, TypeError, ValueError, URLError, TimeoutError) as inner_exc:
                         last_error = inner_exc
                         break
+                if exc.code == 401 and offset + 1 < attempts:
+                    continue
                 if exc.code in {429, 503} and offset + 1 < attempts:
                     continue
                 if exc.code in {429, 503}:

@@ -6,7 +6,9 @@
       "model": "openai/gpt-oss-120b",
       "enabled": true,
       "fallback_models": [
+        {"provider": "openrouter", "model": "openai/gpt-oss-120b"},
         {"provider": "groq", "model": "openai/gpt-oss-20b"},
+        {"provider": "openrouter", "model": "openai/gpt-oss-20b"},
         {"provider": "groq", "model": "qwen/qwen3.8-27b"},
         {"provider": "openrouter", "model": "meta-llama/llama-3.3-70b-instruct"}
       ]
