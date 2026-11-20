@@ -29,15 +29,19 @@ class BatchFeatureExportTests(unittest.TestCase):
                                  "clinvar": {"clinical_significance": "Pathogenic"}}
         }))
         self.labels = self.root / "labels.csv"
-        with self.labels.open("w", newline="") as f:
+        self.write_labels([
+            {"gene": "TTR", "variant": "V50M", "label": "LP"},
+            {"gene": "SNCA", "variant": "A53T", "label": "P"},
+        ])
+
+    def write_labels(self, rows):
+        with self.labels.open("w", newline="", encoding="utf-8") as f:
             w = csv.DictWriter(f, fieldnames=["gene", "variant", "label"])
             w.writeheader()
-            w.writerow({"gene": "TTR", "variant": "V50M", "label": "LP"})
-            w.writerow({"gene": "SNCA", "variant": "A53T", "label": "P"})
+            w.writerows(rows)
 
     def test_exports_feature_json_and_separate_label_audit(self):
-        features = self.root / "features.json"
-        audit = self.root / "audit.csv"
+        features, audit = self.root / "features.json", self.root / "audit.csv"
         result = export_batch(self.runs, self.labels, features, audit)
         rows = json.loads(features.read_text())
         self.assertEqual(result["feature_rows_exported"], 1)
@@ -54,11 +58,37 @@ class BatchFeatureExportTests(unittest.TestCase):
     def test_requires_alpha_missense_when_requested(self):
         run = self.runs / "run-001"
         (run / "payload.json").write_text(json.dumps({"clinical_context": {}}))
-        features = self.root / "features.json"
-        audit = self.root / "audit.csv"
-        result = export_batch(self.runs, self.labels, features, audit, require_alphamissense=True)
+        result = export_batch(self.runs, self.labels, self.root / "features.json",
+                              self.root / "audit.csv", require_alphamissense=True)
         self.assertEqual(result["feature_rows_exported"], 0)
         self.assertEqual(result["missing_alphamissense"], 1)
+
+    def test_reports_missing_payload_without_fabricating_alpha_score(self):
+        (self.runs / "run-001" / "payload.json").unlink()
+        result = export_batch(self.runs, self.labels, self.root / "features.json",
+                              self.root / "audit.csv")
+        self.assertEqual(result["missing_payload"], 1)
+        self.assertIsNone(json.loads((self.root / "features.json").read_text())[0]["alphamissense_score"])
+
+    def test_collapses_duplicate_runs_and_prefers_alpha_context(self):
+        run2 = self.runs / "run-002"
+        (run2 / "analysis").mkdir(parents=True)
+        (run2 / "analysis" / "TTR_V50M_physics.json").write_text(json.dumps(self.analysis))
+        (run2 / "payload.json").write_text(json.dumps({
+            "clinical_context": {"alphamissense_sniper": {"score": 0.31}}
+        }))
+        result = export_batch(self.runs, self.labels, self.root / "features.json",
+                              self.root / "audit.csv")
+        self.assertEqual(result["duplicate_runs_collapsed"], 1)
+        self.assertEqual(result["feature_rows_exported"], 1)
+        self.assertIn(json.loads((self.root / "features.json").read_text())[0]["alphamissense_score"],
+                      {0.22, 0.31})
+
+    def test_rejects_single_class_gold_file(self):
+        self.write_labels([{"gene": "TTR", "variant": "V50M", "label": "LP"}])
+        with self.assertRaisesRegex(ValueError, "both pathogenic and benign"):
+            export_batch(self.runs, self.labels, self.root / "features.json",
+                         self.root / "audit.csv")
 
 
 if __name__ == "__main__":
