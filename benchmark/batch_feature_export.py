@@ -105,6 +105,7 @@ def export_batch(runs_root: Path, labels_csv: Path, features_out: Path,
         chosen_status = "exported"
         chosen_error = None
         for physics in ranked:
+            candidate_status = "exported"
             run_dir = physics.parent.parent
             payload_path = run_dir / "payload.json"
             context = None
@@ -118,11 +119,12 @@ def export_batch(runs_root: Path, labels_csv: Path, features_out: Path,
                     chosen_error = f"{payload_path}: {exc}"
                     continue
             else:
-                chosen_status = "exported_missing_payload"
+                candidate_status = "exported_missing_payload"
             try:
                 analysis = _load_json(physics)
                 row = build_feature_row(key[0], key[1], analysis, context)
                 chosen = row
+                chosen_status = candidate_status
                 break
             except Exception as exc:
                 chosen_error = f"{physics}: {exc}"
