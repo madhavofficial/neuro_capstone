@@ -1,12 +1,11 @@
 """Batch-export blinded feature rows from full_runner run directories.
 
-Expected run layout:
+Expected layout:
   <runs-root>/<run-id>/analysis/<GENE>_<VARIANT>_physics.json
   <runs-root>/<run-id>/payload.json
 
-The output feature JSON contains only gene, variant, AlphaMissense score, and
-structural_features. Independent labels are validated against the supplied
-gold CSV but are written to a separate audit CSV, never into predictor JSON.
+Feature JSON contains no labels or clinical fields. The separate audit CSV
+records gold labels and per-variant export status.
 """
 from __future__ import annotations
 
@@ -16,7 +15,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from benchmark.feature_vector import build_feature_row, STRUCTURAL_FEATURE_KEYS
+from benchmark.feature_vector import build_feature_row
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -42,61 +41,68 @@ def _gold_labels(path: Path) -> dict[tuple[str, str], str]:
     if not rows or not {"gene", "variant", "label"}.issubset(rows[0]):
         raise ValueError("Gold CSV must contain gene,variant,label columns.")
     result: dict[tuple[str, str], str] = {}
+    accepted = {"P", "LP", "B", "LB", "PATHOGENIC", "LIKELY PATHOGENIC",
+                "BENIGN", "LIKELY BENIGN"}
     for line, row in enumerate(rows, start=2):
         key = (row["gene"].strip().upper(), row["variant"].strip().upper())
         label = row["label"].strip().upper()
-        if not all(key) or label not in {"P", "LP", "B", "LB", "PATHOGENIC", "LIKELY PATHOGENIC", "BENIGN", "LIKELY BENIGN"}:
+        if not all(key) or label not in accepted:
             raise ValueError(f"Gold CSV line {line}: invalid identity or non-binary label.")
         if key in result:
             raise ValueError(f"Duplicate gold variant {key}.")
         result[key] = label
+    if len({label in {"P", "LP", "PATHOGENIC", "LIKELY PATHOGENIC"}
+            for label in result.values()}) != 2:
+        raise ValueError("Gold CSV must contain both pathogenic and benign labels.")
     return result
 
 
 def export_batch(runs_root: Path, labels_csv: Path, features_out: Path,
                  audit_out: Path, *, require_alphamissense: bool = False) -> dict[str, Any]:
+    if not runs_root.is_dir():
+        raise FileNotFoundError(f"Runs directory does not exist: {runs_root}")
     labels = _gold_labels(labels_csv)
     candidates: dict[tuple[str, str], list[Path]] = {}
     for physics in runs_root.glob("*/analysis/*_physics.json"):
-        key = _variant_from_physics(physics)
+        try:
+            key = _variant_from_physics(physics)
+        except ValueError:
+            continue
         if key in labels:
             candidates.setdefault(key, []).append(physics)
 
-    exported = []
-    audit = []
-    missing_physics = []
-    missing_context = []
-    missing_am = []
-    errors = []
+    exported, audit = [], []
+    missing_physics, missing_am, missing_payload = [], [], []
+    errors, duplicate_runs_collapsed = [], 0
     for key in sorted(labels):
         paths = candidates.get(key, [])
         if not paths:
             missing_physics.append(key)
-            audit.append({"gene": key[0], "variant": key[1], "label": labels[key], "status": "missing_physics"})
+            audit.append({"gene": key[0], "variant": key[1],
+                          "label": labels[key], "status": "missing_physics"})
             continue
-        # Prefer a run with a payload containing AlphaMissense, then newest
-        # modification time. Duplicate runs are not emitted as duplicate variants.
+        duplicate_runs_collapsed += max(0, len(paths) - 1)
+
         def run_rank(physics: Path) -> tuple[int, float, float]:
             run_dir = physics.parent.parent
             payload_path = run_dir / "payload.json"
-            has_alpha = 0
-            payload_mtime = 0.0
+            has_alpha, payload_mtime = 0, 0.0
             if payload_path.exists():
                 try:
                     payload = _load_json(payload_path)
                     clinical = payload.get("clinical_context")
                     if not isinstance(clinical, dict):
                         clinical = payload
-                    context_block = clinical.get("alphamissense_sniper") if isinstance(clinical, dict) else None
-                    has_alpha = int(isinstance(context_block, dict) and context_block.get("score") is not None)
+                    block = clinical.get("alphamissense_sniper")
+                    has_alpha = int(isinstance(block, dict) and block.get("score") is not None)
                     payload_mtime = payload_path.stat().st_mtime
-                except Exception:
+                except (OSError, ValueError, json.JSONDecodeError):
                     pass
-            return (has_alpha, payload_mtime, physics.stat().st_mtime)
+            return has_alpha, payload_mtime, physics.stat().st_mtime
 
         ranked = sorted(paths, key=run_rank, reverse=True)
         chosen = None
-        chosen_context = None
+        chosen_status = "exported"
         chosen_error = None
         for physics in ranked:
             run_dir = physics.parent.parent
@@ -108,30 +114,38 @@ def export_batch(runs_root: Path, labels_csv: Path, features_out: Path,
                     context = payload.get("clinical_context")
                     if not isinstance(context, dict):
                         context = payload
-                except Exception as exc:
+                except (OSError, ValueError, json.JSONDecodeError) as exc:
                     chosen_error = f"{payload_path}: {exc}"
                     continue
+            else:
+                chosen_status = "exported_missing_payload"
             try:
                 analysis = _load_json(physics)
                 row = build_feature_row(key[0], key[1], analysis, context)
-                chosen, chosen_context = row, context
+                chosen = row
                 break
             except Exception as exc:
                 chosen_error = f"{physics}: {exc}"
         if chosen is None:
-            errors.append({"gene": key[0], "variant": key[1], "error": chosen_error or "no usable run"})
-            audit.append({"gene": key[0], "variant": key[1], "label": labels[key], "status": "feature_error"})
+            errors.append({"gene": key[0], "variant": key[1],
+                           "error": chosen_error or "no usable run"})
+            audit.append({"gene": key[0], "variant": key[1],
+                          "label": labels[key], "status": "feature_error"})
             continue
+
+        if chosen_status == "exported_missing_payload":
+            missing_payload.append(key)
         if chosen["alphamissense_score"] is None:
             missing_am.append(key)
             if require_alphamissense:
-                audit.append({"gene": key[0], "variant": key[1], "label": labels[key], "status": "missing_alphamissense"})
+                audit.append({"gene": key[0], "variant": key[1],
+                              "label": labels[key], "status": "missing_alphamissense"})
                 continue
         exported.append(chosen)
-        audit.append({
-            "gene": key[0], "variant": key[1], "label": labels[key],
-            "status": "exported" if chosen["alphamissense_score"] is not None else "exported_missing_alphamissense",
-        })
+        status = ("exported_missing_alphamissense"
+                  if chosen["alphamissense_score"] is None else chosen_status)
+        audit.append({"gene": key[0], "variant": key[1],
+                      "label": labels[key], "status": status})
 
     features_out.parent.mkdir(parents=True, exist_ok=True)
     audit_out.parent.mkdir(parents=True, exist_ok=True)
@@ -144,7 +158,9 @@ def export_batch(runs_root: Path, labels_csv: Path, features_out: Path,
         "gold_variants": len(labels),
         "feature_rows_exported": len(exported),
         "missing_physics": len(missing_physics),
+        "missing_payload": len(missing_payload),
         "missing_alphamissense": len(missing_am),
+        "duplicate_runs_collapsed": duplicate_runs_collapsed,
         "feature_errors": len(errors),
         "features_json": str(features_out),
         "label_audit_csv_separate_from_features": str(audit_out),
