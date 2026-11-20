@@ -1,0 +1,101 @@
+variant_id,gene,variant,label,label_source,clinvar_variation_id,review_status,condition,source_url,date_retrieved
+snca-a53t,SNCA,A53T,pathogenic,UniProt humsavar VAR_007454 (LP/P; rs104893877),VAR_007454,humsavar_curated,"Parkinson disease 1, autosomal dominant (PARK1) [MIM:168601]",https://www.uniprot.org/uniprotkb/P37840/entry,2026-11-20
+ttr-c30r,TTR,C30R,pathogenic,UniProt humsavar VAR_007547 (LP/P; rs121918083),VAR_007547,humsavar_curated,"Amyloidosis, hereditary systemic 1 (AMYLD1) [MIM:105210]",https://www.uniprot.org/uniprotkb/P02766/entry,2026-11-20
+mapt-k574t,MAPT,K574T,pathogenic,UniProt humsavar VAR_010344 (LP/P; rs63750129),VAR_010344,humsavar_curated,Pick disease of the brain (PIDB) [MIM:172700],https://www.uniprot.org/uniprotkb/P10636/entry,2026-11-20
+app-a692g,APP,A692G,pathogenic,UniProt humsavar VAR_000016 (LP/P; rs63750671),VAR_000016,humsavar_curated,Alzheimer disease 1 (AD1) [MIM:104300],https://www.uniprot.org/uniprotkb/P05067/entry,2026-11-20
+psen1-a79v,PSEN1,A79V,pathogenic,UniProt humsavar VAR_006413 (LP/P; rs63749824),VAR_006413,humsavar_curated,Alzheimer disease 3 (AD3) [MIM:607822],https://www.uniprot.org/uniprotkb/P49768/entry,2026-11-20
+psen2-n141i,PSEN2,N141I,pathogenic,UniProt humsavar VAR_006462 (LP/P; rs63750215),VAR_006462,humsavar_curated,Alzheimer disease 4 (AD4) [MIM:606889],https://www.uniprot.org/uniprotkb/P49810/entry,2026-11-20
+sod1-a5t,SOD1,A5T,pathogenic,UniProt humsavar VAR_007130 (LP/P; rs121912444),VAR_007130,humsavar_curated,Amyotrophic lateral sclerosis 1 (ALS1) [MIM:105400],https://www.uniprot.org/uniprotkb/P00441/entry,2026-11-20
+tardbp-d169g,TARDBP,D169G,pathogenic,UniProt humsavar VAR_045657 (LP/P; rs80356717),VAR_045657,humsavar_curated,Amyotrophic lateral sclerosis 10 (ALS10) [MIM:612069],https://www.uniprot.org/uniprotkb/Q13148/entry,2026-11-20
+lrrk2-r1067q,LRRK2,R1067Q,pathogenic,UniProt humsavar VAR_024938 (LP/P; rs111341148),VAR_024938,humsavar_curated,Parkinson disease 8 (PARK8) [MIM:607060],https://www.uniprot.org/uniprotkb/Q5S007/entry,2026-11-20
+gba1-v54l,GBA1,V54L,pathogenic,UniProt humsavar VAR_003255 (LP/P; rs121908302),VAR_003255,humsavar_curated,Gaucher disease (GD) [MIM:230800],https://www.uniprot.org/uniprotkb/P04062/entry,2026-11-20
+grn-a9d,GRN,A9D,pathogenic,UniProt humsavar VAR_044451 (LP/P; rs63751243),VAR_044451,humsavar_curated,Frontotemporal dementia 2 (FTD2) [MIM:607485],https://www.uniprot.org/uniprotkb/P28799/entry,2026-11-20
+fus-r244c,FUS,R244C,pathogenic,UniProt humsavar VAR_054837 (LP/P; rs1165095258),VAR_054837,humsavar_curated,"Amyotrophic lateral sclerosis 6, with or without frontotemporal dementia (ALS6) [MIM:608030]",https://www.uniprot.org/uniprotkb/P35637/entry,2026-11-20
+prkn-v15m,PRKN,V15M,pathogenic,UniProt humsavar VAR_019733 (LP/P; rs532703934),VAR_019733,humsavar_curated,Parkinson disease 2 (PARK2) [MIM:600116],https://www.uniprot.org/uniprotkb/O60260/entry,2026-11-20
+pink1-g309d,PINK1,G309D,pathogenic,UniProt humsavar VAR_018994 (LP/P; rs74315355),VAR_018994,humsavar_curated,Parkinson disease 6 (PARK6) [MIM:605909],https://www.uniprot.org/uniprotkb/Q9BXM7/entry,2026-11-20
+vcp-r95g,VCP,R95G,pathogenic,UniProt humsavar VAR_033016 (LP/P; rs121909332),VAR_033016,humsavar_curated,Inclusion body myopathy with early-onset Paget disease with or without frontotemporal dementia 1 (IBMPFD1) [MIM:167320],https://www.uniprot.org/uniprotkb/P55072/entry,2026-11-20
+park7-m26i,PARK7,M26I,pathogenic,UniProt humsavar VAR_020492 (LP/P; rs74315351),VAR_020492,humsavar_curated,Parkinson disease 7 (PARK7) [MIM:606324],https://www.uniprot.org/uniprotkb/Q99497/entry,2026-11-20
+snca-a30p,SNCA,A30P,pathogenic,UniProt humsavar VAR_007957 (LP/P; rs104893878),VAR_007957,humsavar_curated,"Parkinson disease 1, autosomal dominant (PARK1) [MIM:168601]",https://www.uniprot.org/uniprotkb/P37840/entry,2026-11-20
+ttr-d38e,TTR,D38E,pathogenic,UniProt humsavar VAR_007548 (LP/P; -),VAR_007548,humsavar_curated,"Amyloidosis, hereditary systemic 1 (AMYLD1) [MIM:105210]",https://www.uniprot.org/uniprotkb/P02766/entry,2026-11-20
+mapt-g589v,MAPT,G589V,pathogenic,UniProt humsavar VAR_010345 (LP/P; rs63750376),VAR_010345,humsavar_curated,Frontotemporal dementia 1 (FTD1) [MIM:600274],https://www.uniprot.org/uniprotkb/P10636/entry,2026-11-20
+app-e693q,APP,E693Q,pathogenic,UniProt humsavar VAR_000017 (LP/P; rs63750579),VAR_000017,humsavar_curated,"Cerebral amyloid angiopathy, APP-related (CAA-APP) [MIM:605714]",https://www.uniprot.org/uniprotkb/P05067/entry,2026-11-20
+psen1-v82l,PSEN1,V82L,pathogenic,UniProt humsavar VAR_006414 (LP/P; rs63749967),VAR_006414,humsavar_curated,Alzheimer disease 3 (AD3) [MIM:607822],https://www.uniprot.org/uniprotkb/P49768/entry,2026-11-20
+psen2-m239v,PSEN2,M239V,pathogenic,UniProt humsavar VAR_006463 (LP/P; rs28936379),VAR_006463,humsavar_curated,Alzheimer disease 4 (AD4) [MIM:606889],https://www.uniprot.org/uniprotkb/P49810/entry,2026-11-20
+sod1-a5v,SOD1,A5V,pathogenic,UniProt humsavar VAR_007131 (LP/P; rs121912442),VAR_007131,humsavar_curated,Amyotrophic lateral sclerosis 1 (ALS1) [MIM:105400],https://www.uniprot.org/uniprotkb/P00441/entry,2026-11-20
+tardbp-g287s,TARDBP,G287S,pathogenic,UniProt humsavar VAR_045658 (LP/P; rs80356719),VAR_045658,humsavar_curated,Amyotrophic lateral sclerosis 10 (ALS10) [MIM:612069],https://www.uniprot.org/uniprotkb/Q13148/entry,2026-11-20
+lrrk2-i1122v,LRRK2,I1122V,pathogenic,UniProt humsavar VAR_024940 (LP/P; rs34805604),VAR_024940,humsavar_curated,Parkinson disease 8 (PARK8) [MIM:607060],https://www.uniprot.org/uniprotkb/Q5S007/entry,2026-11-20
+gba1-f76v,GBA1,F76V,pathogenic,UniProt humsavar VAR_003256 (LP/P; -),VAR_003256,humsavar_curated,Gaucher disease (GD) [MIM:230800],https://www.uniprot.org/uniprotkb/P04062/entry,2026-11-20
+fus-r514g,FUS,R514G,pathogenic,UniProt humsavar VAR_054838 (LP/P; rs1555509609),VAR_054838,humsavar_curated,"Amyotrophic lateral sclerosis 6, with or without frontotemporal dementia (ALS6) [MIM:608030]",https://www.uniprot.org/uniprotkb/P35637/entry,2026-11-20
+prkn-r33q,PRKN,R33Q,pathogenic,UniProt humsavar VAR_019734 (LP/P; rs147757966),VAR_019734,humsavar_curated,Parkinson disease 2 (PARK2) [MIM:600116],https://www.uniprot.org/uniprotkb/O60260/entry,2026-11-20
+pink1-a168p,PINK1,A168P,pathogenic,UniProt humsavar VAR_046575 (LP/P; rs768091663),VAR_046575,humsavar_curated,Parkinson disease 6 (PARK6) [MIM:605909],https://www.uniprot.org/uniprotkb/Q9BXM7/entry,2026-11-20
+vcp-r155c,VCP,R155C,pathogenic,UniProt humsavar VAR_033017 (LP/P; rs121909330),VAR_033017,humsavar_curated,Inclusion body myopathy with early-onset Paget disease with or without frontotemporal dementia 1 (IBMPFD1) [MIM:167320],https://www.uniprot.org/uniprotkb/P55072/entry,2026-11-20
+park7-e64d,PARK7,E64D,pathogenic,UniProt humsavar VAR_020493 (LP/P; rs74315353),VAR_020493,humsavar_curated,Parkinson disease 7 (PARK7) [MIM:606324],https://www.uniprot.org/uniprotkb/Q99497/entry,2026-11-20
+snca-e46k,SNCA,E46K,pathogenic,UniProt humsavar VAR_022703 (LP/P; rs104893875),VAR_022703,humsavar_curated,"Dementia, Lewy body (DLB) [MIM:127750]",https://www.uniprot.org/uniprotkb/P37840/entry,2026-11-20
+ttr-d38g,TTR,D38G,pathogenic,UniProt humsavar VAR_007549 (LP/P; rs121918098),VAR_007549,humsavar_curated,"Amyloidosis, hereditary systemic 1 (AMYLD1) [MIM:105210]",https://www.uniprot.org/uniprotkb/P02766/entry,2026-11-20
+mapt-n596k,MAPT,N596K,pathogenic,UniProt humsavar VAR_010346 (LP/P; rs63750756),VAR_010346,humsavar_curated,Frontotemporal dementia 1 (FTD1) [MIM:600274],https://www.uniprot.org/uniprotkb/P10636/entry,2026-11-20
+app-a713t,APP,A713T,pathogenic,UniProt humsavar VAR_000019 (LP/P; rs63750066),VAR_000019,humsavar_curated,Alzheimer disease 1 (AD1) [MIM:104300],https://www.uniprot.org/uniprotkb/P05067/entry,2026-11-20
+psen1-v96f,PSEN1,V96F,pathogenic,UniProt humsavar VAR_006415 (LP/P; rs63750601),VAR_006415,humsavar_curated,Alzheimer disease 3 (AD3) [MIM:607822],https://www.uniprot.org/uniprotkb/P49768/entry,2026-11-20
+psen2-v148i,PSEN2,V148I,pathogenic,UniProt humsavar VAR_007958 (LP/P; rs63750812),VAR_007958,humsavar_curated,Alzheimer disease 4 (AD4) [MIM:606889],https://www.uniprot.org/uniprotkb/P49810/entry,2026-11-20
+sod1-v8e,SOD1,V8E,pathogenic,UniProt humsavar VAR_007132 (LP/P; rs1568807330),VAR_007132,humsavar_curated,Amyotrophic lateral sclerosis 1 (ALS1) [MIM:105400],https://www.uniprot.org/uniprotkb/P00441/entry,2026-11-20
+tardbp-g290a,TARDBP,G290A,pathogenic,UniProt humsavar VAR_045659 (LP/P; rs121908395),VAR_045659,humsavar_curated,Amyotrophic lateral sclerosis 10 (ALS10) [MIM:612069],https://www.uniprot.org/uniprotkb/Q13148/entry,2026-11-20
+lrrk2-s1228t,LRRK2,S1228T,pathogenic,UniProt humsavar VAR_024941 (LP/P; rs60185966),VAR_024941,humsavar_curated,Parkinson disease 8 (PARK8) [MIM:607060],https://www.uniprot.org/uniprotkb/Q5S007/entry,2026-11-20
+gba1-t82i,GBA1,T82I,pathogenic,UniProt humsavar VAR_003257 (LP/P; rs1141811),VAR_003257,humsavar_curated,Gaucher disease 1 (GD1) [MIM:230800],https://www.uniprot.org/uniprotkb/P04062/entry,2026-11-20
+fus-r514s,FUS,R514S,pathogenic,UniProt humsavar VAR_054839 (LP/P; rs1555509681),VAR_054839,humsavar_curated,"Amyotrophic lateral sclerosis 6, with or without frontotemporal dementia (ALS6) [MIM:608030]",https://www.uniprot.org/uniprotkb/P35637/entry,2026-11-20
+prkn-p37l,PRKN,P37L,pathogenic,UniProt humsavar VAR_019735 (LP/P; rs148990138),VAR_019735,humsavar_curated,Parkinson disease 2 (PARK2) [MIM:600116],https://www.uniprot.org/uniprotkb/O60260/entry,2026-11-20
+pink1-p196l,PINK1,P196L,pathogenic,UniProt humsavar VAR_046577 (LP/P; rs138302371),VAR_046577,humsavar_curated,Parkinson disease 6 (PARK6) [MIM:605909],https://www.uniprot.org/uniprotkb/Q9BXM7/entry,2026-11-20
+vcp-r155h,VCP,R155H,pathogenic,UniProt humsavar VAR_033018 (LP/P; rs121909329),VAR_033018,humsavar_curated,Frontotemporal dementia and/or amyotrophic lateral sclerosis 6 (FTDALS6) [MIM:613954],https://www.uniprot.org/uniprotkb/P55072/entry,2026-11-20
+park7-a104t,PARK7,A104T,pathogenic,UniProt humsavar VAR_020495 (LP/P; rs774005786),VAR_020495,humsavar_curated,Parkinson disease 7 (PARK7) [MIM:606324],https://www.uniprot.org/uniprotkb/Q99497/entry,2026-11-20
+snca-h50q,SNCA,H50Q,pathogenic,UniProt humsavar VAR_070171 (LP/P; rs201106962),VAR_070171,humsavar_curated,"Parkinson disease 1, autosomal dominant (PARK1) [MIM:168601]",https://www.uniprot.org/uniprotkb/P37840/entry,2026-11-20
+ttr-v40i,TTR,V40I,pathogenic,UniProt humsavar VAR_007550 (LP/P; rs121918093),VAR_007550,humsavar_curated,"Amyloidosis, hereditary systemic 1 (AMYLD1) [MIM:105210]",https://www.uniprot.org/uniprotkb/P02766/entry,2026-11-20
+mapt-p618l,MAPT,P618L,pathogenic,UniProt humsavar VAR_010348 (LP/P; rs63751273),VAR_010348,humsavar_curated,Frontotemporal dementia 1 (FTD1) [MIM:600274],https://www.uniprot.org/uniprotkb/P10636/entry,2026-11-20
+app-i716v,APP,I716V,pathogenic,UniProt humsavar VAR_000020 (LP/P; rs63750399),VAR_000020,humsavar_curated,Alzheimer disease 1 (AD1) [MIM:104300],https://www.uniprot.org/uniprotkb/P05067/entry,2026-11-20
+ttr-g26s,TTR,G26S,benign,UniProt humsavar VAR_007546 (LB/B; rs1800458),VAR_007546,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P02766/entry,2026-11-20
+mapt-d285n,MAPT,D285N,benign,UniProt humsavar VAR_010340 (LB/B; rs62063786),VAR_010340,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P10636/entry,2026-11-20
+app-e665d,APP,E665D,benign,UniProt humsavar VAR_010107 (LB/B; rs63750363),VAR_010107,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P05067/entry,2026-11-20
+psen1-e318g,PSEN1,E318G,benign,UniProt humsavar VAR_006454 (LB/B; rs17125721),VAR_006454,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P49768/entry,2026-11-20
+psen2-r62h,PSEN2,R62H,benign,UniProt humsavar VAR_006461 (LB/B; rs58973334),VAR_006461,humsavar_curated,Alzheimer disease 4 (AD4) [MIM:606889],https://www.uniprot.org/uniprotkb/P49810/entry,2026-11-20
+tardbp-a90v,TARDBP,A90V,benign,UniProt humsavar VAR_045656 (LB/B; rs80356715),VAR_045656,humsavar_curated,-,https://www.uniprot.org/uniprotkb/Q13148/entry,2026-11-20
+lrrk2-r50h,LRRK2,R50H,benign,UniProt humsavar VAR_024931 (LB/B; rs2256408),VAR_024931,humsavar_curated,-,https://www.uniprot.org/uniprotkb/Q5S007/entry,2026-11-20
+gba1-e365k,GBA1,E365K,benign,UniProt humsavar VAR_003297 (LB/B; rs2230288),VAR_003297,humsavar_curated,Gaucher disease 1 (GD1) [MIM:230800],https://www.uniprot.org/uniprotkb/P04062/entry,2026-11-20
+grn-g515a,GRN,G515A,benign,UniProt humsavar VAR_014830 (LB/B; rs25647),VAR_014830,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P28799/entry,2026-11-20
+fus-h517q,FUS,H517Q,benign,UniProt humsavar VAR_054841 (LB/B; rs121909667),VAR_054841,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P35637/entry,2026-11-20
+prkn-q100h,PRKN,Q100H,benign,UniProt humsavar VAR_019740 (LB/B; rs1256316516),VAR_019740,humsavar_curated,-,https://www.uniprot.org/uniprotkb/O60260/entry,2026-11-20
+pink1-p305l,PINK1,P305L,benign,UniProt humsavar VAR_018993 (LB/B; rs7349186),VAR_018993,humsavar_curated,-,https://www.uniprot.org/uniprotkb/Q9BXM7/entry,2026-11-20
+park7-r98q,PARK7,R98Q,benign,UniProt humsavar VAR_020494 (LB/B; rs71653619),VAR_020494,humsavar_curated,-,https://www.uniprot.org/uniprotkb/Q99497/entry,2026-11-20
+ttr-d94h,TTR,D94H,benign,UniProt humsavar VAR_007581 (LB/B; rs730881164),VAR_007581,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P02766/entry,2026-11-20
+mapt-v289a,MAPT,V289A,benign,UniProt humsavar VAR_010341 (LB/B; rs62063787),VAR_010341,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P10636/entry,2026-11-20
+app-e501k,APP,E501K,benign,UniProt humsavar VAR_022315 (LB/B; rs45588932),VAR_022315,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P05067/entry,2026-11-20
+psen1-f205l,PSEN1,F205L,benign,UniProt humsavar VAR_011876 (LB/B; rs1042864),VAR_011876,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P49768/entry,2026-11-20
+lrrk2-l119p,LRRK2,L119P,benign,UniProt humsavar VAR_024932 (LB/B; rs33995463),VAR_024932,humsavar_curated,-,https://www.uniprot.org/uniprotkb/Q5S007/entry,2026-11-20
+gba1-t408m,GBA1,T408M,benign,UniProt humsavar VAR_003301 (LB/B; rs75548401),VAR_003301,humsavar_curated,Gaucher disease 1 (GD1) [MIM:230800],https://www.uniprot.org/uniprotkb/P04062/entry,2026-11-20
+grn-r19w,GRN,R19W,benign,UniProt humsavar VAR_064625 (LB/B; rs63750723),VAR_064625,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P28799/entry,2026-11-20
+fus-m254v,FUS,M254V,benign,UniProt humsavar VAR_065229 (LB/B; rs752076094),VAR_065229,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P35637/entry,2026-11-20
+prkn-s167n,PRKN,S167N,benign,UniProt humsavar VAR_019742 (LB/B; rs1801474),VAR_019742,humsavar_curated,-,https://www.uniprot.org/uniprotkb/O60260/entry,2026-11-20
+pink1-a340t,PINK1,A340T,benign,UniProt humsavar VAR_018995 (LB/B; rs3738136),VAR_018995,humsavar_curated,-,https://www.uniprot.org/uniprotkb/Q9BXM7/entry,2026-11-20
+park7-g150s,PARK7,G150S,benign,UniProt humsavar VAR_020497 (LB/B; rs368420490),VAR_020497,humsavar_curated,-,https://www.uniprot.org/uniprotkb/Q99497/entry,2026-11-20
+ttr-h110n,TTR,H110N,benign,UniProt humsavar VAR_007586 (LB/B; rs121918074),VAR_007586,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P02766/entry,2026-11-20
+mapt-y441h,MAPT,Y441H,benign,UniProt humsavar VAR_010342 (LB/B; rs2258689),VAR_010342,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P10636/entry,2026-11-20
+lrrk2-n551k,LRRK2,N551K,benign,UniProt humsavar VAR_024933 (LB/B; rs7308720),VAR_024933,humsavar_curated,-,https://www.uniprot.org/uniprotkb/Q5S007/entry,2026-11-20
+gba1-l509p,GBA1,L509P,benign,UniProt humsavar VAR_003325 (LB/B; -),VAR_003325,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P04062/entry,2026-11-20
+grn-r55w,GRN,R55W,benign,UniProt humsavar VAR_064626 (LB/B; rs1555610922),VAR_064626,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P28799/entry,2026-11-20
+prkn-r271s,PRKN,R271S,benign,UniProt humsavar VAR_019751 (LB/B; rs772622421),VAR_019751,humsavar_curated,-,https://www.uniprot.org/uniprotkb/O60260/entry,2026-11-20
+pink1-n521t,PINK1,N521T,benign,UniProt humsavar VAR_018996 (LB/B; rs1043424),VAR_018996,humsavar_curated,-,https://www.uniprot.org/uniprotkb/Q9BXM7/entry,2026-11-20
+park7-a171s,PARK7,A171S,benign,UniProt humsavar VAR_020499 (LB/B; rs777026628),VAR_020499,humsavar_curated,-,https://www.uniprot.org/uniprotkb/Q99497/entry,2026-11-20
+ttr-g121s,TTR,G121S,benign,UniProt humsavar VAR_007589 (LB/B; rs755337715),VAR_007589,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P02766/entry,2026-11-20
+mapt-s447p,MAPT,S447P,benign,UniProt humsavar VAR_010343 (LB/B; rs10445337),VAR_010343,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P10636/entry,2026-11-20
+lrrk2-i723v,LRRK2,I723V,benign,UniProt humsavar VAR_024934 (LB/B; rs10878307),VAR_024934,humsavar_curated,-,https://www.uniprot.org/uniprotkb/Q5S007/entry,2026-11-20
+gba1-m92t,GBA1,M92T,benign,UniProt humsavar VAR_032396 (LB/B; rs1141815),VAR_032396,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P04062/entry,2026-11-20
+grn-a69t,GRN,A69T,benign,UniProt humsavar VAR_064627 (LB/B; rs199944486),VAR_064627,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P28799/entry,2026-11-20
+prkn-r334c,PRKN,R334C,benign,UniProt humsavar VAR_019757 (LB/B; rs199657839),VAR_019757,humsavar_curated,-,https://www.uniprot.org/uniprotkb/O60260/entry,2026-11-20
+pink1-l148w,PINK1,L148W,benign,UniProt humsavar VAR_041010 (LB/B; rs56297806),VAR_041010,humsavar_curated,-,https://www.uniprot.org/uniprotkb/Q9BXM7/entry,2026-11-20
+ttr-p122r,TTR,P122R,benign,UniProt humsavar VAR_007590 (LB/B; -),VAR_007590,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P02766/entry,2026-11-20
+mapt-r723w,MAPT,R723W,benign,UniProt humsavar VAR_010353 (LB/B; rs63750424),VAR_010353,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P10636/entry,2026-11-20
+lrrk2-d944y,LRRK2,D944Y,benign,UniProt humsavar VAR_024937 (LB/B; rs17519916),VAR_024937,humsavar_curated,-,https://www.uniprot.org/uniprotkb/Q5S007/entry,2026-11-20
+gba1-s310g,GBA1,S310G,benign,UniProt humsavar VAR_032410 (LB/B; rs1057942),VAR_032410,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P04062/entry,2026-11-20
+grn-s120y,GRN,S120Y,benign,UniProt humsavar VAR_064629 (LB/B; rs63750043),VAR_064629,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P28799/entry,2026-11-20
+prkn-a339s,PRKN,A339S,benign,UniProt humsavar VAR_019758 (LB/B; rs1554274880),VAR_019758,humsavar_curated,-,https://www.uniprot.org/uniprotkb/O60260/entry,2026-11-20
+pink1-p196s,PINK1,P196S,benign,UniProt humsavar VAR_041011 (LB/B; rs35802484),VAR_041011,humsavar_curated,-,https://www.uniprot.org/uniprotkb/Q9BXM7/entry,2026-11-20
+ttr-r124c,TTR,R124C,benign,UniProt humsavar VAR_007591 (LB/B; rs745834030),VAR_007591,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P02766/entry,2026-11-20
+mapt-s669l,MAPT,S669L,benign,UniProt humsavar VAR_019667 (LB/B; rs63750425),VAR_019667,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P10636/entry,2026-11-20
+lrrk2-p1262a,LRRK2,P1262A,benign,UniProt humsavar VAR_024942 (LB/B; rs4640000),VAR_024942,humsavar_curated,-,https://www.uniprot.org/uniprotkb/Q5S007/entry,2026-11-20
+gba1-r368h,GBA1,R368H,benign,UniProt humsavar VAR_032411 (LB/B; rs1064648),VAR_032411,humsavar_curated,-,https://www.uniprot.org/uniprotkb/P04062/entry,2026-11-20
