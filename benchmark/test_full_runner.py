@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 import unittest
@@ -344,6 +345,47 @@ class FullRunnerTests(unittest.TestCase):
                 markdown.index("## Settled literature-class agreement (reference only)"),
                 markdown.index("## Excluded runs"),
             )
+
+    def test_model_synthesis_strips_gold_label_and_sources_from_prompt(self):
+        captured: dict[str, object] = {}
+
+        def fake_json_request(url, payload, key):
+            captured["user"] = json.loads(payload["messages"][1]["content"])
+            return {
+                "choices": [
+                    {
+                        "message": {
+                            "content": json.dumps({
+                                "prediction": "vus",
+                                "conclusion": "uncertain",
+                                "uncertainty": True,
+                                "scope": "variant",
+                                "claims": [],
+                            })
+                        }
+                    }
+                ]
+            }
+
+        target = {
+            "variant_id": "ttr-v48m",
+            "gene": "TTR",
+            "variant": "V48M",
+            "label": "pathogenic",
+            "label_source": "ClinVar 4193819 Likely pathogenic",
+            "clinvar_variation_id": "4193819",
+            "condition": "ATTR",
+        }
+        spec = {"provider": "groq", "model": "openai/gpt-oss-120b"}
+        with patch.object(runner, "_provider_keys", return_value=["fake-key"]), patch.object(runner, "_json_request", side_effect=fake_json_request):
+            synthesis, meta = runner._model_synthesis({"status": "SUCCESS", "evidence": []}, target, spec)
+
+        self.assertIsNotNone(synthesis)
+        self.assertEqual(meta["mode"], "api")
+        sent_target = captured["user"]["target"]
+        self.assertEqual(sent_target, {"variant_id": "ttr-v48m", "gene": "TTR", "variant": "V48M"})
+        for forbidden in ("label", "label_source", "clinvar_variation_id", "condition"):
+            self.assertNotIn(forbidden, sent_target)
 
 
 if __name__ == "__main__":

@@ -142,7 +142,12 @@ def _model_synthesis(payload: dict[str, Any], target: dict[str, str], spec: dict
                 candidates.append({"provider": str(fb["provider"]), "model": str(fb["model"])})
 
     system = SYNTHESIS_SYSTEM_PROMPT
-    user = json.dumps({"target": target, "payload": payload}, ensure_ascii=False)
+    prompt_target = {
+        "variant_id": target.get("variant_id", ""),
+        "gene": target.get("gene", ""),
+        "variant": target.get("variant", ""),
+    }
+    user = json.dumps({"target": prompt_target, "payload": payload}, ensure_ascii=False)
 
     last_error: Exception | None = None
     total_tried = 0
