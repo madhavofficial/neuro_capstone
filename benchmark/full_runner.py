@@ -485,6 +485,43 @@ def relabel_rows_from_gold(rows: list[dict[str, Any]], gold_path: Path) -> list[
     return updated
 
 
+def separate_track_metrics(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Compute separate metrics for established (all_evidence) vs blinded/novel ablations."""
+    tracks: dict[str, dict[str, Any]] = {}
+    specs = (
+        ("established_all_evidence", "Established (Full Pipeline / all_evidence)", scored_rows(rows)),
+        (
+            "novel_physics_only",
+            "Novel Blinded (Biophysics Only / physics_only)",
+            [r for r in rows if not _is_duplicate_variant(r) and r.get("ablation") == "physics_only" and r.get("completed") is True and _is_gpt_oss(r)],
+        ),
+        (
+            "novel_literature_only",
+            "Novel Blinded (No ClinVar / literature_only)",
+            [r for r in rows if not _is_duplicate_variant(r) and r.get("ablation") == "literature_only" and r.get("completed") is True and _is_gpt_oss(r)],
+        ),
+        (
+            "clinical_only_baseline",
+            "Clinical Lookup Baseline (clinical_only)",
+            [r for r in rows if not _is_duplicate_variant(r) and r.get("ablation") == "clinical_only" and r.get("completed") is True and _is_gpt_oss(r)],
+        ),
+    )
+    for key, label, subset in specs:
+        m = calculate_metrics(subset)
+        tracks[key] = {
+            "label": label,
+            "n_runs": len(subset),
+            "settled_agreement": m.get("pathogenic_benign_agreement"),
+            "n_unsettled_excluded": m.get("n_unsettled_excluded"),
+            "paper_citation_validity": m.get("paper_citation_validity"),
+            "clinical_field_validity": m.get("clinical_field_validity"),
+            "unsupported_claim_rate": m.get("unsupported_claim_rate"),
+            "json_schema_validity": m.get("json_schema_validity"),
+            "prediction_by_class": m.get("prediction_by_class"),
+        }
+    return tracks
+
+
 def write_html_report(rows: list[dict[str, Any]], path: Path) -> None:
     scored = scored_rows(rows)
     metrics = calculate_metrics(scored)
@@ -518,7 +555,11 @@ def write_html_report(rows: list[dict[str, Any]], path: Path) -> None:
         f"<tr><td>{html.escape(label)}</td><td>{values.get('n')}</td><td>{values.get('correct')}</td><td>{pct(values.get('agreement'))}</td></tr>"
         for label, values in metrics.get("prediction_by_class", {}).items()
     )
-    document = f"<!doctype html><html><head><meta charset='utf-8'><title>Neuro-Capstone Benchmark</title><style>body{{font:15px system-ui;background:#f5f7fb;color:#172033;margin:32px}}h1{{color:#102a43}}.grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}}.card,section{{background:white;border-radius:12px;padding:18px;box-shadow:0 2px 10px #102a4318;margin-bottom:18px}}.label{{color:#627d98;text-transform:capitalize}}.value{{font-size:25px;font-weight:700;margin-top:8px}}table{{width:100%;border-collapse:collapse}}td,th{{padding:9px;border-bottom:1px solid #e6e8ec;text-align:left}}th{{color:#486581}}code{{white-space:pre-wrap}}</style></head><body><h1>Neuro-Capstone benchmark</h1><p>Scored runs are full-pipeline cases only: every stage succeeded and GPT-OSS 120B returned an API synthesis. Physics is a heuristic, not a clinical diagnosis. Recorded {len(rows)}; scored {len(scored)}; unsettled variants excluded from agreement: {metrics.get('n_unsettled_excluded', 0)}.</p><div class='grid'>{cards}</div><section><h2>Ablation comparison</h2><table><tr><th>Setting</th><th>Completion</th><th>Top-5 relevance</th><th>Citation validity</th><th>VUS uncertainty</th></tr>{ablation_rows}</table></section><section><h2>Excluded runs</h2><table><tr><th>Reason</th><th>N</th></tr>{exclusion_rows}</table></section><section><h2>Settled literature-class agreement (reference only)</h2><p>Settled classes come from published literature named in gold_variants.csv. Unsettled variants ({metrics.get('n_unsettled_excluded', 0)}) are excluded rather than marked wrong. Because the settled benign/protective subset is tiny, this table is a reference check rather than a balanced clinical classifier benchmark.</p><table><tr><th>Gold class</th><th>N</th><th>Correct</th><th>Agreement</th></tr>{class_rows}</table></section></body></html>"
+    track_rows = "".join(
+        f"<tr><td>{html.escape(t['label'])}</td><td>{t['n_runs']}</td><td>{pct(t.get('settled_agreement'))}</td><td>{pct(t.get('paper_citation_validity'))}</td><td>{pct(t.get('clinical_field_validity'))}</td><td>{pct(t.get('unsupported_claim_rate'))}</td></tr>"
+        for t in separate_track_metrics(rows).values()
+    )
+    document = f"<!doctype html><html><head><meta charset='utf-8'><title>Neuro-Capstone Benchmark</title><style>body{{font:15px system-ui;background:#f5f7fb;color:#172033;margin:32px}}h1{{color:#102a43}}.grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}}.card,section{{background:white;border-radius:12px;padding:18px;box-shadow:0 2px 10px #102a4318;margin-bottom:18px}}.label{{color:#627d98;text-transform:capitalize}}.value{{font-size:25px;font-weight:700;margin-top:8px}}table{{width:100%;border-collapse:collapse}}td,th{{padding:9px;border-bottom:1px solid #e6e8ec;text-align:left}}th{{color:#486581}}code{{white-space:pre-wrap}}</style></head><body><h1>Neuro-Capstone benchmark</h1><p>Scored runs are full-pipeline cases only: every stage succeeded and GPT-OSS 120B returned an API synthesis. Physics is a heuristic, not a clinical diagnosis. Recorded {len(rows)}; scored {len(scored)}; unsettled variants excluded from agreement: {metrics.get('n_unsettled_excluded', 0)}.</p><div class='grid'>{cards}</div><section><h2>Separate Track Benchmarks: Novel (Blinded) vs. Established</h2><table><tr><th>Track</th><th>N</th><th>Settled Agreement</th><th>Paper Citation Validity</th><th>Clinical Field Validity</th><th>Unsupported Claim Rate</th></tr>{track_rows}</table></section><section><h2>Ablation comparison</h2><table><tr><th>Setting</th><th>Completion</th><th>Top-5 relevance</th><th>Citation validity</th><th>VUS uncertainty</th></tr>{ablation_rows}</table></section><section><h2>Excluded runs</h2><table><tr><th>Reason</th><th>N</th></tr>{exclusion_rows}</table></section><section><h2>Settled literature-class agreement (reference only)</h2><p>Settled classes come from published literature named in gold_variants.csv. Unsettled variants ({metrics.get('n_unsettled_excluded', 0)}) are excluded rather than marked wrong. Because the settled benign/protective subset is tiny, this table is a reference check rather than a balanced clinical classifier benchmark.</p><table><tr><th>Gold class</th><th>N</th><th>Correct</th><th>Agreement</th></tr>{class_rows}</table></section></body></html>"
     path.write_text(document, encoding="utf-8")
 
 
@@ -539,6 +580,7 @@ def write_metrics(rows: list[dict[str, Any]], path: Path) -> None:
     metrics["n_recorded"] = len(rows)
     metrics["n_scored"] = metrics["n_runs"]
     metrics["n_excluded"] = len(rows) - metrics["n_runs"]
+    metrics["separate_tracks"] = separate_track_metrics(rows)
     path.write_text(json.dumps(metrics, indent=2), encoding="utf-8")
 
 
@@ -598,6 +640,15 @@ def write_markdown_report(rows: list[dict[str, Any]], path: Path) -> None:
     ])
     for label, values in metrics.get("prediction_by_class", {}).items():
         lines.append(f"| {label} | {values.get('n')} | {values.get('correct')} | {values.get('agreement')} |")
+    lines.extend([
+        "",
+        "## Separate Track Benchmarks: Novel (Blinded) vs. Established",
+        "",
+        "| Track | N | Settled Agreement | Unsettled Excluded | Paper Citation Validity | Clinical Field Validity | Unsupported Claim Rate |",
+        "|---|---:|---:|---:|---:|---:|---:|",
+    ])
+    for t in separate_track_metrics(rows).values():
+        lines.append(f"| {t['label']} | {t['n_runs']} | {t.get('settled_agreement')} | {t.get('n_unsettled_excluded')} | {t.get('paper_citation_validity')} | {t.get('clinical_field_validity')} | {t.get('unsupported_claim_rate')} |")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
