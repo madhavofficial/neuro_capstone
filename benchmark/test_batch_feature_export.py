@@ -45,9 +45,11 @@ class BatchFeatureExportTests(unittest.TestCase):
         encoded = json.dumps(rows).lower()
         self.assertNotIn("clinvar", encoded)
         self.assertNotIn("pathogenic", encoded)
-        audit_rows = list(csv.DictReader(audit.open()))
-        self.assertEqual(audit_rows[0]["label"], "LP")
-        self.assertEqual(audit_rows[1]["status"], "missing_physics")
+        with audit.open(newline="", encoding="utf-8") as handle:
+            audit_rows = list(csv.DictReader(handle))
+        audit_by_key = {(row["gene"], row["variant"]): row for row in audit_rows}
+        self.assertEqual(audit_by_key[("TTR", "V50M")]["label"], "LP")
+        self.assertEqual(audit_by_key[("SNCA", "A53T")]["status"], "missing_physics")
 
     def test_requires_alpha_missense_when_requested(self):
         run = self.runs / "run-001"
