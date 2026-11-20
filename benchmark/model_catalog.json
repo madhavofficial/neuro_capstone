@@ -7,8 +7,7 @@
       "enabled": true,
       "fallback_models": [
         {"provider": "groq", "model": "openai/gpt-oss-20b"},
-        {"provider": "groq", "model": "llama-3.3-70b-versatile"},
-        {"provider": "groq", "model": "qwen/qwen3-32b"},
+        {"provider": "groq", "model": "qwen/qwen3.8-27b"},
         {"provider": "openrouter", "model": "meta-llama/llama-3.3-70b-instruct"}
       ]
     },
