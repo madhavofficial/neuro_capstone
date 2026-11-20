@@ -1,12 +1,9 @@
 """Train and evaluate a structure-only classifier on blinded variant features.
 
-Inputs are deliberately split:
-* --features: JSON array produced from benchmark.feature_vector.build_feature_row
-* --labels: independent gold CSV with gene,variant,label (P/LP and B/LB accepted)
-
-ClinVar fields are rejected in feature rows. Labels are joined only after feature
-validation and are used only as targets. Evaluation uses out-of-fold predictions
-with gene-grouped stratified CV to reduce within-gene leakage.
+Predictors and labels are deliberately separate. Clinical/ClinVar fields are
+rejected from feature JSON; AlphaMissense is used only to define the rescue
+slice. Validation is gene-grouped and uncertainty is estimated by resampling
+whole gene clusters rather than treating correlated variants as independent.
 """
 from __future__ import annotations
 
@@ -15,20 +12,19 @@ import csv
 import json
 import math
 import random
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 import pandas as pd
-
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import StratifiedGroupKFold
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.metrics import roc_auc_score
 
-ROOT = Path(__file__).resolve().parents[1]
 STRUCTURAL_KEYS = (
     "exposure", "sasa", "secondary_structure", "plddt_confidence",
     "delta_volume", "delta_hydrophobicity", "delta_charge", "backbone_strain",
@@ -41,6 +37,7 @@ NUMERIC_KEYS = tuple(
     key for key in STRUCTURAL_KEYS
     if key not in CATEGORICAL_KEYS and key not in LIST_COUNT_KEYS
 )
+MODEL_KEYS = NUMERIC_KEYS + LIST_COUNT_KEYS + CATEGORICAL_KEYS
 FORBIDDEN_KEYS = {
     "clinvar", "clinical_label", "clinical_significance",
     "clinical_classification", "review_status", "clinvar_variation_id",
@@ -49,10 +46,9 @@ FORBIDDEN_KEYS = {
 
 def _contains_forbidden(value: Any) -> bool:
     if isinstance(value, dict):
-        for key, child in value.items():
-            if str(key).strip().lower() in FORBIDDEN_KEYS or _contains_forbidden(child):
-                return True
-    elif isinstance(value, list):
+        return any(str(k).strip().lower() in FORBIDDEN_KEYS or _contains_forbidden(v)
+                   for k, v in value.items())
+    if isinstance(value, list):
         return any(_contains_forbidden(item) for item in value)
     return False
 
@@ -66,6 +62,22 @@ def _normalise_label(value: Any) -> int:
     raise ValueError(f"Unsupported gold label {value!r}; expected P/LP or B/LB.")
 
 
+def _numeric_value(value: Any, *, key: tuple[str, str], name: str) -> float:
+    if value is None or value == "":
+        return math.nan
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{key}: {name} must be numeric or null.") from exc
+    if not math.isfinite(number):
+        raise ValueError(f"{key}: {name} must be finite.")
+    if name in {"sasa", "h_bonds_lost_est", "interface_contacts_lost"} and number < 0:
+        raise ValueError(f"{key}: {name} cannot be negative.")
+    if name == "plddt_confidence" and not 0 <= number <= 100:
+        raise ValueError(f"{key}: plddt_confidence must be in [0, 100].")
+    return number
+
+
 def load_inputs(features_path: Path, labels_path: Path) -> list[dict[str, Any]]:
     features = json.loads(features_path.read_text(encoding="utf-8-sig"))
     if isinstance(features, dict):
@@ -77,9 +89,9 @@ def load_inputs(features_path: Path, labels_path: Path) -> list[dict[str, Any]]:
         labels = list(csv.DictReader(handle))
     if not labels:
         raise ValueError("Gold-label CSV is empty.")
-    required_labels = {"gene", "variant", "label"}
-    if not required_labels.issubset(labels[0]):
-        raise ValueError(f"Gold CSV requires columns: {sorted(required_labels)}")
+    required = {"gene", "variant", "label"}
+    if not required.issubset(labels[0]):
+        raise ValueError(f"Gold CSV requires columns: {sorted(required)}")
 
     label_map: dict[tuple[str, str], int] = {}
     for line, row in enumerate(labels, start=2):
@@ -113,30 +125,21 @@ def load_inputs(features_path: Path, labels_path: Path) -> list[dict[str, Any]]:
         if missing:
             raise ValueError(f"{key}: missing structural features {sorted(missing)}.")
 
-        cooked: dict[str, Any] = {"gene": key[0], "variant": key[1], "label": label_map[key]}
+        cooked: dict[str, Any] = {"gene": key[0], "variant": key[1],
+                                  "label": label_map[key]}
         for name in CATEGORICAL_KEYS:
             value = structural.get(name)
             cooked[name] = None if value is None or str(value).strip() == "" else str(value)
         for name in LIST_COUNT_KEYS:
             value = structural.get(name)
             if value is None:
-                cooked[name] = None
+                cooked[name] = math.nan
             elif isinstance(value, list):
                 cooked[name] = float(len(value))
             else:
                 raise ValueError(f"{key}: {name} must be a list or null.")
         for name in NUMERIC_KEYS:
-            value = structural.get(name)
-            if value is None or value == "":
-                cooked[name] = math.nan
-            else:
-                try:
-                    number = float(value)
-                except (TypeError, ValueError):
-                    raise ValueError(f"{key}: {name} must be numeric or null.")
-                if not math.isfinite(number):
-                    raise ValueError(f"{key}: {name} must be finite.")
-                cooked[name] = number
+            cooked[name] = _numeric_value(structural.get(name), key=key, name=name)
 
         am = row.get("alphamissense_score")
         if am is None or am == "":
@@ -144,8 +147,8 @@ def load_inputs(features_path: Path, labels_path: Path) -> list[dict[str, Any]]:
         else:
             try:
                 am = float(am)
-            except (TypeError, ValueError):
-                raise ValueError(f"{key}: AlphaMissense score must be numeric or null.")
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"{key}: AlphaMissense score must be numeric or null.") from exc
             if not math.isfinite(am) or not 0 <= am <= 1:
                 raise ValueError(f"{key}: AlphaMissense score must be finite and in [0, 1].")
             cooked["alphamissense_score"] = am
@@ -156,43 +159,83 @@ def load_inputs(features_path: Path, labels_path: Path) -> list[dict[str, Any]]:
     return parsed
 
 
-def _make_model() -> Pipeline:
-    numeric = Pipeline([
-        ("imputer", SimpleImputer(strategy="median")),
-        ("scale", StandardScaler()),
-    ])
-    categorical = Pipeline([
-        ("imputer", SimpleImputer(strategy="most_frequent")),
-        ("onehot", OneHotEncoder(handle_unknown="ignore")),
-    ])
-    prep = ColumnTransformer([
-        ("numeric", numeric, list(NUMERIC_KEYS) + list(LIST_COUNT_KEYS)),
-        ("categorical", categorical, list(CATEGORICAL_KEYS)),
-    ])
+def _make_model(training_frame: pd.DataFrame) -> Pipeline:
+    # Drop columns that are entirely missing in this training fold. This avoids
+    # sklearn's all-empty-feature warnings and prevents test-fold information
+    # from deciding which predictors are retained.
+    numeric = [k for k in NUMERIC_KEYS + LIST_COUNT_KEYS
+               if not training_frame[k].isna().all()]
+    categorical = [k for k in CATEGORICAL_KEYS
+                   if not training_frame[k].isna().all()]
+    if not numeric and not categorical:
+        raise ValueError("No structural predictors are observed in this training fold.")
+
+    transformers = []
+    if numeric:
+        transformers.append(("numeric", Pipeline([
+            ("imputer", SimpleImputer(strategy="median")),
+            ("scale", StandardScaler()),
+        ]), numeric))
+    if categorical:
+        transformers.append(("categorical", Pipeline([
+            ("imputer", SimpleImputer(strategy="most_frequent")),
+            ("onehot", OneHotEncoder(handle_unknown="ignore")),
+        ]), categorical))
+    prep = ColumnTransformer(transformers, remainder="drop")
     return Pipeline([
         ("preprocess", prep),
-        ("classifier", LogisticRegression(class_weight="balanced", max_iter=3000, random_state=42)),
+        ("classifier", LogisticRegression(class_weight="balanced",
+                                          max_iter=3000, random_state=42)),
     ])
 
 
-def _bootstrap_auc(labels: list[int], scores: list[float], iterations: int, seed: int) -> list[float]:
+def _cluster_bootstrap_auc(labels: list[int], scores: list[float],
+                           genes: list[str], iterations: int,
+                           seed: int) -> tuple[list[float], dict[str, int]]:
+    """Stratified cluster bootstrap: resample whole genes within label-profile strata.
+
+    Genes are stratified as pathogenic-only, benign-only, or mixed. Keeping
+    each stratum's gene count fixed preserves both classes while resampling
+    clusters, not individual variants.
+    """
+    by_gene: dict[str, list[int]] = defaultdict(list)
+    for index, gene in enumerate(genes):
+        by_gene[gene].append(index)
+    strata: dict[tuple[int, ...], list[str]] = defaultdict(list)
+    for gene, indices in by_gene.items():
+        profile = tuple(sorted({labels[i] for i in indices}))
+        strata[profile].append(gene)
+    if len(by_gene) < 2:
+        raise ValueError("At least two distinct genes are required for a cluster bootstrap.")
+
     rng = random.Random(seed)
-    pos = [i for i, y in enumerate(labels) if y == 1]
-    neg = [i for i, y in enumerate(labels) if y == 0]
-    if min(len(pos), len(neg)) < 2:
-        raise ValueError("At least two variants per class are required for a bootstrap CI.")
-    values = []
+    values: list[float] = []
     for _ in range(iterations):
-        sample = [rng.choice(pos) for _ in pos] + [rng.choice(neg) for _ in neg]
-        values.append(float(roc_auc_score([labels[i] for i in sample],
-                                          [scores[i] for i in sample])))
+        sampled_indices: list[int] = []
+        for members in strata.values():
+            for _draw in members:
+                sampled_gene = rng.choice(members)
+                sampled_indices.extend(by_gene[sampled_gene])
+        sample_labels = [labels[i] for i in sampled_indices]
+        if len(set(sample_labels)) != 2:
+            continue
+        sample_scores = [scores[i] for i in sampled_indices]
+        values.append(float(roc_auc_score(sample_labels, sample_scores)))
+    if len(values) < max(100, int(iterations * 0.8)):
+        raise ValueError(
+            f"Only {len(values)}/{iterations} valid gene-cluster bootstrap samples; "
+            "the dataset has insufficient class diversity across genes."
+        )
     values.sort()
-    return [values[int(0.025 * iterations)],
-            values[min(int(0.975 * iterations), iterations - 1)]]
+    ci = [values[int(0.025 * len(values))],
+          values[min(int(0.975 * len(values)), len(values) - 1)]]
+    return ci, {"requested": iterations, "valid": len(values),
+                "invalid": iterations - len(values), "genes": len(by_gene)}
 
 
 def evaluate(rows: list[dict[str, Any]], *, folds: int, iterations: int,
-             seed: int, am_low_cutoff: float, structure_positive_cutoff: float) -> dict[str, Any]:
+             seed: int, am_low_cutoff: float,
+             structure_positive_cutoff: float) -> dict[str, Any]:
     labels = [row["label"] for row in rows]
     genes = [row["gene"] for row in rows]
     if len(set(genes)) < folds:
@@ -200,9 +243,9 @@ def evaluate(rows: list[dict[str, Any]], *, folds: int, iterations: int,
     splitter = StratifiedGroupKFold(n_splits=folds, shuffle=True, random_state=seed)
     predictions = [math.nan] * len(rows)
     fold_summary = []
-    x_rows = [{key: row[key] for key in NUMERIC_KEYS + LIST_COUNT_KEYS + CATEGORICAL_KEYS}
-              for row in rows]
-    for fold, (train, test) in enumerate(splitter.split(x_rows, labels, groups=genes), start=1):
+    x_rows = [{key: row[key] for key in MODEL_KEYS} for row in rows]
+    for fold, (train, test) in enumerate(
+            splitter.split(x_rows, labels, groups=genes), start=1):
         y_train = [labels[i] for i in train]
         y_test = [labels[i] for i in test]
         if len(set(y_train)) != 2 or len(set(y_test)) != 2:
@@ -210,46 +253,48 @@ def evaluate(rows: list[dict[str, Any]], *, folds: int, iterations: int,
                 f"Fold {fold} lacks one class in train or test. "
                 "Reduce --folds or obtain a better class-by-gene distribution."
             )
-        model = _make_model()
-        model.fit(pd.DataFrame([x_rows[i] for i in train]), y_train)
-        scores = model.predict_proba(pd.DataFrame([x_rows[i] for i in test]))[:, 1]
+        train_frame = pd.DataFrame([x_rows[i] for i in train])
+        test_frame = pd.DataFrame([x_rows[i] for i in test])
+        model = _make_model(train_frame)
+        model.fit(train_frame, y_train)
+        scores = model.predict_proba(test_frame)[:, 1]
         for index, score in zip(test, scores):
             predictions[index] = float(score)
         fold_summary.append({
-            "fold": fold,
-            "train_variants": len(train),
-            "test_variants": len(test),
+            "fold": fold, "train_variants": len(train), "test_variants": len(test),
             "test_genes": sorted({genes[i] for i in test}),
+            "dropped_all_missing_features": [
+                key for key in MODEL_KEYS if train_frame[key].isna().all()
+            ],
         })
 
     if any(not math.isfinite(score) for score in predictions):
         raise RuntimeError("Cross-validation did not produce an out-of-fold score for every row.")
     auc = float(roc_auc_score(labels, predictions))
-    ci = _bootstrap_auc(labels, predictions, iterations, seed)
+    ci, bootstrap = _cluster_bootstrap_auc(labels, predictions, genes, iterations, seed)
     rescue_candidates = [
-        row for row in rows
-        if row["label"] == 1
+        row for row in rows if row["label"] == 1
         and row["alphamissense_score"] is not None
         and row["alphamissense_score"] < am_low_cutoff
     ]
-    by_key = {(row["gene"], row["variant"]): predictions[i] for i, row in enumerate(rows)}
-    rescued = [
-        row for row in rescue_candidates
-        if by_key[(row["gene"], row["variant"])] >= structure_positive_cutoff
-    ]
+    by_key = {(row["gene"], row["variant"]): predictions[i]
+              for i, row in enumerate(rows)}
+    rescued = [row for row in rescue_candidates
+               if by_key[(row["gene"], row["variant"])] >= structure_positive_cutoff]
+    missingness = {
+        key: sum(pd.isna(row[key]) for row in x_rows)
+        for key in MODEL_KEYS
+    }
     return {
-        "method": "LogisticRegression(class_weight=balanced) on structural features only; "
+        "method": "Balanced logistic regression on structural features only; "
                   "gene-grouped StratifiedGroupKFold out-of-fold predictions",
-        "n_variants": len(rows),
-        "n_pathogenic": sum(labels),
-        "n_benign": len(labels) - sum(labels),
-        "n_genes": len(set(genes)),
-        "structure_only_auroc_oof": auc,
-        "bootstrap_95_ci": ci,
-        "bootstrap_iterations": iterations,
-        "bootstrap_seed": seed,
-        "cv_folds": folds,
-        "cv_folds_detail": fold_summary,
+        "n_variants": len(rows), "n_pathogenic": sum(labels),
+        "n_benign": len(labels) - sum(labels), "n_genes": len(set(genes)),
+        "structure_only_auroc_oof": auc, "bootstrap_95_ci_gene_cluster": ci,
+        "bootstrap_method": "Stratified gene-cluster percentile bootstrap over OOF predictions",
+        "bootstrap_iterations": bootstrap,
+        "bootstrap_seed": seed, "cv_folds": folds, "cv_folds_detail": fold_summary,
+        "feature_missingness_counts": missingness,
         "alphamissense_low_cutoff": am_low_cutoff,
         "structure_positive_cutoff": structure_positive_cutoff,
         "n_missing_alphamissense": sum(r["alphamissense_score"] is None for r in rows),
@@ -260,8 +305,11 @@ def evaluate(rows: list[dict[str, Any]], *, folds: int, iterations: int,
              "structure_only_oof_score": by_key[(row["gene"], row["variant"])]}
             for row in rescued
         ],
-        "feature_policy": "ClinVar/clinical fields and all labels are excluded from predictors. "
-                          "AlphaMissense is used only to define the rescue slice; it is not a model feature.",
+        "feature_policy": "Clinical/ClinVar fields and labels are excluded from predictors. "
+                          "AlphaMissense defines the rescue slice only; it is not a model feature.",
+        "uncertainty_note": "The gene-cluster bootstrap resamples genes within pathogenic-only, "
+                            "benign-only, and mixed-label gene strata. The interval is conditional "
+                            "on the out-of-fold predictions and does not capture model-selection uncertainty.",
         "out_of_fold_predictions": [
             {"gene": row["gene"], "variant": row["variant"], "label": row["label"],
              "structure_only_oof_score": predictions[i]}
@@ -272,10 +320,8 @@ def evaluate(rows: list[dict[str, Any]], *, folds: int, iterations: int,
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--features", type=Path, required=True,
-                        help="JSON array of build_feature_row outputs.")
-    parser.add_argument("--labels", type=Path, required=True,
-                        help="Independent gold CSV: gene,variant,label (P/LP/B/LB).")
+    parser.add_argument("--features", type=Path, required=True)
+    parser.add_argument("--labels", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--folds", type=int, default=5)
     parser.add_argument("--bootstrap-iterations", type=int, default=2000)
@@ -286,18 +332,15 @@ def main() -> None:
     if args.folds < 2:
         parser.error("--folds must be at least 2.")
     if args.bootstrap_iterations < 100:
-        parser.error("Use at least 100 bootstrap iterations.")
+        parser.error("--bootstrap-iterations must be at least 100.")
     if not 0 <= args.alphamissense_low_cutoff <= 1:
         parser.error("AlphaMissense cutoff must be in [0, 1].")
     if not 0 <= args.structure_positive_cutoff <= 1:
         parser.error("Structure positive cutoff must be in [0, 1].")
-
     rows = load_inputs(args.features, args.labels)
-    result = evaluate(
-        rows, folds=args.folds, iterations=args.bootstrap_iterations,
-        seed=args.seed, am_low_cutoff=args.alphamissense_low_cutoff,
-        structure_positive_cutoff=args.structure_positive_cutoff,
-    )
+    result = evaluate(rows, folds=args.folds, iterations=args.bootstrap_iterations,
+                      seed=args.seed, am_low_cutoff=args.alphamissense_low_cutoff,
+                      structure_positive_cutoff=args.structure_positive_cutoff)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(json.dumps({k: v for k, v in result.items()
