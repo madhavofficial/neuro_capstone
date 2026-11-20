@@ -67,25 +67,58 @@ def resolve(row: dict[str, str]) -> dict[str, str]:
             result["review_status"] = "missing_exact_variant"
             return result
 
-        # Prioritize matching records: prefer those with review_status / germline classification
-        def score_match(m: tuple[str, dict]) -> int:
-            d = m[1]
-            score = 0
-            if d.get("germline_classification", {}).get("description"):
-                score += 10
-            rev = str(d.get("review_status", "")).lower()
-            if "practice" in rev or "expert" in rev:
-                score += 5
-            elif "criteria" in rev or "multiple" in rev:
-                score += 3
-            elif rev and rev != "no assertion criteria provided":
-                score += 1
-            return score
+        # Select only records meeting the ClinVar review and label requirements.
+        accepted_statuses = {
+            "practice guideline",
+            "reviewed by expert panel",
+            "criteria provided, multiple submitters, no conflicts",
+        }
 
-        matches.sort(key=score_match, reverse=True)
-        variation_id, doc = matches[0]
+        expected_label = row.get("label", "").strip().lower()
+        eligible = []
+        saw_accepted_review = False
+
+        for variation_id, doc in matches:
+            germline = doc.get("germline_classification", {})
+            status = str(germline.get("review_status", "")).strip().lower()
+            classification = str(germline.get("description", "")).strip().lower()
+
+            if status not in accepted_statuses:
+                continue
+
+            saw_accepted_review = True
+
+            if expected_label == "pathogenic":
+                label_matches = (
+                    "pathogenic" in classification
+                    and "conflicting" not in classification
+                    and "benign" not in classification
+                )
+            elif expected_label == "benign":
+                label_matches = (
+                    "benign" in classification
+                    and "pathogenic" not in classification
+                    and "conflicting" not in classification
+                )
+            else:
+                label_matches = False
+
+            if label_matches:
+                eligible.append((variation_id, doc, status))
+
+        if not eligible:
+            result["clinvar_variation_id"] = "UNRESOLVED"
+            if expected_label not in {"pathogenic", "benign"}:
+                result["review_status"] = "rejected:unsettled_label"
+            elif not saw_accepted_review:
+                result["review_status"] = "rejected:review_status"
+            else:
+                result["review_status"] = "rejected:label_mismatch"
+            return result
+
+        variation_id, doc, status = eligible[0]
         result["clinvar_variation_id"] = variation_id
-        result["review_status"] = str(doc.get("review_status", "retrieved"))
+        result["review_status"] = status
         result["condition"] = str(doc.get("title", row.get("condition", "")))
     except Exception as exc:
         result["clinvar_variation_id"] = "UNRESOLVED"
