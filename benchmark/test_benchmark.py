@@ -70,16 +70,17 @@ class BenchmarkTests(unittest.TestCase):
         rows = benchmark.load_gold(gold_path)
         by_id = {row["variant_id"]: row for row in rows}
         self.assertNotIn("ttr-a45t", by_id)
-        for vid in ("mapt-g272v", "mapt-n279k", "ttr-v20i", "ttr-a25t", "ttr-v30a"):
+        for vid in ("mapt-g272v", "mapt-n279k", "ttr-v20i", "ttr-a25t", "ttr-v30a", "ttr-v48m"):
             self.assertEqual(by_id[vid]["label"], "pathogenic", vid)
             self.assertTrue(by_id[vid]["label_source"].strip(), vid)
-        for vid in ("ttr-t139m", "ttr-g26s"):
+        for vid in ("ttr-t139m", "ttr-g26s", "mapt-v300i"):
             self.assertEqual(by_id[vid]["label"], "benign", vid)
             self.assertTrue(by_id[vid]["label_source"].strip(), vid)
         unsettled = [row["variant_id"] for row in rows if row["label"] == "unsettled"]
-        self.assertEqual(len(unsettled), 9)
-        for vid in ("snca-h50q", "snca-a53v", "snca-v15a"):
+        self.assertEqual(len(unsettled), 8)
+        for vid in ("snca-h50q", "snca-a53v", "snca-v15a", "ttr-t59a"):
             self.assertIn(vid, unsettled)
+        self.assertEqual(by_id["mapt-k257t"]["clinvar_variation_id"], "14259")
 
     def test_load_gold_rejects_duplicate_clinvar_variation_ids(self):
         with tempfile.TemporaryDirectory() as directory:
