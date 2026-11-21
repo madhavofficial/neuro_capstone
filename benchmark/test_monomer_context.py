@@ -1,3 +1,4 @@
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -63,9 +64,16 @@ class MonomerContextTests(unittest.TestCase):
         self.assertIsNone(predict_monomer_ddg("missing.pdb", "A53T", "A"))
 
     def test_missing_dependency_is_recorded_not_swallowed(self):
-        pdb = Path("data/benchmarks/s669_structures/1DIV.pdb")
-        with patch("benchmark.thermompnn_s669.load_thermompnn", side_effect=ModuleNotFoundError("No module named 'omegaconf'")):
-            res = score_monomer_ddg(pdb, "D23A", "A")
+        # Use a temporary existing PDB path so this test exercises dependency
+        # reporting rather than depending on the optional 1DIV fixture file.
+        with tempfile.NamedTemporaryFile(suffix=".pdb") as handle:
+            pdb = Path(handle.name)
+            fake_chain = type("Chain", (), {"id": "A"})()
+            with patch("analyze_structure.load_structure", return_value=[object()]), \
+                 patch("analyze_structure.get_chain", return_value=fake_chain), \
+                 patch("benchmark.thermompnn_s669.load_thermompnn",
+                       side_effect=ModuleNotFoundError("No module named 'omegaconf'")):
+                res = score_monomer_ddg(pdb, "D23A", "A")
         self.assertIsNone(res["monomer_ddg"])
         self.assertEqual(res["status"], "missing_dependency")
         self.assertIn("omegaconf", res["error"])
