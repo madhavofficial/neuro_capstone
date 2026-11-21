@@ -654,9 +654,30 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
             # Automatically invoke NLP query generation if both gene and variant are present
             if target.gene and target.variant:
                 try:
+                    # Resolve clinical context before NLP query formation so disease
+                    # terms and rsIDs feed directly into the retrieval query.
+                    _clinical_ctx = _context or None
+                    if _clinical_ctx is None:
+                        _ctx_path = os.path.join(
+                            "data", "context",
+                            f"{target.gene}_{target.variant}_context.json"
+                        )
+                        if os.path.exists(_ctx_path):
+                            try:
+                                with open(_ctx_path, "r", encoding="utf-8") as _cf:
+                                    _clinical_ctx = json.load(_cf)
+                            except Exception:
+                                pass
+
                     from nlp_formation import run_nlp_formation
                     print(f">> Generating NLP query for {target.gene} {target.variant}...")
-                    nlp_query, keyword_boost_hints = run_nlp_formation(target.gene, target.variant, data_dir="data")
+                    nlp_query, keyword_boost_hints = run_nlp_formation(
+                        target.gene,
+                        target.variant,
+                        data_dir="data",
+                        clinical_context=_clinical_ctx,
+                        physics_path=physics_json_path,
+                    )
                     print(f"[OK] NLP Query Generated: {nlp_query[:100]}...")
                     print(f">> Keyword Boost Hints: {keyword_boost_hints}")
 
@@ -672,22 +693,6 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
                                     _physics_vec = json.load(_pf)
                             except Exception:
                                 pass
-
-                        # ── Clinical context ──────────────────────────────────
-                        # _context is returned by run_pipeline from fetch_context;
-                        # also try loading from the saved context JSON as fallback.
-                        _clinical_ctx = _context or None
-                        if _clinical_ctx is None:
-                            _ctx_path = os.path.join(
-                                "data", "context",
-                                f"{target.gene}_{target.variant}_context.json"
-                            )
-                            if os.path.exists(_ctx_path):
-                                try:
-                                    with open(_ctx_path, "r", encoding="utf-8") as _cf:
-                                        _clinical_ctx = json.load(_cf)
-                                except Exception:
-                                    pass
 
                         # ── RAG retrieval ─────────────────────────────────────
                         print(f"\n>> Orchestrating vector retrieval and assembling payload...")

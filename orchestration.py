@@ -309,9 +309,13 @@ def run_full_pipeline(
                 physics_dict["mechanism_tags"] = mechanism_tags
 
             from nlp_formation import create_nlp_query
-            raw_query, keyword_boost_hints = create_nlp_query(physics_dict)
+            raw_query, keyword_boost_hints = create_nlp_query(
+                physics_dict,
+                clinical_context=clinical_context,
+                gene=gene,
+            )
 
-            # Prepend gene symbol as the mutation signature anchor
+            # Prepend gene symbol as the mutation signature anchor if omitted
             if not raw_query.startswith(gene):
                 raw_query = f"{gene} {raw_query}"
             query = raw_query
@@ -319,6 +323,19 @@ def run_full_pipeline(
             logger.info(f">> Keyword boost hints: {keyword_boost_hints}")
         except Exception as e:
             logger.warning(f"[WARN]  Physics-driven query failed, using provided query: {e}")
+    elif clinical_context:
+        try:
+            from nlp_formation import create_nlp_query
+            raw_query, keyword_boost_hints = create_nlp_query(
+                {"variant": variant},
+                clinical_context=clinical_context,
+                gene=gene,
+            )
+            query = raw_query
+            logger.info(f">> Context-driven query built: '{query[:120]}...'")
+            logger.info(f">> Keyword boost hints: {keyword_boost_hints}")
+        except Exception as e:
+            logger.warning(f"[WARN]  Context-driven query failed, using provided query: {e}")
 
     logger.info("=" * 70)
     logger.info(" EVIDENCE PIPELINE ORCHESTRATION")
