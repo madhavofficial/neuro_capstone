@@ -31,7 +31,7 @@ class BatchFeatureExportTests(unittest.TestCase):
         self.labels = self.root / "labels.csv"
         self.write_labels([
             {"gene": "TTR", "variant": "V50M", "label": "LP"},
-            {"gene": "SNCA", "variant": "A53T", "label": "P"},
+            {"gene": "SNCA", "variant": "A53T", "label": "B"},
         ])
 
     def write_labels(self, rows):
