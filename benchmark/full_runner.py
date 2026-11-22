@@ -354,7 +354,8 @@ def run_full(gold_path: Path, *, model_specs: list[dict[str, str]], ablations: t
                     payload, stages = stage_cache[cache_key]
                     (run_dir / "payload.json").write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
                     synthesis, model_meta = _model_synthesis(payload, target, spec) if spec.get("provider") else (_baseline_synthesis(payload, target), {"mode": "deterministic_baseline"})
-                    clinical = payload.get("clinical_context", {}).get("clinvar", {}) if isinstance(payload.get("clinical_context"), dict) else {}
+                    raw_clinvar = payload.get("clinical_context", {}).get("clinvar") if isinstance(payload.get("clinical_context"), dict) else None
+                    clinical = raw_clinvar if isinstance(raw_clinvar, dict) else {}
                     thermompnn = payload.get("thermompnn") if isinstance(payload.get("thermompnn"), dict) else {}
                     synthesis_path = run_dir / "synthesis.json"
                     if synthesis is None:
