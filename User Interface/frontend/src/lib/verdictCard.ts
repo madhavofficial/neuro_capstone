@@ -61,8 +61,13 @@ export function resolveVerdictHero(data: AnalyzeResponse): VerdictHeroModel {
   const topEvidence = data.evidence && data.evidence.length > 0 ? data.evidence[0] : null;
   const hasRetrievedLiterature = Boolean(topEvidence);
 
-  const hasClinvarPathogenic = clinvarSig.includes('pathogenic');
-  const hasClinvarBenign = !hasClinvarPathogenic && clinvarSig.includes('benign');
+  const isGeneLevelClinvar =
+    clinvar?.variant_match === false ||
+    String(clinvar?.scope || '').toLowerCase() === 'gene_level' ||
+    clinvarSig.startsWith('gene has ');
+
+  const hasClinvarPathogenic = !isGeneLevelClinvar && clinvarSig.includes('pathogenic');
+  const hasClinvarBenign = !isGeneLevelClinvar && !hasClinvarPathogenic && clinvarSig.includes('benign');
   const hasClinvarClassification = hasClinvarPathogenic || hasClinvarBenign;
   const clinvarClinicalRecord = rawClinvarSig || null;
 

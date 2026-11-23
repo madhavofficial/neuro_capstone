@@ -218,4 +218,30 @@ for (const status of ["STRUCTURAL_DISCOVERY_VUS", "PREDICTED_PATHOGENIC_VUS"] as
   assert.doesNotMatch(contradictoryWithLit.verdictDescription, /no literature evidence was retrieved/i);
 }
 
+// 9. Gene-level ClinVar coverage fallback must NOT trigger HYPOTHESIS: PATHOGENIC
+const geneLevelClinvarFallback = resolveVerdictHero(
+  baseResponse({
+    gene: "PARK7",
+    variant: "Q45N",
+    status: "STRUCTURAL_DISCOVERY_VUS",
+    confidence_matrix: {
+      physics_engine: "HEURISTIC",
+      literature_rag: "NULL_RESULTS",
+      clinical_context: "LOW",
+    },
+    context_data: {
+      clinvar: {
+        clinical_significance: "Gene has pathogenic variants in ClinVar",
+        variant_match: false,
+        scope: "gene_level",
+      },
+    },
+    evidence: [],
+  }),
+);
+assert.equal(geneLevelClinvarFallback.hypothesisLiteratureGap, true);
+assert.equal(geneLevelClinvarFallback.verdictType, "VUS");
+assert.equal(geneLevelClinvarFallback.verdictTitle, "HYPOTHESIS: VARIANT OF UNCERTAIN SIGNIFICANCE (VUS)");
+assert.equal(geneLevelClinvarFallback.clinvarClinicalRecord, "Gene has pathogenic variants in ClinVar");
+
 console.log("verdict card checks passed");
