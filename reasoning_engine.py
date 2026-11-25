@@ -31,11 +31,7 @@ logger = logging.getLogger(__name__)
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 DEFAULT_MODELS_CASCADE = [
-    "openrouter/free",
-    "z-ai/glm-5.2:free",
-    "nvidia/nemotron-3.5-lightning:free",
     "nvidia/nemotron-3-ultra-550b-a55b:free",
-    "google/gemma-4-31b-it:free",
 ]
 
 
@@ -364,12 +360,13 @@ def generate_reasoning(
                     {"role": "user", "content": prompt},
                 ],
                 "temperature": 0.2,
-                "max_tokens": 2500,
+                "max_tokens": 4096,
+                "reasoning": {"effort": "low"},
             }
 
             try:
                 logger.info(f"Querying [{model_id}] using API Key {key_idx}/{len(api_keys)} ({key_preview})...")
-                with httpx.Client(timeout=25.0) as client:
+                with httpx.Client(timeout=180.0) as client:
                     response = client.post(OPENROUTER_API_URL, headers=headers, json=payload)
 
                 if response.status_code == 200:

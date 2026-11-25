@@ -100,17 +100,38 @@ class _Mutation:
 _MODEL_CACHE: dict[Path, Any] = {}
 
 
+@contextmanager
+def _thermompnn_import_path(repo: Path):
+    """Temporarily add ThermoMPNN to sys.path only while importing its modules.
+
+    Leaving third_party/ThermoMPNN on sys.path causes its local datasets.py
+    file to shadow the HuggingFace ``datasets`` package and break
+    ``sentence_transformers`` imports in vector_engine.py.
+    """
+    repo_str = str(repo.resolve())
+    added = repo_str not in sys.path
+    if added:
+        sys.path.insert(0, repo_str)
+    try:
+        yield
+    finally:
+        if added:
+            try:
+                sys.path.remove(repo_str)
+            except ValueError:
+                pass
+
+
 def load_thermompnn(repo: Path):
     """Load the published ThermoMPNN weights on CPU using pure PyTorch."""
     repo = repo.resolve()
     cached = _MODEL_CACHE.get(repo)
     if cached is not None:
         return cached
-    if str(repo) not in sys.path:
-        sys.path.insert(0, str(repo))
     os.environ.setdefault("WANDB_MODE", "disabled")
 
-    from transfer_model import TransferModel
+    with _thermompnn_import_path(repo):
+        from transfer_model import TransferModel
 
     config = _AttrDict(
         platform=_AttrDict(thermompnn_dir=str(repo), accel="cpu", cache_dir=str(repo / "cache")),
@@ -210,9 +231,8 @@ def predict_monomer_ddg(pdb_path: str | Path, variant: str, chain_id: str | None
 
 def score_structure(model, pdb_path: Path, chain: str, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     repo = DEFAULT_REPO.resolve()
-    if str(repo) not in sys.path:
-        sys.path.insert(0, str(repo))
-    from protein_mpnn_utils import alt_parse_PDB
+    with _thermompnn_import_path(repo):
+        from protein_mpnn_utils import alt_parse_PDB
 
     parsed = alt_parse_PDB(str(pdb_path), [chain])
     if not parsed or not isinstance(parsed[0].get("seq"), str):
